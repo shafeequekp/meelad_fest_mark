@@ -1,0 +1,12 @@
+*.pyc
+nbproject
+*.db
+.idea/*
+.pyc
+.DS_Store
+*.rdb
+*.json
+*.log
+db.sqlite3
+media/*
+meelad/local.py

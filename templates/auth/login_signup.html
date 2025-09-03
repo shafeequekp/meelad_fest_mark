@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meelad — Login & Signup</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* smooth show/hide */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-rose-50">
+  <div class="mx-auto max-w-6xl px-4 py-10">
+    <!-- Header -->
+    <header class="mb-10 text-center">
+      <h1 class="text-3xl font-bold tracking-tight text-gray-900">Meelad Portal</h1>
+      <p class="mt-2 text-gray-600">Welcome! Sign in to continue or create a new account.</p>
+    </header>
+
+    <div class="grid gap-6 lg:grid-cols-2">
+      <!-- Left: Hero / Tips -->
+      <section class="order-2 lg:order-1">
+        <div class="h-full rounded-2xl bg-white/70 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur">
+          <h2 class="mb-4 text-xl font-semibold text-gray-900">About your account</h2>
+          <ul class="list-disc space-y-2 pl-6 text-gray-700">
+            <li>You can log in using your <span class="font-medium">Email</span> (required by default).</li>
+            <li>During sign up, provide <span class="font-medium">at least one</span> of Email or Phone Number.</li>
+            <li>Password must be at least 8 characters. Use a mix of letters and numbers.</li>
+            <li>Optionally add <span class="font-medium">Madrasa</span> details; you can edit them later.</li>
+          </ul>
+
+          <div class="mt-6 rounded-xl bg-indigo-50 p-4 text-indigo-900">
+            <p class="text-sm">
+              <span class="font-semibold">Django note:</span>
+              Replace action URLs with your own, and keep <code class="rounded bg-black/5 px-1">{% csrf_token %}</code> inside each form.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Auth Card -->
+      <section class="order-1 lg:order-2">
+        <div class="rounded-2xl bg-white/90 p-6 shadow-lg ring-1 ring-black/5">
+          <!-- Tabs -->
+          <div class="mb-6 flex rounded-xl bg-gray-100 p-1 text-sm">
+            <button id="tab-login" class="flex-1 rounded-lg px-4 py-2 font-medium transition active-tab">Login</button>
+            <button id="tab-signup" class="flex-1 rounded-lg px-4 py-2 font-medium transition">Sign up</button>
+          </div>
+
+          <!-- Login Panel -->
+          <div id="panel-login" class="tab-panel active">
+            <form method="post" action="{% url 'login' %}" class="space-y-4" novalidate>
+              {% csrf_token %}
+
+              <div>
+                <label for="login-email" class="mb-1 block text-sm font-medium text-gray-700">Email</label>
+                <div class="relative">
+                  <input id="login-email" name="email" type="email" required autocomplete="email"
+                         class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
+                         placeholder="you@example.com" />
+                </div>
+              </div>
+
+              <div>
+                <label for="login-password" class="mb-1 block text-sm font-medium text-gray-700">Password</label>
+                <input id="login-password" name="password" type="password" required autocomplete="current-password"
+                       class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
+                       placeholder="••••••••" />
+              </div>
+
+              <div class="flex items-center justify-between">
+                <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                  <input type="checkbox" name="remember" class="h-4 w-4 rounded border-gray-300" />
+                  Remember me
+                </label>
+                <a href="" class="text-sm font-medium text-indigo-700 hover:underline">Forgot password?</a>
+              </div>
+
+              <button type="submit"
+                      class="mt-2 w-full rounded-xl bg-indigo-600 px-4 py-2.5 font-semibold text-white shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                Sign in
+              </button>
+            </form>
+          </div>
+
+          <!-- Signup Panel -->
+          <div id="panel-signup" class="tab-panel">
+            <form id="signup-form" method="post" action="{% url 'signup' %}" class="space-y-4" novalidate>
+              {% csrf_token %}
+
+              <!-- Email / Phone (at least one required) -->
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label for="email" class="mb-1 block text-sm font-medium text-gray-700">Email (optional)</label>
+                  <input id="email" name="email" type="email" autocomplete="email"
+                         class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
+                         placeholder="you@example.com" />
+                </div>
+                <div>
+                  <label for="phone_number" class="mb-1 block text-sm font-medium text-gray-700">Phone (optional)</label>
+                  <div class="flex gap-2">
+                    <input id="country_code" name="country_code" type="text" value="+91"
+                           class="w-24 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring" />
+                    <input id="phone_number" name="phone_number" type="tel"
+                           class="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
+                           placeholder="9876543210" />
+                  </div>
+                  <p class="mt-1 text-xs text-gray-500">Provide <span class="font-medium">email</span> or <span class="font-medium">phone</span> (at least one).</p>
+                </div>
+              </div>
+
+              <!-- Passwords -->
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label for="password1" class="mb-1 block text-sm font-medium text-gray-700">Password</label>
+                  <input id="password1" name="password1" type="password" required autocomplete="new-password"
+                         class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
+                         placeholder="At least 8 characters" />
+                </div>
+                <div>
+                  <label for="password2" class="mb-1 block text-sm font-medium text-gray-700">Confirm Password</label>
+                  <input id="password2" name="password2" type="password" required autocomplete="new-password"
+                         class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
+                         placeholder="Re-enter password" />
+                </div>
+              </div>
+
+              <!-- Optional: Madrasa details -->
+              <details class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <summary class="cursor-pointer select-none text-sm font-semibold text-gray-800">Add Madrasa details (optional)</summary>
+                <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label for="madrasa_name" class="mb-1 block text-sm font-medium text-gray-700">Madrasa Name</label>
+                    <input id="madrasa_name" name="madrasa_name" type="text"
+                           class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
+                           placeholder="Your Madrasa" />
+                  </div>
+                  <div>
+                    <label for="madrasa_name" class="mb-1 block text-sm font-medium text-gray-700">Meelad Fest Name</label>
+                    <input id="meelad_fest_name" name="meelad_fest_name" type="text"
+                           class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
+                           placeholder="Meelad Fest Name" />
+                  </div>
+<!--                  <div>-->
+<!--                    <label for="reg_number" class="mb-1 block text-sm font-medium text-gray-700">Registration Number</label>-->
+<!--                    <input id="reg_number" name="reg_number" type="text"-->
+<!--                           class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"-->
+<!--                           placeholder="Optional" />-->
+<!--                  </div>-->
+                </div>
+              </details>
+
+              <div id="signup-errors" class="hidden rounded-xl bg-rose-50 p-3 text-sm text-rose-700"></div>
+
+              <button type="submit"
+                      class="w-full rounded-xl bg-emerald-600 px-4 py-2.5 font-semibold text-white shadow hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+                Create account
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="mt-10 text-center text-xs text-gray-500">
+      © <span id="year"></span> Meelad. All rights reserved.
+    </footer>
+  </div>
+
+  <script>
+    // ---- Tabs ----
+    const tabLogin = document.getElementById('tab-login');
+    const tabSignup = document.getElementById('tab-signup');
+    const panelLogin = document.getElementById('panel-login');
+    const panelSignup = document.getElementById('panel-signup');
+
+    function activate(tab) {
+      if (tab === 'login') {
+        panelLogin.classList.add('active');
+        panelSignup.classList.remove('active');
+        tabLogin.classList.add('bg-white', 'shadow');
+        tabSignup.classList.remove('bg-white', 'shadow');
+      } else {
+        panelSignup.classList.add('active');
+        panelLogin.classList.remove('active');
+        tabSignup.classList.add('bg-white', 'shadow');
+        tabLogin.classList.remove('bg-white', 'shadow');
+      }
+    }
+    tabLogin.addEventListener('click', () => activate('login'));
+    tabSignup.addEventListener('click', () => activate('signup'));
+    activate('login');
+
+    // ---- Footer year ----
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // ---- Client-side validation for signup ----
+    document.getElementById('signup-form').addEventListener('submit', function (e) {
+      const email = document.getElementById('email').value.trim();
+      const cc = document.getElementById('country_code').value.trim();
+      const phone = document.getElementById('phone_number').value.trim();
+      const p1 = document.getElementById('password1').value;
+      const p2 = document.getElementById('password2').value;
+      const errors = [];
+
+      if (!email && !phone) {
+        errors.push('Provide at least Email or Phone Number.');
+      }
+      if (phone && !/^\d{10,15}$/.test(phone.replace(/\D/g, ''))) {
+        errors.push('Phone must be 10–15 digits (numbers only).');
+      }
+      if (cc && !/^\+?\d{1,4}$/.test(cc)) {
+        errors.push('Country code must be like +91.');
+      }
+      if (p1.length < 8) {
+        errors.push('Password must be at least 8 characters.');
+      }
+      if (p1 !== p2) {
+        errors.push('Passwords do not match.');
+      }
+
+      const box = document.getElementById('signup-errors');
+      if (errors.length) {
+        e.preventDefault();
+        box.classList.remove('hidden');
+        box.innerHTML = '<ul class="list-disc pl-5">' + errors.map(x => `<li>${x}</li>`).join('') + '</ul>';
+      } else {
+        box.classList.add('hidden');
+        box.innerHTML = '';
+      }
+    });
+  </script>
+</body>
+</html>
