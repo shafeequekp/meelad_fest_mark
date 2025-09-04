@@ -10,6 +10,7 @@
     /* smooth show/hide */
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
+    .active-tab { background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-rose-50">
@@ -26,16 +27,16 @@
         <div class="h-full rounded-2xl bg-white/70 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur">
           <h2 class="mb-4 text-xl font-semibold text-gray-900">About your account</h2>
           <ul class="list-disc space-y-2 pl-6 text-gray-700">
-            <li>You can log in using your <span class="font-medium">Email</span> (required by default).</li>
-            <li>During sign up, provide <span class="font-medium">at least one</span> of Email or Phone Number.</li>
-            <li>Password must be at least 8 characters. Use a mix of letters and numbers.</li>
-            <li>Optionally add <span class="font-medium">Madrasa</span> details; you can edit them later.</li>
+            <li>You can log in using your <span class="font-medium">Email</span>.</li>
+            <li>During sign up, provide <span class="font-medium">Email compulsorily</span>.</li>
+            <li>Password must be at least <span class="font-medium">4 characters</span>. Use a mix of letters and numbers for more security.</li>
+            <li>You must add <span class="font-medium">Madrasa</span> and <span class="font-medium">Meelad fest name</span>; you can add teams later.</li>
           </ul>
 
           <div class="mt-6 rounded-xl bg-indigo-50 p-4 text-indigo-900">
             <p class="text-sm">
-              <span class="font-semibold">Django note:</span>
-              Replace action URLs with your own, and keep <code class="rounded bg-black/5 px-1">{% csrf_token %}</code> inside each form.
+              <span class="font-semibold">Admin note:</span>
+              You can add teams after login and update points inside each team anytime.
             </p>
           </div>
         </div>
@@ -57,11 +58,9 @@
 
               <div>
                 <label for="login-email" class="mb-1 block text-sm font-medium text-gray-700">Email</label>
-                <div class="relative">
-                  <input id="login-email" name="email" type="email" required autocomplete="email"
-                         class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
-                         placeholder="you@example.com" />
-                </div>
+                <input id="login-email" name="email" type="email" required autocomplete="email"
+                       class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
+                       placeholder="you@example.com" />
               </div>
 
               <div>
@@ -76,7 +75,7 @@
                   <input type="checkbox" name="remember" class="h-4 w-4 rounded border-gray-300" />
                   Remember me
                 </label>
-                <a href="" class="text-sm font-medium text-indigo-700 hover:underline">Forgot password?</a>
+                <a href="#" class="text-sm font-medium text-indigo-700 hover:underline">Forgot password?</a>
               </div>
 
               <button type="submit"
@@ -91,11 +90,11 @@
             <form id="signup-form" method="post" action="{% url 'signup' %}" class="space-y-4" novalidate>
               {% csrf_token %}
 
-              <!-- Email / Phone (at least one required) -->
+              <!-- Email / Phone -->
               <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label for="email" class="mb-1 block text-sm font-medium text-gray-700">Email (optional)</label>
-                  <input id="email" name="email" type="email" autocomplete="email"
+                  <label for="email" class="mb-1 block text-sm font-medium text-gray-700">Email</label>
+                  <input id="email" name="email" type="email" autocomplete="email" required
                          class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
                          placeholder="you@example.com" />
                 </div>
@@ -108,7 +107,6 @@
                            class="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
                            placeholder="9876543210" />
                   </div>
-                  <p class="mt-1 text-xs text-gray-500">Provide <span class="font-medium">email</span> or <span class="font-medium">phone</span> (at least one).</p>
                 </div>
               </div>
 
@@ -116,42 +114,48 @@
               <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label for="password1" class="mb-1 block text-sm font-medium text-gray-700">Password</label>
-                  <input id="password1" name="password1" type="password" required autocomplete="new-password"
+                  <input id="password1" name="password1" type="password" required minlength="4" autocomplete="new-password"
                          class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
-                         placeholder="At least 8 characters" />
+                         placeholder="At least 4 characters" />
                 </div>
                 <div>
                   <label for="password2" class="mb-1 block text-sm font-medium text-gray-700">Confirm Password</label>
-                  <input id="password2" name="password2" type="password" required autocomplete="new-password"
+                  <input id="password2" name="password2" type="password" required minlength="4" autocomplete="new-password"
                          class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
                          placeholder="Re-enter password" />
                 </div>
               </div>
 
-              <!-- Optional: Madrasa details -->
-              <details class="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <summary class="cursor-pointer select-none text-sm font-semibold text-gray-800">Add Madrasa details (optional)</summary>
-                <div class="mt-4 grid gap-4 sm:grid-cols-2">
+              <!-- Madrasa details -->
+              <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <h3 class="mb-4 text-sm font-semibold text-gray-800">Madrasa details</h3>
+                <div class="mt-2 grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label for="madrasa_name" class="mb-1 block text-sm font-medium text-gray-700">Madrasa Name</label>
-                    <input id="madrasa_name" name="madrasa_name" type="text"
+                    <label for="madrasa_name" class="mb-1 block text-sm font-medium text-gray-700">Madrasa Name <span class="text-rose-600">*</span></label>
+                    <input id="madrasa_name" name="madrasa_name" type="text" required
                            class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
                            placeholder="Your Madrasa" />
                   </div>
                   <div>
-                    <label for="madrasa_name" class="mb-1 block text-sm font-medium text-gray-700">Meelad Fest Name</label>
-                    <input id="meelad_fest_name" name="meelad_fest_name" type="text"
+                    <label for="meelad_fest_name" class="mb-1 block text-sm font-medium text-gray-700">Meelad Fest Name <span class="text-rose-600">*</span></label>
+                    <input id="meelad_fest_name" name="meelad_fest_name" type="text" required
                            class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
                            placeholder="Meelad Fest Name" />
                   </div>
-<!--                  <div>-->
-<!--                    <label for="reg_number" class="mb-1 block text-sm font-medium text-gray-700">Registration Number</label>-->
-<!--                    <input id="reg_number" name="reg_number" type="text"-->
-<!--                           class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"-->
-<!--                           placeholder="Optional" />-->
-<!--                  </div>-->
+                  <div>
+                    <label for="reg_number" class="mb-1 block text-sm font-medium text-gray-700">Registration Number</label>
+                    <input id="reg_number" name="reg_number" type="text"
+                           class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
+                           placeholder="(Optional)" />
+                  </div>
+                  <div>
+                    <label for="sadr" class="mb-1 block text-sm font-medium text-gray-700">Sadr Muallim</label>
+                    <input id="sadr" name="sadr" type="text"
+                           class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
+                           placeholder="(Optional)" />
+                  </div>
                 </div>
-              </details>
+              </div>
 
               <div id="signup-errors" class="hidden rounded-xl bg-rose-50 p-3 text-sm text-rose-700"></div>
 
@@ -171,7 +175,7 @@
   </div>
 
   <script>
-    // ---- Tabs ----
+    // Tabs
     const tabLogin = document.getElementById('tab-login');
     const tabSignup = document.getElementById('tab-signup');
     const panelLogin = document.getElementById('panel-login');
@@ -181,23 +185,23 @@
       if (tab === 'login') {
         panelLogin.classList.add('active');
         panelSignup.classList.remove('active');
-        tabLogin.classList.add('bg-white', 'shadow');
-        tabSignup.classList.remove('bg-white', 'shadow');
+        tabLogin.classList.add('active-tab');
+        tabSignup.classList.remove('active-tab');
       } else {
         panelSignup.classList.add('active');
         panelLogin.classList.remove('active');
-        tabSignup.classList.add('bg-white', 'shadow');
-        tabLogin.classList.remove('bg-white', 'shadow');
+        tabSignup.classList.add('active-tab');
+        tabLogin.classList.remove('active-tab');
       }
     }
     tabLogin.addEventListener('click', () => activate('login'));
     tabSignup.addEventListener('click', () => activate('signup'));
     activate('login');
 
-    // ---- Footer year ----
+    // Footer year
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // ---- Client-side validation for signup ----
+    // Signup validation
     document.getElementById('signup-form').addEventListener('submit', function (e) {
       const email = document.getElementById('email').value.trim();
       const cc = document.getElementById('country_code').value.trim();
@@ -215,8 +219,8 @@
       if (cc && !/^\+?\d{1,4}$/.test(cc)) {
         errors.push('Country code must be like +91.');
       }
-      if (p1.length < 8) {
-        errors.push('Password must be at least 8 characters.');
+      if (p1.length < 4) {
+        errors.push('Password must be at least 4 characters.');
       }
       if (p1 !== p2) {
         errors.push('Passwords do not match.');

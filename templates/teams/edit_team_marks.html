@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Section & Category Marks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-50 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 shadow-lg flex justify-between items-center">
+        <h1 class="text-3xl font-bold flex-1 text-center sm:text-left">
+            📝 {{ meelad_fest_name }} Marks Editing Dashboard
+        </h1>
+
+        {% if request.user.is_authenticated %}
+            <div class="flex space-x-2">
+                <a href="{% url 'home' %}"
+                   class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
+                    Home
+                </a>
+                <a href="{% url 'logout' %}"
+                   class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
+                    Logout
+                </a>
+            </div>
+        {% endif %}
+    </header>
+
+    <!-- Content -->
+    <main class="flex-grow flex items-center justify-center p-4">
+        <div class="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-6 sm:p-8">
+
+            <h2 class="text-2xl sm:text-3xl font-bold text-indigo-700 mb-6 text-center sm:text-left">
+                Edit Section & Category Marks – {{ team.name|capfirst }}
+            </h2>
+
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+
+                <!-- Boys Section -->
+                <div class="border border-gray-200 rounded-lg p-4 sm:p-6">
+                    <h3 class="text-lg font-semibold text-blue-600 mb-4">Boys Section Marks</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        {% for field in boys_form %}
+                        <div>
+                            <label class="block text-sm text-gray-600">{{ field.label }}</label>
+                            {{ field }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Girls Section -->
+                <div class="border border-gray-200 rounded-lg p-4 sm:p-6">
+                    <h3 class="text-lg font-semibold text-pink-600 mb-4">Girls Section Marks</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        {% for field in girls_form %}
+                        <div>
+                            <label class="block text-sm text-gray-600">{{ field.label }}</label>
+                            {{ field }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-center sm:justify-end">
+                    <button type="submit"
+                        class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow hover:bg-indigo-700 transition">
+                        Update Marks
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+</body>
+</html>

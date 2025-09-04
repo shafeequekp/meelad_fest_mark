@@ -8,94 +8,100 @@
 
 <body class="bg-gray-50 min-h-screen flex flex-col">
 
-    <!-- Header -->
-    <header class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 shadow-lg flex justify-between items-center">
-        <h1 class="text-3xl font-bold flex-1 text-center sm:text-left">
-            🏆 {{ meelad_fest_name }} Team Performance Dashboard
-        </h1>
+<!-- Header -->
+<header class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 shadow-lg flex justify-between items-center">
+    <h1 class="text-3xl font-bold flex-1 text-center sm:text-left">
+        🏆 {{ meelad_fest_name }} Team Performance Dashboard
+    </h1>
 
-        {% if request.user.is_authenticated %}
-            <div class="flex space-x-2">
-                <a href="{% url 'add_team' %}"
-                   class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
-                    Add Teams
-                </a>
-                <a href="{% url 'logout' %}"
-                   class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
-                    Logout
-                </a>
+    {% if request.user.is_authenticated %}
+    <div class="flex space-x-2">
+        <a href="{% url 'home' %}"
+           class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
+            Home
+        </a>
+        <a href="{% url 'logout' %}"
+           class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
+            Logout
+        </a>
+    </div>
+    {% endif %}
+</header>
+
+<!-- Content -->
+<main class="flex-grow flex items-center justify-center p-4">
+    <div class="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-6 sm:p-8">
+        <h2 class="text-2xl sm:text-3xl font-bold text-indigo-700 mb-6 text-center sm:text-left">
+            Add Team & Marks
+        </h2>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            <!-- Team Info -->
+            <div class="border border-gray-200 rounded-lg p-4 sm:p-6">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Team Info</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600">Name</label>
+                        {{ team_form.name }}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600">Madrasa</label>
+                        <input type="text"
+                               value="{{ request.user.madrasa }}"
+                               class="w-full p-2 border rounded-lg bg-gray-100 text-gray-700"
+                               disabled>
+                    </div>
+
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600">Leader</label>
+                        {{ team_form.leader }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600">Assistant</label>
+                        {{ team_form.assistant }}
+                    </div>
+                </div>
             </div>
-        {% endif %}
-    </header>
 
-    <!-- Content -->
-    <main class="flex-grow flex items-center justify-center p-4">
-        <div class="w-full max-w-5xl bg-white shadow-xl rounded-2xl p-6 sm:p-8">
-            <h2 class="text-2xl sm:text-3xl font-bold text-indigo-700 mb-6 text-center sm:text-left">
-                Add Team & Marks
-            </h2>
-
-            <form method="post" class="space-y-6">
-                {% csrf_token %}
-
-                <!-- Team Info -->
-                <div class="border border-gray-200 rounded-lg p-4 sm:p-6">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-4">Team Info</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600">Name</label>
-                            {{ team_form.name }}
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600">Madrasa</label>
-                            {{ team_form.madrasa }}
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600">Leader</label>
-                            {{ team_form.leader }}
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600">Assistant</label>
-                            {{ team_form.assistant }}
-                        </div>
-                    </div>
+            <!-- Boys Section -->
+            <div class="border border-gray-200 rounded-lg p-4 sm:p-6">
+                <h3 class="text-lg font-semibold text-blue-600 mb-4">Boys Section Marks</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <div><label class="block text-sm text-gray-600">Super Senior</label> {{ marks_form.super_senior_boys }}</div>
+                    <div><label class="block text-sm text-gray-600">Senior</label> {{ marks_form.senior_boys }}</div>
+                    <div><label class="block text-sm text-gray-600">Junior</label> {{ marks_form.junior_boys }}</div>
+                    <div><label class="block text-sm text-gray-600">Sub Junior</label> {{ marks_form.subjunior_boys }}</div>
+                    <div><label class="block text-sm text-gray-600">Kiddies</label> {{ marks_form.kiddies_boys }}</div>
+                    <div><label class="block text-sm text-gray-600">General</label> {{ marks_form.general_boys }}</div>
                 </div>
+            </div>
 
-                <!-- Boys Section -->
-                <div class="border border-gray-200 rounded-lg p-4 sm:p-6">
-                    <h3 class="text-lg font-semibold text-blue-600 mb-4">Boys Section Marks</h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        <div><label class="block text-sm text-gray-600">Super Senior</label> {{ marks_form.super_senior_boys }}</div>
-                        <div><label class="block text-sm text-gray-600">Senior</label> {{ marks_form.senior_boys }}</div>
-                        <div><label class="block text-sm text-gray-600">Junior</label> {{ marks_form.junior_boys }}</div>
-                        <div><label class="block text-sm text-gray-600">Sub Junior</label> {{ marks_form.subjunior_boys }}</div>
-                        <div><label class="block text-sm text-gray-600">Kiddies</label> {{ marks_form.kiddies_boys }}</div>
-                        <div><label class="block text-sm text-gray-600">General</label> {{ marks_form.general_boys }}</div>
-                    </div>
+            <!-- Girls Section -->
+            <div class="border border-gray-200 rounded-lg p-4 sm:p-6">
+                <h3 class="text-lg font-semibold text-pink-600 mb-4">Girls Section Marks</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <div><label class="block text-sm text-gray-600">Super Senior</label> {{ marks_form.super_senior_girls }}</div>
+                    <div><label class="block text-sm text-gray-600">Senior</label> {{ marks_form.senior_girls }}</div>
+                    <div><label class="block text-sm text-gray-600">Junior</label> {{ marks_form.junior_girls }}</div>
+                    <div><label class="block text-sm text-gray-600">Sub Junior</label> {{ marks_form.subjunior_girls }}</div>
+                    <div><label class="block text-sm text-gray-600">Kiddies</label> {{ marks_form.kiddies_girls }}</div>
+                    <div><label class="block text-sm text-gray-600">General</label> {{ marks_form.general_girls }}</div>
                 </div>
+            </div>
 
-                <!-- Girls Section -->
-                <div class="border border-gray-200 rounded-lg p-4 sm:p-6">
-                    <h3 class="text-lg font-semibold text-pink-600 mb-4">Girls Section Marks</h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        <div><label class="block text-sm text-gray-600">Super Senior</label> {{ marks_form.super_senior_girls }}</div>
-                        <div><label class="block text-sm text-gray-600">Senior</label> {{ marks_form.senior_girls }}</div>
-                        <div><label class="block text-sm text-gray-600">Junior</label> {{ marks_form.junior_girls }}</div>
-                        <div><label class="block text-sm text-gray-600">Sub Junior</label> {{ marks_form.subjunior_girls }}</div>
-                        <div><label class="block text-sm text-gray-600">Kiddies</label> {{ marks_form.kiddies_girls }}</div>
-                        <div><label class="block text-sm text-gray-600">General</label> {{ marks_form.general_girls }}</div>
-                    </div>
-                </div>
-
-                <!-- Submit Button -->
-                <div class="flex justify-center sm:justify-end">
-                    <button type="submit"
+            <!-- Submit Button -->
+            <div class="flex justify-center sm:justify-end">
+                <button type="submit"
                         class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow hover:bg-indigo-700 transition">
-                        Save Marks
-                    </button>
-                </div>
-            </form>
-        </div>
-    </main>
+                    Save Marks
+                </button>
+            </div>
+        </form>
+    </div>
+</main>
 </body>
 </html>
