@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from accounts.models import User, Madrasa
+from applications.accounts.models import User, Madrasa
 
 
 class UserAdmin(admin.ModelAdmin):

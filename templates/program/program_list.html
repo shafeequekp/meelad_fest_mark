@@ -1,0 +1,296 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Programs</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    .tab-btn {
+      color: #374151; /* gray-700 */
+      position: relative;
+      z-index: 10; /* so text stays above indicator */
+    }
+    .tab-btn.active {
+      color: #fff;
+    }
+
+
+#programModal.flex {
+  animation: fadeIn 0.2s ease-in-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+}
+
+  </style>
+</head>
+<body class="bg-gray-100 p-4 sm:p-6">
+<div class="max-w-6xl mx-auto">
+<!-- Header -->
+<header class="mb-10">
+  <div class="flex flex-col items-center md:flex-row md:justify-between">
+
+    <!-- Left: Title + Subtitle -->
+    <div class="text-center md:text-left mb-4 md:mb-0">
+      <h1 class="text-4xl font-extrabold text-indigo-700 drop-shadow-sm">
+        🏆 Programs Dashboard
+      </h1>
+      <p class="text-gray-500 mt-1">Manage your programs</p>
+    </div>
+
+    <!-- Right: Buttons -->
+    {% if request.user.is_authenticated %}
+    <div class="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-3">
+
+      <!-- Copy Form Link -->
+      <div class="relative group">
+        <button
+          onclick="copyFormLink()"
+          class="px-3 md:px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">
+          🔗 Copy Form Link
+        </button>
+
+        <!-- Tooltip / helper (desktop) -->
+        <div class="absolute right-0 mt-2 w-64 p-2 bg-gray-100 text-gray-700 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 md:block hidden">
+          Note: Please copy this link and share with team leaders to add their members' programs.
+        </div>
+
+        <!-- Mobile helper below button -->
+        <span class="text-gray-500 text-sm mt-1 md:hidden block">
+          Note: Please copy this link and share with team leaders to add their members' programs.
+        </span>
+      </div>
+
+      <!-- Home & Logout buttons -->
+      <div class="flex space-x-3">
+         <a href="{% url 'home' %}"
+           class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">
+          Home
+        </a>
+         <a href="{% url 'teams' %}"
+           class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">
+          Teams
+        </a>
+
+        <a href="{% url 'logout' %}"
+           class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">
+          Logout
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</header>
+
+
+
+  <!-- Page Title -->
+<!--  <h1 class="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8">Programs</h1>-->
+
+  <!-- Boys/Girls Switch Tabs -->
+  <div class="relative w-full max-w-md mx-auto mb-6 sm:mb-8 bg-gray-200 rounded-lg overflow-hidden">
+    <div class="flex">
+      <button id="boysTab" onclick="showSection('boys')"
+        class="tab-btn flex-1 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-colors duration-300">
+        Boys
+      </button>
+      <button id="girlsTab" onclick="showSection('girls')"
+        class="tab-btn flex-1 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-colors duration-300">
+        Girls
+      </button>
+    </div>
+    <!-- Sliding Indicator -->
+    <div id="sliderIndicator"
+      class="absolute top-0 left-0 h-full w-1/2 bg-blue-600 text-white rounded-lg transition-transform duration-300">
+    </div>
+  </div>
+
+
+  <!-- Boys Section -->
+  <div id="boysSection" class="section">
+    {% for category in categories %}
+    {% if category.programs.all %}
+      <h2 class="text-lg sm:text-xl font-semibold mb-3" style="color:purple">{{ category.name }}</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-10 mb-8">
+        {% for program in category.programs.all %}
+          <div
+            class="cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-4"
+            onclick="openModal('{{ program.id }}', '{{ category.id }}')"
+          >
+            {% if program.image %}
+              <img src="{{ program.image.url }}" alt="{{ program.title }}"
+                   class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+            {% else %}
+            <img src="{% static 'program_images/art_image2.png' %}" alt="{{ program.title }}"
+                   class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+            {% endif %}
+            <div>
+              <h2 class="text-base sm:text-lg font-semibold">{{ program.title }}</h2>
+              <p class="text-xs sm:text-sm text-gray-600 line-clamp-2">{{ program.description|truncatechars:60 }}</p>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+<!--     <hr><br>-->
+    {% endif %}
+
+    {% endfor %}
+  </div>
+
+  <!-- Girls Section -->
+  <div id="girlsSection" class="section hidden">
+    {% for category in categories %}
+    {% if category.programs_for_girls.all %}
+      <h2 class="text-lg sm:text-xl font-semibold mb-3">{{ category.name }}</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-10 mb-8">
+        {% for program in category.programs_for_girls.all %}
+          <div
+            class="cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-4"
+            onclick="openModal('{{ program.id }}', '{{ category.id }}')"
+          >
+            {% if program.image %}
+              <img src="{{ program.image.url }}" alt="{{ program.title }}"
+                   class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+             {% else %}
+            <img src="{% static 'program_images/art_image2.png' %}" alt="{{ program.title }}"
+                   class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+            {% endif %}
+            <div>
+              <h2 class="text-base sm:text-lg font-semibold">{{ program.title }}</h2>
+              <p class="text-xs sm:text-sm text-gray-600 line-clamp-2">{{ program.description|truncatechars:60 }}</p>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <!-- Modal -->
+  <div id="programModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50 px-4 overflow-y-auto max-h-[90vh]">
+    <div class="bg-white rounded-xl shadow-lg w-full max-w-4xl p-4 sm:p-6 relative">
+      <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-xl">✖</button>
+      <h2 id="modalTitle" class="text-xl sm:text-2xl font-bold mb-4"></h2>
+
+      <!-- Table -->
+      <div id="participantsContainer" class="overflow-x-auto text-sm sm:text-base"></div>
+
+      <!-- Export options -->
+      <div class="mt-6 border-t pt-4 flex flex-wrap justify-end gap-4 text-sm sm:text-base text-blue-600">
+        <a id="downloadPdfBtn" href="#" target="_blank" class="hover:underline">
+          📄 Judges Slip
+        </a>
+        <a id="downloadAllParticipantPdfBtn" href="#" target="_blank" class="hover:underline">
+          📄 Participants
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+  <script>
+    function showSection(section) {
+      const boys = document.getElementById("boysSection");
+      const girls = document.getElementById("girlsSection");
+      const boysTab = document.getElementById("boysTab");
+      const girlsTab = document.getElementById("girlsTab");
+      const indicator = document.getElementById("sliderIndicator");
+
+      boys.classList.add("hidden");
+      girls.classList.add("hidden");
+      document.getElementById(section + "Section").classList.remove("hidden");
+
+      boysTab.classList.remove("active");
+      girlsTab.classList.remove("active");
+
+      if (section === "boys") {
+        boysTab.classList.add("active");
+        indicator.style.transform = "translateX(0%)";
+      } else {
+        girlsTab.classList.add("active");
+        indicator.style.transform = "translateX(100%)";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      showSection("boys");
+    });
+
+    function openModal(programId, categoryId) {
+ fetch(`/program/${programId}/participants/${categoryId}/`)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("modalTitle").textContent = data.program;
+
+      if (data.participants.length === 0) {
+        document.getElementById("participantsContainer").innerHTML =
+          "<p class='text-gray-600'>No participants yet.</p>";
+      } else {
+        let table = `
+          <table class="min-w-full border-collapse border border-gray-300 text-xs sm:text-sm">
+            <thead class="bg-gray-200">
+              <tr>
+                <th class="border px-2 sm:px-3 py-2">Sl. No</th>
+                <th class="border px-2 sm:px-3 py-2">Code Number</th>
+                <th class="border px-2 sm:px-3 py-2">Chest Number</th>
+                <th class="border px-2 sm:px-3 py-2">Mark1</th>
+                <th class="border px-2 sm:px-3 py-2">Mark2</th>
+                <th class="border px-2 sm:px-3 py-2">Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+        data.participants.forEach((p, i) => {
+          table += `
+            <tr class="hover:bg-gray-50">
+              <td class="border px-2 sm:px-3 py-2 text-center">${i+1}</td>
+              <td class="border px-2 sm:px-3 py-2">${p.code_number || ''}</td>
+              <td class="border px-2 sm:px-3 py-2">${p.chest_number || '-'}</td>
+              <td class="border px-2 sm:px-3 py-2">${p.mark1 || ''}</td>
+              <td class="border px-2 sm:px-3 py-2">${p.mark2 || ''}</td>
+              <td class="border px-2 sm:px-3 py-2">${p.remarks || ''}</td>
+            </tr>`;
+        });
+        table += "</tbody></table>";
+        document.getElementById("participantsContainer").innerHTML = table;
+      }
+
+      // Detect current section (boys/girls)
+      const currentSection = document.getElementById("boysSection").classList.contains("hidden")
+        ? "girls"
+        : "boys";
+
+      // Update download links
+      document.getElementById("downloadPdfBtn").href =
+        `/program/${programId}/judge-slip/pdf/`;
+
+      document.getElementById("downloadAllParticipantPdfBtn").href =
+        `/program/download-participants/${programId}/${currentSection}/${categoryId}/`;
+
+      // Show modal
+      document.getElementById("programModal").classList.remove("hidden");
+      document.getElementById("programModal").classList.add("flex");
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Failed to load participants.");
+    });
+}
+
+
+
+    function closeModal() {
+      document.getElementById("programModal").classList.add("hidden");
+      document.getElementById("programModal").classList.remove("flex");
+    }
+  </script>
+</body>
+</html>

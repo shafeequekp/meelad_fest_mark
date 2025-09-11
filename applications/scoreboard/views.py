@@ -2,44 +2,44 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.views import generic, View
 from django.http import HttpResponseRedirect, FileResponse, HttpResponse
 
-from .models import Mark, Team
+from applications.scoreboard.models import Mark, Team
 from .forms import TeamForm, MarksForm, MarkEditForm
-from accounts.models import Madrasa, User
+from applications.accounts.models import Madrasa, User
 
 
 def add_team_and_marks(request):
     if request.method == 'POST':
         team_form = TeamForm(request.POST)
-        marks_form = MarksForm(request.POST)
+        # marks_form = MarksForm(request.POST)
 
-        if team_form.is_valid() and marks_form.is_valid():
+        if team_form.is_valid():
             team = team_form.save(commit=False)
             team.madrasa = request.user.madrasa
             team.save()
 
-            # Boys Section
-            Mark.objects.create(
-                team=team,
-                section='boys',
-                super_senior=marks_form.cleaned_data['super_senior_boys'],
-                senior=marks_form.cleaned_data['senior_boys'],
-                junior=marks_form.cleaned_data['junior_boys'],
-                subjunior=marks_form.cleaned_data['subjunior_boys'],
-                kiddies=marks_form.cleaned_data['kiddies_boys'],
-                general=marks_form.cleaned_data['general_boys'],
-            )
-
-            # Girls Section
-            Mark.objects.create(
-                team=team,
-                section='girls',
-                super_senior=marks_form.cleaned_data['super_senior_girls'],
-                senior=marks_form.cleaned_data['senior_girls'],
-                junior=marks_form.cleaned_data['junior_girls'],
-                subjunior=marks_form.cleaned_data['subjunior_girls'],
-                kiddies=marks_form.cleaned_data['kiddies_girls'],
-                general=marks_form.cleaned_data['general_girls'],
-            )
+            # # Boys Section
+            # Mark.objects.create(
+            #     team=team,
+            #     section='boys',
+            #     super_senior=marks_form.cleaned_data['super_senior_boys'],
+            #     senior=marks_form.cleaned_data['senior_boys'],
+            #     junior=marks_form.cleaned_data['junior_boys'],
+            #     subjunior=marks_form.cleaned_data['subjunior_boys'],
+            #     kiddies=marks_form.cleaned_data['kiddies_boys'],
+            #     general=marks_form.cleaned_data['general_boys'],
+            # )
+            #
+            # # Girls Section
+            # Mark.objects.create(
+            #     team=team,
+            #     section='girls',
+            #     super_senior=marks_form.cleaned_data['super_senior_girls'],
+            #     senior=marks_form.cleaned_data['senior_girls'],
+            #     junior=marks_form.cleaned_data['junior_girls'],
+            #     subjunior=marks_form.cleaned_data['subjunior_girls'],
+            #     kiddies=marks_form.cleaned_data['kiddies_girls'],
+            #     general=marks_form.cleaned_data['general_girls'],
+            # )
 
             return redirect('teams')  # redirect to team list page after save
     else:
@@ -118,6 +118,15 @@ class TeamsView(generic.ListView):
             madrasa = self.request.user.madrasa
             return madrasa.team_set.all()
         return Team.objects.none()
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        request = self.request
+        madrasa_id = request.user.madrasa.id
+        host_url = f"{request.scheme}://{request.get_host()}"
+        context["form_url"] = f'{host_url}/program/student-registration/?madrasa_id={madrasa_id}'
+        return context
+
 
 
 

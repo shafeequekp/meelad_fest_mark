@@ -1,5 +1,5 @@
 from django import forms
-from .models import Team, Mark
+from applications.scoreboard.models import Team, Mark
 
 
 class TeamForm(forms.ModelForm):

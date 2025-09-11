@@ -1,5 +1,5 @@
 from django.db import models
-from accounts.models import Madrasa
+from applications.accounts.models import Madrasa
 
 
 class Team(models.Model):

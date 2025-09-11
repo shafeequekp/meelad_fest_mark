@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 
-from accounts.models import Madrasa
+from applications.accounts.models import Madrasa
 User = get_user_model()
 
 

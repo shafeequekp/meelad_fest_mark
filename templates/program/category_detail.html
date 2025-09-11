@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>{{ category.name }} - Detail</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  .slider-wrapper {
+    display: flex;
+    width: 100%;
+    transition: transform 0.4s ease-in-out;
+  }
+  .slider-section {
+    width: 100%;
+    flex-shrink: 0;
+    min-height: 100vh;
+    overflow-y: auto;
+    padding-bottom: 4rem;
+  }
+  .tab-slider {
+    transition: transform 0.3s ease-in-out;
+  }
+
+  /* Modal animation */
+  .modal-enter { opacity: 0; transform: scale(0.95); }
+  .modal-enter-active { opacity: 1; transform: scale(1); transition: all 0.3s ease-out; }
+  .modal-exit { opacity: 1; transform: scale(1); }
+  .modal-exit-active { opacity: 0; transform: scale(0.95); transition: all 0.2s ease-in; }
+</style>
+<script>
+  let genderIndex = 0; // 0 = Boys, 1 = Girls
+  let sectionIndex = 0; // 0 = Students, 1 = Programs
+
+function goToGender(index) {
+  genderIndex = index;
+  document.getElementById('boysSection').classList.toggle('hidden', index !== 0);
+  document.getElementById('girlsSection').classList.toggle('hidden', index !== 1);
+
+  // Move sliding line full width
+  const slider = document.getElementById('genderSlider');
+  slider.style.transform = `translateX(${index * 100}%)`;
+
+  // Reset inner slider to first tab
+  goToSlide(0, index);
+}
+
+
+
+  function goToSlide(index, gender = genderIndex) {
+    const wrapper = gender === 0
+      ? document.getElementById("boysSliderWrapper")
+      : document.getElementById("girlsSliderWrapper");
+    const slider = gender === 0
+      ? document.getElementById("boysTabSlider")
+      : document.getElementById("girlsTabSlider");
+
+    sectionIndex = index;
+    wrapper.style.transform = `translateX(-${index * 100}%)`;
+    slider.style.transform = `translateX(${index * 100}%)`;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+function toggleModal(id, gender = null) {
+  const modal = document.getElementById(id);
+  const content = modal.querySelector(".modal-content");
+
+  if (modal.classList.contains("hidden")) {
+    const genderInput = modal.querySelector('#programGender');
+    if (genderInput) {
+      genderInput.value = gender || (genderIndex === 0 ? 'male' : 'female');
+    }
+
+    modal.classList.remove("hidden");
+    content.classList.add("modal-enter");
+    requestAnimationFrame(() => {
+      content.classList.add("modal-enter-active");
+      content.classList.remove("modal-enter");
+    });
+  } else {
+    content.classList.add("modal-exit");
+    requestAnimationFrame(() => {
+      content.classList.add("modal-exit-active");
+      content.classList.remove("modal-exit");
+    });
+    setTimeout(() => {
+      modal.classList.add("hidden");
+      content.classList.remove("modal-exit-active");
+    }, 200);
+  }
+}
+
+
+</script>
+
+</head>
+<body class="bg-gray-50 min-h-screen p-4 md:p-6">
+
+<!-- Header -->
+<header class="mb-6 md:mb-8 flex justify-between items-center max-w-5xl mx-auto">
+  <h1 class="text-xl md:text-2xl font-bold text-indigo-700">📂 {{ category.name }}</h1>
+  <a href="{{category_url}}"
+     class="text-sm md:text-base text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg shadow">
+    ← Categories
+  </a>
+</header>
+
+<!-- Gender Tabs -->
+<div class="w-full max-w-2xl mx-auto mb-6 relative">
+  <div class="flex justify-between relative">
+    <button onclick="goToGender(0)" id="boysTab" class="text-gray-600 font-bold text-xl py-2 w-1/2 text-center">Boys</button>
+    <button onclick="goToGender(1)" id="girlsTab" class="text-gray-600 font-bold text-xl py-2 w-1/2 text-center">Girls</button>
+    <!-- Sliding line -->
+    <div id="genderSlider" class="absolute bottom-0 left-0 h-1 w-1/2 bg-blue-500 transition-all duration-300 ease-in-out"></div>
+  </div>
+</div>
+
+
+
+
+<!-- Boys Section -->
+<div id="boysSection" class="overflow-hidden max-w-5xl mx-auto rounded-xl shadow bg-gradient-to-r from-blue-200 via-blue-300 to-blue-400 p-4">
+  <!-- Inner Tabs (Students/Programs) -->
+  <div class="relative flex justify-center mb-6">
+  {% if category.name|lower != 'general' %}
+    <!-- Two-tab layout -->
+    <div class="flex relative bg-gray-200 rounded-xl overflow-hidden w-80">
+      <div id="boysTabSlider" class="tab-slider absolute top-0 left-0 w-1/2 h-full bg-white shadow-md rounded-xl"></div>
+      <button onclick="goToSlide(0,0)" class="relative z-10 w-1/2 py-3 text-center font-medium text-indigo-700">
+        👩‍🎓 Students
+      </button>
+      <button onclick="goToSlide(1,0)" class="relative z-10 w-1/2 py-3 text-center font-medium text-green-700">
+        📘 Programs
+      </button>
+    </div>
+  {% else %}
+    <!-- Single-tab layout -->
+    <div class="flex relative bg-gray-200 rounded-xl overflow-hidden w-40">
+      <div class="absolute top-0 left-0 w-full h-full bg-white shadow-md rounded-xl"></div>
+      <button onclick="goToSlide(0,0)" class="relative z-10 w-full py-3 text-center font-medium text-green-700">
+        📘 Programs
+      </button>
+    </div>
+  {% endif %}
+</div>
+
+
+  <div class="overflow-hidden max-w-5xl mx-auto bg-white rounded-xl shadow">
+    <div id="boysSliderWrapper" class="slider-wrapper">
+
+      <!-- Students Section -->
+      {% if category.name|lower != 'general' %}
+      <div class="slider-section p-4 md:p-6">
+        <div class="flex justify-between items-center mb-4 sticky top-0 bg-white z-10">
+          <h2 class="text-lg md:text-xl font-semibold text-indigo-600">👩‍🎓 Students</h2>
+          <button onclick="toggleModal('studentModal')" class="px-2 py-1.5 text-sm md:px-4 md:py-2 md:text-base bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition">+ Add</button>
+        </div>
+        <ul class="space-y-2">
+          {% for student in boys %}
+          <li>
+            <button onclick="toggleModal('modal-{{ student.id }}')" class="w-full p-2 text-left bg-gray-100 rounded hover:bg-gray-200">
+              {{ student.full_name }} ({{ student.code_number }})
+            </button>
+            <!-- Student Programs Modal -->
+            <div id="modal-{{ student.id }}" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div class="modal-content bg-white rounded-xl shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto relative">
+                <h3 class="text-lg font-semibold mb-4">Add Programs for {{ student.full_name }}</h3>
+                <form method="post" action="{% url 'add_student_program' student.id %}">
+                  {% csrf_token %}
+                  <label class="block mb-2 text-gray-700">Select Programs:</label>
+                  <select name="programs" multiple class="w-full border rounded-lg p-2 h-40">
+                    {% for program in boys_programs %}
+                      <option value="{{ program.id }}">{{ program.title }}</option>
+                    {% endfor %}
+                  </select>
+                  <div class="mt-4 flex justify-end gap-2">
+                    <button type="button" onclick="toggleModal('modal-{{ student.id }}')" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Save</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </li>
+          {% empty %}
+          <li class="text-gray-400 italic">No students yet.</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <!-- Programs Section -->
+      <div class="slider-section p-4 md:p-6">
+        <div class="flex justify-between items-center mb-4 sticky top-0 bg-white z-10">
+          <h2 class="text-lg md:text-xl font-semibold text-green-600">📘 Programs</h2>
+          <button onclick="toggleModal('programModal', 'male')" class="px-3 md:px-4 py-2 bg-purple-600 text-white rounded-lg shadow hover:bg-purple-700">+ Add</button>
+        </div>
+
+        <h3 class="text-lg md:text-xl font-semibold text-red-400">Stage</h3><br>
+        <ul class="space-y-2">
+          {% for program in boys_stage_programs %}
+          <li class="p-2 bg-gray-100 rounded">
+            <strong>{{ program.title }}</strong><br>
+            <span class="text-sm text-gray-500">{{ program.description }}</span>
+          </li>
+          {% empty %}
+          <li class="text-gray-400 italic">No programs yet.</li>
+          {% endfor %}
+        </ul>
+
+        <br>
+        <h3 class="text-lg md:text-xl font-semibold text-red-400">Non Stage</h3><br>
+        <ul class="space-y-2">
+          {% for program in boys_non_stage_programs %}
+          <li class="p-2 bg-gray-100 rounded">
+            <strong>{{ program.title }}</strong><br>
+            <span class="text-sm text-gray-500">{{ program.description }}</span>
+          </li>
+          {% empty %}
+          <li class="text-gray-400 italic">No programs yet.</li>
+          {% endfor %}
+        </ul>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- Girls Section (hidden by default) -->
+<div id="girlsSection" class="hidden overflow-hidden max-w-5xl mx-auto rounded-xl shadow bg-gradient-to-r from-rose-200 via-rose-300 to-rose-400 p-4">
+  <!-- Inner Tabs (Students/Programs) -->
+ <div class="relative flex justify-center mb-6">
+  {% if category.name|lower != 'general' %}
+    <!-- Two-tab layout -->
+    <div class="flex relative bg-gray-200 rounded-xl overflow-hidden w-80">
+      <div id="girlsTabSlider" class="tab-slider absolute top-0 left-0 w-1/2 h-full bg-white shadow-md rounded-xl"></div>
+      <button onclick="goToSlide(0,1)" class="relative z-10 w-1/2 py-3 text-center font-medium text-indigo-700">
+        👩‍🎓 Students
+      </button>
+      <button onclick="goToSlide(1,1)" class="relative z-10 w-1/2 py-3 text-center font-medium text-green-700">
+        📘 Programs
+      </button>
+    </div>
+  {% else %}
+    <!-- Single-tab layout -->
+    <div class="flex relative bg-gray-200 rounded-xl overflow-hidden w-40">
+      <div class="absolute top-0 left-0 w-full h-full bg-white shadow-md rounded-xl"></div>
+      <button onclick="goToSlide(0,1)" class="relative z-10 w-full py-3 text-center font-medium text-green-700">
+        📘 Programs
+      </button>
+    </div>
+  {% endif %}
+</div>
+
+
+  <div class="overflow-hidden max-w-5xl mx-auto bg-white rounded-xl shadow">
+    <div id="girlsSliderWrapper" class="slider-wrapper">
+
+      <!-- Students Section -->
+       {% if category.name|lower != 'general' %}
+      <div class="slider-section p-4 md:p-6">
+        <div class="flex justify-between items-center mb-4 sticky top-0 bg-white z-10">
+          <h2 class="text-lg md:text-xl font-semibold text-pink-600">👩‍🎓 Students</h2>
+          <button onclick="toggleModal('studentModal')" class="px-2 py-1.5 text-sm md:px-4 md:py-2 md:text-base bg-pink-600 text-white rounded-lg shadow hover:bg-pink-700 transition">+ Add</button>
+        </div>
+        <ul class="space-y-2">
+          {% for student in girls %}
+          <li>
+            <button onclick="toggleModal('modal-{{ student.id }}')" class="w-full p-2 text-left bg-gray-100 rounded hover:bg-gray-200">
+              {{ student.full_name }} ({{ student.code_number }})
+            </button>
+            <!-- Student Programs Modal (same as above) -->
+             <div id="modal-{{ student.id }}" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div class="modal-content bg-white rounded-xl shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto relative">
+                <h3 class="text-lg font-semibold mb-4">Add Programs for {{ student.full_name }}</h3>
+                <form method="post" action="{% url 'add_student_program' student.id %}">
+                  {% csrf_token %}
+                  <label class="block mb-2 text-gray-700">Select Programs:</label>
+                  <select name="programs" multiple class="w-full border rounded-lg p-2 h-40">
+                    {% for program in girls_programs %}
+                      <option value="{{ program.id }}">{{ program.title }}</option>
+                    {% endfor %}
+                  </select>
+                  <div class="mt-4 flex justify-end gap-2">
+                    <button type="button" onclick="toggleModal('modal-{{ student.id }}')" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Save</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </li>
+          {% empty %}
+          <li class="text-gray-400 italic">No students yet.</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <!-- Programs Section -->
+      <div class="slider-section p-4 md:p-6">
+        <div class="flex justify-between items-center mb-4 sticky top-0 bg-white z-10">
+          <h2 class="text-lg md:text-xl font-semibold text-purple-600">📘 Programs</h2>
+          <button onclick="toggleModal('programModal', 'female')" class="px-3 md:px-4 py-2 bg-pink-600 text-white rounded-lg shadow hover:bg-pink-700">+ Add</button>
+        </div>
+
+        <h3 class="text-lg md:text-xl font-semibold text-red-400">Stage</h3><br>
+        <ul class="space-y-2">
+          {% for program in girls_stage_programs %}
+          <li class="p-2 bg-gray-100 rounded">
+            <strong>{{ program.title }}</strong><br>
+            <span class="text-sm text-gray-500">{{ program.description }}</span>
+          </li>
+          {% empty %}
+          <li class="text-gray-400 italic">No programs yet.</li>
+          {% endfor %}
+        </ul>
+
+        <br>
+        <h3 class="text-lg md:text-xl font-semibold text-red-400">Non Stage</h3><br>
+        <ul class="space-y-2">
+          {% for program in girls_non_stage_programs %}
+          <li class="p-2 bg-gray-100 rounded">
+            <strong>{{ program.title }}</strong><br>
+            <span class="text-sm text-gray-500">{{ program.description }}</span>
+          </li>
+          {% empty %}
+          <li class="text-gray-400 italic">No programs yet.</li>
+          {% endfor %}
+        </ul>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Add Student Modal (same as your original) -->
+<div id="studentModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+  <div class="modal-content bg-white rounded-xl shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto relative">
+    <h3 class="text-lg font-semibold mb-4 text-center">Add Student</h3>
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      {{ student_form.as_p }}
+      <div class="flex justify-center gap-4">
+        <button type="button" onclick="toggleModal('studentModal')" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+        <button type="submit" name="student_form" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Add</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Program Modal (same as your original) -->
+<div id="programModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+  <div class="modal-content bg-white rounded-xl shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto relative">
+    <h3 class="text-lg font-semibold mb-4 text-center">Add Program</h3>
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <input type="hidden" name="gender" id="programGender" value="">
+      {{ program_form.as_p }}
+      <div class="flex justify-center gap-4">
+        <button type="button" onclick="toggleModal('programModal')" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+        <button type="submit" name="program_form" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Add</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>

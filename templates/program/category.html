@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Categories</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-r from-indigo-50 to-purple-50 min-h-screen p-8">
+
+<div class="max-w-6xl mx-auto">
+
+<header class="mb-10">
+  <div class="flex flex-col items-center md:flex-row md:justify-between">
+    <div class="text-center md:text-left mb-4 md:mb-0">
+      <h1 class="text-4xl font-extrabold text-indigo-700 drop-shadow-sm">
+        📂 Categories Dashboard
+      </h1>
+      <p class="text-gray-500 mt-1">Manage your categories and add new ones</p>
+    </div>
+
+    {% if request.user.is_authenticated %}
+    <div class="flex space-x-3">
+      <a href="{% url 'home' %}" class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">
+        Home
+      </a>
+      <a href="{% url 'logout' %}" class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">
+        Logout
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</header>
+
+
+
+<!-- Categories Grid -->
+<div class="grid gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+
+  {% for category in categories %}
+  <!-- Category Card -->
+  <div class="relative group bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-1 transition">
+
+    <!-- Go to detail page -->
+    <a href="{% url 'category_detail' category.id %}?team={{ request.GET.team }}" class="block">
+      <div class="h-32 bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+        <span class="text-5xl font-extrabold text-white">
+          {{ category.name|slice:":1"|upper }}
+        </span>
+      </div>
+      <div class="p-5">
+        <h2 class="text-xl font-semibold text-gray-800 group-hover:text-indigo-600 transition">
+          {{ category.name }}
+        </h2>
+        <p class="text-gray-500 text-sm mt-1">{{ category.description|default:"No description" }}</p>
+      </div>
+    </a>
+
+    <!-- Three-dot menu button -->
+    <button type="button" onclick="openEditModal('{{ category.id }}')"
+            class="absolute top-3 right-3 p-2 rounded-full bg-white shadow hover:bg-gray-100 transition">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <circle cx="12" cy="5" r="1.5"/>
+        <circle cx="12" cy="12" r="1.5"/>
+        <circle cx="12" cy="19" r="1.5"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Edit Modal -->
+  <div id="editModal-{{ category.id }}" class="fixed inset-0 hidden bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-lg w-full max-w-md p-6 relative">
+      <button onclick="closeEditModal('{{ category.id }}')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">&times;</button>
+
+      <h2 class="text-2xl font-bold text-indigo-700 mb-6">Edit Category</h2>
+
+      <form method="post" action="{% url 'edit_category' category.id %}" class="space-y-4">
+        {% csrf_token %}
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Name</label>
+          <input type="text" name="name" value="{{ category.name }}"
+                 class="mt-1 w-full border rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500" required>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Description</label>
+          <textarea name="description" rows="3"
+                    class="mt-1 w-full border rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500">{{ category.description|default:"" }}</textarea>
+        </div>
+
+        <div class="flex justify-end space-x-2">
+          <button type="button" onclick="closeEditModal('{{ category.id }}')" class="px-4 py-2 bg-gray-200 rounded-xl">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+
+  <!-- Add New Category (Opens Modal) -->
+  <button onclick="openModal()" class="flex flex-col items-center justify-center bg-white border-2 border-dashed border-gray-300 rounded-2xl shadow-sm hover:border-indigo-500 hover:bg-indigo-50 hover:shadow-md transition">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-14 w-14 text-gray-400 group-hover:text-indigo-500 mb-3 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+    </svg>
+    <span class="text-lg font-semibold text-gray-500 group-hover:text-indigo-600">Add New Category</span>
+  </button>
+</div>
+
+</div>
+
+
+<!-- Add Category Modal -->
+<div id="categoryModal" class="fixed inset-0 hidden bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-2xl shadow-lg w-full max-w-md p-6 relative">
+    <button onclick="closeModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">&times;</button>
+
+    <h2 class="text-2xl font-bold text-indigo-700 mb-6">Add Category</h2>
+
+    <form method="post" action="{% url 'add_category' %}" class="space-y-4">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Name</label>
+        <input type="text" name="name" class="mt-1 w-full border rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500" required>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Description</label>
+        <textarea name="description" rows="3" class="mt-1 w-full border rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+      </div>
+
+      <div class="flex justify-end space-x-2">
+        <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 rounded-xl">Cancel</button>
+        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<script>
+function openModal() {
+  document.getElementById("categoryModal").classList.remove("hidden");
+}
+function closeModal() {
+  document.getElementById("categoryModal").classList.add("hidden");
+}
+function openEditModal(id) {
+  document.getElementById("editModal-" + id).classList.remove("hidden");
+}
+function closeEditModal(id) {
+  document.getElementById("editModal-" + id).classList.add("hidden");
+}
+</script>
+
+</body>
+</html>
