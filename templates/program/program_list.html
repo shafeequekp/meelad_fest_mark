@@ -32,61 +32,96 @@
 <body class="bg-gray-100 p-4 sm:p-6">
 <div class="max-w-6xl mx-auto">
 <!-- Header -->
-<header class="mb-10">
-  <div class="flex flex-col items-center md:flex-row md:justify-between">
+<header class="mb-10 bg-white shadow relative z-50">
+  <div class="flex items-center justify-between px-4 py-3">
 
     <!-- Left: Title + Subtitle -->
-    <div class="text-center md:text-left mb-4 md:mb-0">
-      <h1 class="text-4xl font-extrabold text-indigo-700 drop-shadow-sm">
+    <div class="text-left">
+      <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-indigo-700 drop-shadow-sm">
         🏆 Programs Dashboard
       </h1>
-      <p class="text-gray-500 mt-1">Manage your programs</p>
+      <p class="text-gray-500 mt-1 text-sm sm:text-base">Manage your programs</p>
     </div>
 
-    <!-- Right: Buttons -->
     {% if request.user.is_authenticated %}
-    <div class="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-3">
+    <!-- Right: Desktop Buttons + Mobile Hamburger -->
+    <div class="flex items-center space-x-3">
 
-      <!-- Copy Form Link -->
-      <div class="relative group">
-        <button
-          onclick="copyFormLink()"
-          class="px-3 md:px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">
-          🔗 Copy Form Link
-        </button>
+      <!-- Desktop Buttons -->
+      <div class="hidden md:flex items-center space-x-3">
 
-        <!-- Tooltip / helper (desktop) -->
-        <div class="absolute right-0 mt-2 w-64 p-2 bg-gray-100 text-gray-700 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 md:block hidden">
-          Note: Please copy this link and share with team leaders to add their members' programs.
+        <!-- Copy Form Link -->
+        <div class="relative group">
+          <button
+            onclick="copyFormLink()"
+            class="px-3 md:px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">
+            🔗 Copy Form Link
+          </button>
+
+          <!-- Tooltip (desktop only) -->
+          <div class="absolute right-0 mt-2 w-64 p-2 bg-gray-100 text-gray-700 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 md:block hidden">
+            Note: Please copy this link and share with team leaders to add their members' programs.
+          </div>
         </div>
 
-        <!-- Mobile helper below button -->
-        <span class="text-gray-500 text-sm mt-1 md:hidden block">
-          Note: Please copy this link and share with team leaders to add their members' programs.
-        </span>
-      </div>
-
-      <!-- Home & Logout buttons -->
-      <div class="flex space-x-3">
-         <a href="{% url 'home' %}"
+        <!-- Home, Teams, Logout -->
+        <a href="{% url 'home' %}"
            class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">
           Home
         </a>
-         <a href="{% url 'teams' %}"
+        <a href="{% url 'teams' %}"
            class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">
           Teams
         </a>
-
         <a href="{% url 'logout' %}"
            class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">
           Logout
         </a>
       </div>
+
+      <!-- Mobile Hamburger -->
+      <button id="menu-toggle" class="md:hidden p-2 rounded-lg hover:bg-gray-200 focus:outline-none">
+        <svg id="menu-open" class="w-6 h-6 block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
     </div>
     {% endif %}
-
   </div>
 </header>
+
+{% if request.user.is_authenticated %}
+<!-- Right Sidebar Mobile Menu -->
+<div id="mobile-menu"
+     class="fixed top-0 right-0 h-full w-72 bg-white shadow-lg transform translate-x-full transition-transform duration-300 ease-in-out z-50">
+
+  <div class="p-4 flex justify-between items-center border-b">
+    <h2 class="text-lg font-bold text-indigo-700">Menu</h2>
+    <button id="menu-close-btn" class="text-gray-600 hover:text-indigo-700 focus:outline-none">✕</button>
+  </div>
+
+  <nav class="p-4 space-y-3">
+    <!-- Copy Form Link (mobile) -->
+    <button
+      onclick="copyFormLink()"
+      class="w-full text-left px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">
+      🔗 Copy Form Link
+    </button>
+    <p class="text-gray-500 text-sm mt-1">
+      Note: Please copy this link and share with team leaders to add their members' programs.
+    </p>
+
+    <!-- Other Links -->
+    <a href="{% url 'home' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Home</a>
+    <a href="{% url 'teams' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Teams</a>
+    <a href="{% url 'logout' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Logout</a>
+  </nav>
+</div>
+
+<!-- Overlay -->
+<div id="overlay" class="fixed inset-0 bg-black bg-opacity-40 hidden z-40"></div>
+{% endif %}
 
 
 
@@ -196,7 +231,49 @@
 
 </div>
 
-  <script>
+ <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    /* -------------------
+       Mobile Menu Toggle
+    ------------------- */
+    const menuBtn = document.getElementById("menu-toggle");
+    const menu = document.getElementById("mobile-menu");
+    const overlay = document.getElementById("overlay");
+    const closeBtn = document.getElementById("menu-close-btn");
+
+    function openMenu() {
+      menu.classList.remove("translate-x-full");
+      overlay.classList.remove("hidden");
+    }
+
+    function closeMenu() {
+      menu.classList.add("translate-x-full");
+      overlay.classList.add("hidden");
+    }
+
+    if (menuBtn) menuBtn.addEventListener("click", openMenu);
+    if (closeBtn) closeBtn.addEventListener("click", closeMenu);
+    if (overlay) overlay.addEventListener("click", closeMenu);
+
+    /* -------------------
+       Copy Form Link
+    ------------------- */
+    window.copyFormLink = function () {
+      const formUrl = "{{ form_url }}"; // Django variable
+      navigator.clipboard
+        .writeText(formUrl)
+        .then(() => {
+          alert("Form URL copied to clipboard!");
+        })
+        .catch((err) => {
+          alert("Failed to copy URL. Try manually!");
+          console.error(err);
+        });
+    };
+
+    /* -------------------
+       Boys/Girls Tabs
+    ------------------- */
     function showSection(section) {
       const boys = document.getElementById("boysSection");
       const girls = document.getElementById("girlsSection");
@@ -220,77 +297,86 @@
       }
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      showSection("boys");
-    });
+    // default section
+    showSection("boys");
 
-    function openModal(programId, categoryId) {
- fetch(`/program/${programId}/participants/${categoryId}/`)
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById("modalTitle").textContent = data.program;
+    // make available globally
+    window.showSection = showSection;
 
-      if (data.participants.length === 0) {
-        document.getElementById("participantsContainer").innerHTML =
-          "<p class='text-gray-600'>No participants yet.</p>";
-      } else {
-        let table = `
-          <table class="min-w-full border-collapse border border-gray-300 text-xs sm:text-sm">
-            <thead class="bg-gray-200">
-              <tr>
-                <th class="border px-2 sm:px-3 py-2">Sl. No</th>
-                <th class="border px-2 sm:px-3 py-2">Code Number</th>
-                <th class="border px-2 sm:px-3 py-2">Chest Number</th>
-                <th class="border px-2 sm:px-3 py-2">Mark1</th>
-                <th class="border px-2 sm:px-3 py-2">Mark2</th>
-                <th class="border px-2 sm:px-3 py-2">Remarks</th>
-              </tr>
-            </thead>
-            <tbody>
-        `;
-        data.participants.forEach((p, i) => {
-          table += `
-            <tr class="hover:bg-gray-50">
-              <td class="border px-2 sm:px-3 py-2 text-center">${i+1}</td>
-              <td class="border px-2 sm:px-3 py-2">${p.code_number || ''}</td>
-              <td class="border px-2 sm:px-3 py-2">${p.chest_number || '-'}</td>
-              <td class="border px-2 sm:px-3 py-2">${p.mark1 || ''}</td>
-              <td class="border px-2 sm:px-3 py-2">${p.mark2 || ''}</td>
-              <td class="border px-2 sm:px-3 py-2">${p.remarks || ''}</td>
-            </tr>`;
+    /* -------------------
+       Modal Handling
+    ------------------- */
+    window.openModal = function (programId, categoryId) {
+      fetch(`/program/${programId}/participants/`)
+        .then((res) => res.json())
+        .then((data) => {
+          document.getElementById("modalTitle").textContent = data.program;
+
+          if (data.participants.length === 0) {
+            document.getElementById("participantsContainer").innerHTML =
+              "<p class='text-gray-600'>No participants yet.</p>";
+          } else {
+            let table = `
+              <table class="min-w-full border-collapse border border-gray-300 text-xs sm:text-sm">
+                <thead class="bg-gray-200">
+                  <tr>
+                    <th class="border px-2 sm:px-3 py-2">Sl. No</th>
+                    <th class="border px-2 sm:px-3 py-2">Code Number</th>
+                    <th class="border px-2 sm:px-3 py-2">Chest Number</th>
+                    <th class="border px-2 sm:px-3 py-2">Mark1</th>
+                    <th class="border px-2 sm:px-3 py-2">Mark2</th>
+                    <th class="border px-2 sm:px-3 py-2">Remarks</th>
+                  </tr>
+                </thead>
+                <tbody>
+            `;
+            data.participants.forEach((p, i) => {
+              table += `
+                <tr class="hover:bg-gray-50">
+                  <td class="border px-2 sm:px-3 py-2 text-center">${i + 1}</td>
+                  <td class="border px-2 sm:px-3 py-2">${p.code_number || ""}</td>
+                  <td class="border px-2 sm:px-3 py-2">${p.chest_number || "-"}</td>
+                  <td class="border px-2 sm:px-3 py-2">${p.mark1 || ""}</td>
+                  <td class="border px-2 sm:px-3 py-2">${p.mark2 || ""}</td>
+                  <td class="border px-2 sm:px-3 py-2">${p.remarks || ""}</td>
+                </tr>`;
+            });
+            table += "</tbody></table>";
+            document.getElementById("participantsContainer").innerHTML = table;
+          }
+
+          // Detect current section (boys/girls)
+          const currentSection = document
+            .getElementById("boysSection")
+            .classList.contains("hidden")
+            ? "girls"
+            : "boys";
+
+          // Update download links
+          document.getElementById("downloadPdfBtn").href =
+            `/program/${programId}/judge-slip/pdf/`;
+
+          document.getElementById("downloadAllParticipantPdfBtn").href =
+            `/program/download-participants/${programId}/${currentSection}/${categoryId}/`;
+
+          // Show modal
+          const modal = document.getElementById("programModal");
+          modal.classList.remove("hidden");
+          modal.classList.add("flex");
+        })
+        .catch((err) => {
+          console.error(err);
+          alert("Failed to load participants.");
         });
-        table += "</tbody></table>";
-        document.getElementById("participantsContainer").innerHTML = table;
-      }
+    };
 
-      // Detect current section (boys/girls)
-      const currentSection = document.getElementById("boysSection").classList.contains("hidden")
-        ? "girls"
-        : "boys";
+    window.closeModal = function () {
+      const modal = document.getElementById("programModal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    };
+  });
+</script>
 
-      // Update download links
-      document.getElementById("downloadPdfBtn").href =
-        `/program/${programId}/judge-slip/pdf/`;
-
-      document.getElementById("downloadAllParticipantPdfBtn").href =
-        `/program/download-participants/${programId}/${currentSection}/${categoryId}/`;
-
-      // Show modal
-      document.getElementById("programModal").classList.remove("hidden");
-      document.getElementById("programModal").classList.add("flex");
-    })
-    .catch(err => {
-      console.error(err);
-      alert("Failed to load participants.");
-    });
-}
-
-
-
-    function closeModal() {
-      document.getElementById("programModal").classList.add("hidden");
-      document.getElementById("programModal").classList.remove("flex");
-    }
-  </script>
 </body>
 </html>

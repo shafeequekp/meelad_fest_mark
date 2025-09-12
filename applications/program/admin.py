@@ -25,7 +25,7 @@ class ProgramAdmin(admin.ModelAdmin):
 
     def category_display(self, obj):
         # show categories linked to program (ManyToManyField on Category)
-        return ", ".join([c.name for c in obj.category_set.all()])
+        return ", ".join([c.name for c in obj.category_set.all()] + [f'{cat.name} (girls)' for cat in obj.girls_categories.all()])
     category_display.short_description = "Categories"
 
 

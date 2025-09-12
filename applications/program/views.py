@@ -1,5 +1,5 @@
-from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
@@ -109,6 +109,12 @@ class CategoryView(LoginRequiredMixin, generic.ListView):
             return Category.objects.filter(madrasa=user.madrasa)
         return Category.objects.none()
 
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        team_id = self.request.GET.get('team')
+        context['team_name'] = Team.objects.get(id=team_id).name
+        return context
+
 
 class AddCategoryView(LoginRequiredMixin, View):
     template_name = 'program/category.html'
@@ -157,15 +163,25 @@ class CategoryDetailView(generic.DetailView):
 
         # related objects
         team_id = self.request.GET.get("team")
+        try:
+            context['team_name'] = Team.objects.get(id=team_id).name
+        except:
+            pass
+
         host_url = f"{self.request.scheme}://{self.request.get_host()}"
         context['category_url'] = f'{host_url}/program/categories?team={team_id}'
         context["boys"] = Student.objects.filter(category=category, gender='male', team_id=team_id)
         context['girls'] = Student.objects.filter(category=category, gender='female', team_id=team_id)
-        context["boys_stage_programs"] = category.programs.filter(non_stage=False)
-        context["boys_non_stage_programs"] = category.programs.filter(non_stage=True)
 
-        context["girls_stage_programs"] = category.programs_for_girls.filter(non_stage=False)
-        context["girls_non_stage_programs"] = category.programs_for_girls.filter(non_stage=True)
+        boys_programs = category.programs.all()
+        girls_programs = category.programs_for_girls.all()
+        context["boys_stage_programs"] = boys_programs.filter(non_stage=False)
+        context["boys_non_stage_programs"] = boys_programs.filter(non_stage=True)
+        context['boys_programs'] = boys_programs
+        context['girls_programs'] = girls_programs
+
+        context["girls_stage_programs"] = girls_programs.filter(non_stage=False)
+        context["girls_non_stage_programs"] = girls_programs.filter(non_stage=True)
 
         # forms (empty forms for GET)
         context["student_form"] = kwargs.get("student_form") or StudentForm()
@@ -231,7 +247,13 @@ class AddProgramToStudentView(View):
             program.participants.add(student)
 
         # Redirect back to the same page or student detail page
+        team_id = student.team.id if student.team else None
         next_url = request.GET.get("next", reverse("category_detail", kwargs={"pk": student.category.pk}))
+
+        if team_id:
+            # append ?team=ID if no query params exist, otherwise add &team=ID
+            connector = "&" if "?" in next_url else "?"
+            next_url = f"{next_url}{connector}team={team_id}"
         return redirect(next_url)
 
 
@@ -262,12 +284,17 @@ class ProgramListView(generic.ListView):
         context = super().get_context_data(*args, **kwargs)
         context['non_stage_programs'] = Program.objects.filter(non_stage=True)
         context['categories'] = Category.objects.all()
+
+        request = self.request
+        madrasa_id = request.user.madrasa.id
+        host_url = f"{request.scheme}://{request.get_host()}"
+        context["form_url"] = f'{host_url}/program/student-registration/?madrasa_id={madrasa_id}'
         return context
 
 
-def program_participants_json(request, pk, category_id):
+def program_participants_json(request, pk):
     program = get_object_or_404(Program, pk=pk)
-    participants = program.participants.select_related("team").filter(category_id=category_id)
+    participants = program.participants.select_related("team").all()
 
     data = {
         "program": program.title,
@@ -286,6 +313,39 @@ def program_participants_json(request, pk, category_id):
     return JsonResponse(data)
 
 
+# def program_judge_slip_pdf(request, pk):
+#     program = get_object_or_404(Program, pk=pk)
+#     participants = program.participants.all()
+#
+#     response = HttpResponse(content_type="application/pdf")
+#     response['Content-Disposition'] = f'attachment; filename="{program.slug}_participants.pdf"'
+#
+#     doc = SimpleDocTemplate(response, pagesize=A4)
+#     elements = []
+#     styles = getSampleStyleSheet()
+#
+#     elements.append(Paragraph(f"{program.title} Slip", styles['Heading1']))
+#     elements.append(Spacer(1, 12))
+#
+#     data = [["Sl. No", "Code Number", "Chest Number", "Mark1", "Mark2", "Remarks"]]
+#     for i, p in enumerate(participants, start=1):
+#         data.append([i, "", "", "", "", ""])
+#
+#     table = Table(data, colWidths=[40, 80, 80, 60, 60, 160])
+#     table.setStyle(TableStyle([
+#         ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+#         ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
+#         ("ALIGN", (0,0), (-1,-1), "CENTER"),
+#         ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+#     ]))
+#     elements.append(table)
+#
+#     doc.build(elements)
+#     return response
+
+
+
+
 def program_judge_slip_pdf(request, pk):
     program = get_object_or_404(Program, pk=pk)
     participants = program.participants.all()
@@ -293,26 +353,59 @@ def program_judge_slip_pdf(request, pk):
     response = HttpResponse(content_type="application/pdf")
     response['Content-Disposition'] = f'attachment; filename="{program.slug}_participants.pdf"'
 
-    doc = SimpleDocTemplate(response, pagesize=A4)
+    doc = SimpleDocTemplate(response, pagesize=landscape(A4),
+                            leftMargin=20, rightMargin=20, topMargin=20, bottomMargin=20)
     elements = []
     styles = getSampleStyleSheet()
 
-    elements.append(Paragraph(f"{program.title} Slip", styles['Heading1']))
-    elements.append(Spacer(1, 12))
-
-    data = [["Sl. No", "Code Number", "Chest Number", "Mark1", "Mark2", "Remarks"]]
+    # -----------------------------
+    # First Table: Judge Slip with Code Number
+    # -----------------------------
+    heading1 = Paragraph(f"Judge Slip: {program.title} with Category", styles['Heading3'])
+    data1 = [["Sl. No", "Code Number", "Chest Number", "Mark1", "Mark2", "Remarks"]]
     for i, p in enumerate(participants, start=1):
-        data.append([i, p.code_number, "", "", "", ""])
+        data1.append([i, p.code_number or "", "", "", "", ""])
 
-    table = Table(data, colWidths=[40, 80, 80, 60, 60, 160])
-    table.setStyle(TableStyle([
+    table1 = Table(data1, colWidths=[30, 60, 60, 50, 50, 130])
+    table1.setStyle(TableStyle([
         ("GRID", (0,0), (-1,-1), 0.5, colors.black),
         ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
         ("ALIGN", (0,0), (-1,-1), "CENTER"),
         ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
     ]))
-    elements.append(table)
 
+    # -----------------------------
+    # Second Table: without Code Number (also include header)
+    # -----------------------------
+    heading2 = Paragraph(f"{program.title} with Category", styles['Heading3'])
+    data2 = [["Sl. No", "Code Number", "Chest Number", "Mark1", "Mark2", "Remarks"]]
+    for i, p in enumerate(participants, start=1):
+        data2.append([i, "", "", "", "", ""])
+
+    table2 = Table(data2, colWidths=[30, 60, 60, 50, 50, 130])
+    table2.setStyle(TableStyle([
+        ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+        ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
+        ("ALIGN", (0,0), (-1,-1), "CENTER"),
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
+    ]))
+
+    # -----------------------------
+    # Combine both tables horizontally using parent table
+    # -----------------------------
+    combined_table = Table(
+        [
+            [[heading1, Spacer(1,12), table1], [heading2, Spacer(1,12), table2]]
+        ],
+        colWidths=[doc.width/2.0]*2
+    )
+    combined_table.setStyle(TableStyle([
+        ("VALIGN", (0,0), (-1,-1), "TOP"),
+    ]))
+
+    elements.append(combined_table)
     doc.build(elements)
     return response
 
@@ -320,18 +413,7 @@ def program_judge_slip_pdf(request, pk):
 def download_participants_pdf(request, program_id, section, category_id):
     program = Program.objects.get(id=program_id)
     category = Category.objects.get(id=category_id)
-
-    if section == 'boys':
-        participants = Student.objects.filter(
-            category__programs=program,
-            gender='male',
-            category=category
-        ).select_related('team')
-    else:
-        participants = Student.objects.filter(
-            category__programs_for_girls=program,
-            gender='female'
-        ).select_related('team')
+    participants = program.participants.all().select_related('team')
 
     # Http response with PDF headers
     response = HttpResponse(content_type='application/pdf')

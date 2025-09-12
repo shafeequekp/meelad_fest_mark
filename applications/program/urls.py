@@ -9,7 +9,7 @@ urlpatterns = [
     path('load_students/', views.load_students, name='load_students'),
     path('load_programs/', views.load_programs, name='load_programs'),
     path('register_program/', views.register_program, name='register_program'),
-    path("<int:pk>/participants/<int:category_id>/", views.program_participants_json, name="program_participants_json"),
+    path("<int:pk>/participants/", views.program_participants_json, name="program_participants_json"),
     path("<int:pk>/judge-slip/pdf/", views.program_judge_slip_pdf, name="program_participants_pdf"),
     path("download-participants/<int:program_id>/<str:section>/<int:category_id>/", views.download_participants_pdf, name="download_participants_pdf"),
 

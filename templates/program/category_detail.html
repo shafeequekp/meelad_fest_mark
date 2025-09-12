@@ -29,6 +29,31 @@
   .modal-exit-active { opacity: 0; transform: scale(0.95); transition: all 0.2s ease-in; }
 </style>
 <script>
+// for mobile menu
+document.addEventListener("DOMContentLoaded", () => {
+    const menuBtn = document.getElementById("menu-toggle");
+    const menu = document.getElementById("mobile-menu");
+    const overlay = document.getElementById("overlay");
+    const closeBtn = document.getElementById("menu-close-btn");
+
+    function openMenu() {
+      menu.classList.remove("translate-x-full");
+      overlay.classList.remove("hidden");
+    }
+
+    function closeMenu() {
+      menu.classList.add("translate-x-full");
+      overlay.classList.add("hidden");
+    }
+
+    if (menuBtn) menuBtn.addEventListener("click", openMenu);
+    if (closeBtn) closeBtn.addEventListener("click", closeMenu);
+    if (overlay) overlay.addEventListener("click", closeMenu);
+  });
+
+
+
+
   let genderIndex = 0; // 0 = Boys, 1 = Girls
   let sectionIndex = 0; // 0 = Students, 1 = Programs
 
@@ -97,12 +122,50 @@ function toggleModal(id, gender = null) {
 <body class="bg-gray-50 min-h-screen p-4 md:p-6">
 
 <!-- Header -->
-<header class="mb-6 md:mb-8 flex justify-between items-center max-w-5xl mx-auto">
-  <h1 class="text-xl md:text-2xl font-bold text-indigo-700">📂 {{ category.name }}</h1>
-  <a href="{{category_url}}"
-     class="text-sm md:text-base text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg shadow">
-    ← Categories
-  </a>
+<header class="mb-6 md:mb-8 bg-white shadow relative z-50">
+  <div class="flex justify-between items-center max-w-5xl mx-auto px-4 py-3">
+
+    <!-- Left: Title -->
+    <h1 class="text-xl md:text-2xl font-bold text-indigo-700">
+      📂 {{ team_name }} - {{ category.name }}
+    </h1>
+
+    <!-- Right: Desktop Buttons + Mobile Hamburger -->
+    <div class="flex items-center space-x-3">
+
+      <!-- Desktop Buttons -->
+      <div class="hidden md:flex items-center space-x-2">
+        <a href="{% url 'home' %}" class="text-sm md:text-base text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg shadow">Home</a>
+        <a href="{% url 'teams' %}" class="text-sm md:text-base text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg shadow">Teams</a>
+        <a href="{% url 'program_list' %}" class="text-sm md:text-base text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg shadow">Programs</a>
+        <a href="{{ category_url }}" class="text-sm md:text-base text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg shadow">Categories</a>
+      </div>
+
+      <!-- Mobile Hamburger -->
+      <button id="menu-toggle" class="md:hidden p-2 rounded-lg hover:bg-gray-200 focus:outline-none">
+        <svg class="w-6 h-6 block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div id="mobile-menu" class="fixed top-0 right-0 h-full w-64 bg-white shadow-lg transform translate-x-full transition-transform duration-300 ease-in-out z-50">
+    <div class="p-4 flex justify-between items-center border-b">
+      <h2 class="text-lg font-bold text-indigo-700">Menu</h2>
+      <button id="menu-close-btn" class="text-gray-600 hover:text-indigo-700 focus:outline-none">✕</button>
+    </div>
+    <nav class="p-4 space-y-3">
+      <a href="{% url 'home' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-gray-50">Home</a>
+      <a href="{% url 'teams' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-gray-50">Teams</a>
+      <a href="{% url 'program_list' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-gray-50">Programs</a>
+      <a href="{{ category_url }}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-gray-50">Categories</a>
+    </nav>
+  </div>
+
+  <!-- Overlay -->
+  <div id="overlay" class="fixed inset-0 bg-black bg-opacity-40 hidden z-40"></div>
 </header>
 
 <!-- Gender Tabs -->
@@ -148,45 +211,64 @@ function toggleModal(id, gender = null) {
   <div class="overflow-hidden max-w-5xl mx-auto bg-white rounded-xl shadow">
     <div id="boysSliderWrapper" class="slider-wrapper">
 
-      <!-- Students Section -->
-      {% if category.name|lower != 'general' %}
-      <div class="slider-section p-4 md:p-6">
-        <div class="flex justify-between items-center mb-4 sticky top-0 bg-white z-10">
-          <h2 class="text-lg md:text-xl font-semibold text-indigo-600">👩‍🎓 Students</h2>
-          <button onclick="toggleModal('studentModal')" class="px-2 py-1.5 text-sm md:px-4 md:py-2 md:text-base bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition">+ Add</button>
-        </div>
-        <ul class="space-y-2">
-          {% for student in boys %}
-          <li>
-            <button onclick="toggleModal('modal-{{ student.id }}')" class="w-full p-2 text-left bg-gray-100 rounded hover:bg-gray-200">
-              {{ student.full_name }} ({{ student.code_number }})
-            </button>
-            <!-- Student Programs Modal -->
-            <div id="modal-{{ student.id }}" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div class="modal-content bg-white rounded-xl shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto relative">
-                <h3 class="text-lg font-semibold mb-4">Add Programs for {{ student.full_name }}</h3>
-                <form method="post" action="{% url 'add_student_program' student.id %}">
-                  {% csrf_token %}
-                  <label class="block mb-2 text-gray-700">Select Programs:</label>
-                  <select name="programs" multiple class="w-full border rounded-lg p-2 h-40">
-                    {% for program in boys_programs %}
-                      <option value="{{ program.id }}">{{ program.title }}</option>
-                    {% endfor %}
-                  </select>
-                  <div class="mt-4 flex justify-end gap-2">
-                    <button type="button" onclick="toggleModal('modal-{{ student.id }}')" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Save</button>
-                  </div>
-                </form>
-              </div>
+<!-- Students Section -->
+{% if category.name|lower != 'general' %}
+<div class="slider-section p-4 md:p-6">
+  <div class="flex justify-between items-center mb-4 sticky top-0 bg-white z-10">
+    <h2 class="text-lg md:text-xl font-semibold text-indigo-600">👩‍🎓 Students</h2>
+    <button onclick="toggleModal('studentModal')" class="px-2 py-1.5 text-sm md:px-4 md:py-2 md:text-base bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition">+ Add</button>
+  </div>
+  <ul class="space-y-2">
+    {% for student in boys %}
+    <li>
+      <button onclick="toggleModal('modal-{{ student.id }}')" class="w-full p-2 text-left bg-gray-100 rounded hover:bg-gray-200">
+        {{ student.full_name }} ({{ student.code_number }})
+      </button>
+      <!-- Student Programs Modal -->
+      <div id="modal-{{ student.id }}" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="modal-content bg-white rounded-xl shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto relative">
+          <h3 class="text-lg font-semibold mb-4">Add Programs for {{ student.full_name }}</h3>
+
+          <!-- Already Selected Programs -->
+          {% if student.program_set.all %}
+            <div class="mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+              <h4 class="text-sm font-semibold text-indigo-700 mb-2">Already Selected:</h4>
+              <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                {% for prog in student.program_set.all %}
+                  <li>{{ prog.title }}</li>
+                {% endfor %}
+              </ul>
             </div>
-          </li>
-          {% empty %}
-          <li class="text-gray-400 italic">No students yet.</li>
-          {% endfor %}
-        </ul>
+          {% endif %}
+
+          <!-- Add Programs Form -->
+          <form method="post" action="{% url 'add_student_program' student.id %}">
+            {% csrf_token %}
+            <label class="block mb-2 text-gray-700">Select Programs:</label>
+            <select name="programs" multiple class="w-full border rounded-lg p-2 h-40">
+              {% for program in boys_programs %}
+                <option value="{{ program.id }}"
+                  {% if program in student.programs.all %}selected{% endif %}>
+                  {{ program.title }}
+                </option>
+              {% endfor %}
+            </select>
+
+            <div class="mt-4 flex justify-end gap-2">
+              <button type="button" onclick="toggleModal('modal-{{ student.id }}')" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+              <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Save</button>
+            </div>
+          </form>
+        </div>
       </div>
-      {% endif %}
+    </li>
+    {% empty %}
+    <li class="text-gray-400 italic">No students yet.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
 
       <!-- Programs Section -->
       <div class="slider-section p-4 md:p-6">
@@ -276,6 +358,19 @@ function toggleModal(id, gender = null) {
              <div id="modal-{{ student.id }}" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div class="modal-content bg-white rounded-xl shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto relative">
                 <h3 class="text-lg font-semibold mb-4">Add Programs for {{ student.full_name }}</h3>
+
+                  <!-- Already Selected Programs -->
+          {% if student.program_set.all %}
+            <div class="mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+              <h4 class="text-sm font-semibold text-indigo-700 mb-2">Already Selected:</h4>
+              <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                {% for prog in student.program_set.all %}
+                  <li>{{ prog.title }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+
                 <form method="post" action="{% url 'add_student_program' student.id %}">
                   {% csrf_token %}
                   <label class="block mb-2 text-gray-700">Select Programs:</label>
