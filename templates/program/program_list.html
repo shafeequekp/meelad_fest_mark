@@ -3,6 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Programs</title>
   <script src="https://cdn.tailwindcss.com"></script>
 
@@ -16,190 +17,182 @@
       color: #fff;
     }
 
-
-#programModal.flex {
-  animation: fadeIn 0.2s ease-in-out;
-}
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-}
-
+    #programModal.flex {
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
   </style>
 </head>
 <body class="bg-gray-100 p-4 sm:p-6">
+
 <div class="max-w-6xl mx-auto">
-<!-- Header -->
-<header class="mb-10 bg-white shadow relative z-50">
-  <div class="flex items-center justify-between px-4 py-3">
 
-    <!-- Left: Title + Subtitle -->
-    <div class="text-left">
-      <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-indigo-700 drop-shadow-sm">
-        🏆 Programs Dashboard
-      </h1>
-      <p class="text-gray-500 mt-1 text-sm sm:text-base">Manage your programs</p>
-    </div>
+  <!-- Header -->
+  <header class="mb-10 bg-white shadow relative z-50">
+    <div class="flex items-center justify-between px-4 py-3 flex-wrap">
 
-    {% if request.user.is_authenticated %}
-    <!-- Right: Desktop Buttons + Mobile Hamburger -->
-    <div class="flex items-center space-x-3">
-
-      <!-- Desktop Buttons -->
-      <div class="hidden md:flex items-center space-x-3">
-
-        <!-- Copy Form Link -->
-        <div class="relative group">
-          <button
-            onclick="copyFormLink()"
-            class="px-3 md:px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">
-            🔗 Copy Form Link
-          </button>
-
-          <!-- Tooltip (desktop only) -->
-          <div class="absolute right-0 mt-2 w-64 p-2 bg-gray-100 text-gray-700 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 md:block hidden">
-            Note: Please copy this link and share with team leaders to add their members' programs.
-          </div>
-        </div>
-
-        <!-- Home, Teams, Logout -->
-        <a href="{% url 'home' %}"
-           class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">
-          Home
-        </a>
-        <a href="{% url 'teams' %}"
-           class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">
-          Teams
-        </a>
-        <a href="{% url 'logout' %}"
-           class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">
-          Logout
-        </a>
+      <!-- Title -->
+      <div class="flex-1 min-w-[200px]">
+        <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-indigo-700 drop-shadow-sm">
+          🏆 Programs Dashboard
+        </h1>
+        <p class="text-gray-500 mt-1 text-sm sm:text-base">Manage your programs</p>
       </div>
 
-      <!-- Mobile Hamburger -->
-      <button id="menu-toggle" class="md:hidden p-2 rounded-lg hover:bg-gray-200 focus:outline-none">
-        <svg id="menu-open" class="w-6 h-6 block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 6h16M4 12h16M4 18h16"/>
-        </svg>
-      </button>
+      {% if request.user.is_authenticated %}
+      <div class="flex items-center space-x-3 flex-wrap mt-3 md:mt-0">
+
+        <!-- Desktop Buttons -->
+        <div class="hidden md:flex items-center space-x-3">
+
+          <div class="relative group">
+            <button onclick="copyFormLink()" class="px-3 md:px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">
+              🔗 Copy Form Link
+            </button>
+            <div class="absolute right-0 mt-2 w-64 p-2 bg-gray-100 text-gray-700 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 hidden md:block">
+              Note: Please copy this link and share with team leaders to add their members' programs.
+            </div>
+          </div>
+
+          <a href="{% url 'home' %}" class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">
+            Home
+          </a>
+          <a href="{% url 'teams' %}" class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">
+            Teams
+          </a>
+          <a href="{% url 'logout' %}" class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">
+            Logout
+          </a>
+        </div>
+
+        <!-- Mobile Hamburger -->
+        <button id="menu-toggle" class="md:hidden p-2 rounded-lg hover:bg-gray-200 focus:outline-none">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+
+      </div>
+      {% endif %}
     </div>
-    {% endif %}
+  </header>
+
+  {% if request.user.is_authenticated %}
+  <!-- Mobile Menu -->
+  <div id="mobile-menu" class="fixed top-0 right-0 h-full w-72 bg-white shadow-lg transform translate-x-full transition-transform duration-300 ease-in-out z-50">
+
+    <div class="p-4 flex justify-between items-center border-b">
+      <h2 class="text-lg font-bold text-indigo-700">Menu</h2>
+      <button id="menu-close-btn" class="text-gray-600 hover:text-indigo-700 focus:outline-none">✕</button>
+    </div>
+
+    <nav class="p-4 space-y-3">
+      <button onclick="copyFormLink()" class="w-full text-left px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">
+        🔗 Copy Form Link
+      </button>
+      <p class="text-gray-500 text-sm mt-1">
+        Note: Please copy this link and share with team leaders.
+      </p>
+
+      <a href="{% url 'home' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Home</a>
+      <a href="{% url 'teams' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Teams</a>
+      <a href="{% url 'logout' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Logout</a>
+    </nav>
   </div>
-</header>
 
-{% if request.user.is_authenticated %}
-<!-- Right Sidebar Mobile Menu -->
-<div id="mobile-menu"
-     class="fixed top-0 right-0 h-full w-72 bg-white shadow-lg transform translate-x-full transition-transform duration-300 ease-in-out z-50">
+  <div id="overlay" class="fixed inset-0 bg-black bg-opacity-40 hidden z-40"></div>
+  {% endif %}
 
-  <div class="p-4 flex justify-between items-center border-b">
-    <h2 class="text-lg font-bold text-indigo-700">Menu</h2>
-    <button id="menu-close-btn" class="text-gray-600 hover:text-indigo-700 focus:outline-none">✕</button>
-  </div>
-
-  <nav class="p-4 space-y-3">
-    <!-- Copy Form Link (mobile) -->
-    <button
-      onclick="copyFormLink()"
-      class="w-full text-left px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">
-      🔗 Copy Form Link
-    </button>
-    <p class="text-gray-500 text-sm mt-1">
-      Note: Please copy this link and share with team leaders to add their members' programs.
-    </p>
-
-    <!-- Other Links -->
-    <a href="{% url 'home' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Home</a>
-    <a href="{% url 'teams' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Teams</a>
-    <a href="{% url 'logout' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Logout</a>
-  </nav>
-</div>
-
-<!-- Overlay -->
-<div id="overlay" class="fixed inset-0 bg-black bg-opacity-40 hidden z-40"></div>
-{% endif %}
-
-
-
-  <!-- Page Title -->
-<!--  <h1 class="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8">Programs</h1>-->
-
-  <!-- Boys/Girls Switch Tabs -->
+  <!-- Tabs -->
   <div class="relative w-full max-w-md mx-auto mb-6 sm:mb-8 bg-gray-200 rounded-lg overflow-hidden">
     <div class="flex">
-      <button id="boysTab" onclick="showSection('boys')"
-        class="tab-btn flex-1 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-colors duration-300">
-        Boys
-      </button>
-      <button id="girlsTab" onclick="showSection('girls')"
-        class="tab-btn flex-1 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-colors duration-300">
-        Girls
-      </button>
+      <button id="boysTab" onclick="showSection('boys')" class="tab-btn flex-1 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-colors duration-300">Boys</button>
+      <button id="girlsTab" onclick="showSection('girls')" class="tab-btn flex-1 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-colors duration-300">Girls</button>
     </div>
-    <!-- Sliding Indicator -->
-    <div id="sliderIndicator"
-      class="absolute top-0 left-0 h-full w-1/2 bg-blue-600 text-white rounded-lg transition-transform duration-300">
-    </div>
+    <div id="sliderIndicator" class="absolute top-0 left-0 h-full w-1/2 bg-blue-600 rounded-lg transition-transform duration-300"></div>
   </div>
+
+
+
+
 
 
   <!-- Boys Section -->
   <div id="boysSection" class="section">
     {% for category in categories %}
     {% if category.programs.all %}
-      <h2 class="text-lg sm:text-xl font-semibold mb-3" style="color:purple">{{ category.name }}</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-10 mb-8">
+      <h2 class="text-lg sm:text-xl font-semibold mb-3 text-purple-700">{{ category.name }}</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
         {% for program in category.programs.all %}
-          <div
-            class="cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-4"
-            onclick="openModal('{{ program.id }}', '{{ category.id }}')"
-          >
+          <div class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
+               onclick="openModal('{{ program.id }}', '{{ category.id }}')">
+
+            <!-- Three-dot menu -->
+            <div class="absolute top-2 right-2">
+              <button onclick="toggleMenu(event, '{{ program.id }}')" class="p-1 rounded-full hover:bg-gray-200">⋮</button>
+              <div id="menu-{{ program.id }}" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+                <a href="javascript:void(0)" onclick="event.stopPropagation(); openPrizeModal('{{ program.id }}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🏅 Add Prizes</a>
+                <button onclick="event.stopPropagation(); publishResult({{ program.id }})" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full">📢 Publish Result</button>
+                <a href="/program/{{ program.id }}/download-result/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📥 Result</a>
+              </div>
+            </div>
+
+            <!-- Image -->
             {% if program.image %}
-              <img src="{{ program.image.url }}" alt="{{ program.title }}"
-                   class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+              <img src="{{ program.image.url }}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
             {% else %}
-            <img src="{% static 'program_images/art_image2.png' %}" alt="{{ program.title }}"
-                   class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+              <img src="{% static 'program_images/art_image2.png' %}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
             {% endif %}
-            <div>
-              <h2 class="text-base sm:text-lg font-semibold">{{ program.title }}</h2>
-              <p class="text-xs sm:text-sm text-gray-600 line-clamp-2">{{ program.description|truncatechars:60 }}</p>
+
+            <div class="flex-1 min-w-0">
+              <h2 class="text-base sm:text-lg font-semibold truncate">{{ program.title }}</h2>
+              <p class="text-xs sm:text-sm text-gray-600 line-clamp-2 truncate">{{ program.description|truncatechars:60 }}</p>
             </div>
           </div>
         {% endfor %}
       </div>
-
-<!--     <hr><br>-->
     {% endif %}
-
     {% endfor %}
   </div>
+
+
+
+
+
 
   <!-- Girls Section -->
   <div id="girlsSection" class="section hidden">
     {% for category in categories %}
     {% if category.programs_for_girls.all %}
-      <h2 class="text-lg sm:text-xl font-semibold mb-3">{{ category.name }}</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-10 mb-8">
+      <h2 class="text-lg sm:text-xl font-semibold mb-3 text-purple-700">{{ category.name }}</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
         {% for program in category.programs_for_girls.all %}
-          <div
-            class="cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-4"
-            onclick="openModal('{{ program.id }}', '{{ category.id }}')"
-          >
+          <div class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
+               onclick="openModal('{{ program.id }}', '{{ category.id }}')">
+
+            <!-- Three-dot menu -->
+            <div class="absolute top-2 right-2">
+              <button onclick="toggleMenu(event, '{{ program.id }}')" class="p-1 rounded-full hover:bg-gray-200">⋮</button>
+              <div id="menu-{{ program.id }}" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+                <a href="javascript:void(0)" onclick="event.stopPropagation(); openPrizeModal('{{ program.id }}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🏅 Add Prizes</a>
+                <button onclick="event.stopPropagation(); publishResult({{ program.id }})" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full">📢 Publish Result</button>
+                <a href="/program/{{ program.id }}/download-result/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📥 Result</a>
+              </div>
+            </div>
+
             {% if program.image %}
-              <img src="{{ program.image.url }}" alt="{{ program.title }}"
-                   class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
-             {% else %}
-            <img src="{% static 'program_images/art_image2.png' %}" alt="{{ program.title }}"
-                   class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+              <img src="{{ program.image.url }}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+            {% else %}
+              <img src="{% static 'program_images/art_image2.png' %}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
             {% endif %}
-            <div>
-              <h2 class="text-base sm:text-lg font-semibold">{{ program.title }}</h2>
-              <p class="text-xs sm:text-sm text-gray-600 line-clamp-2">{{ program.description|truncatechars:60 }}</p>
+
+            <div class="flex-1 min-w-0">
+              <h2 class="text-base sm:text-lg font-semibold truncate">{{ program.title }}</h2>
+              <p class="text-xs sm:text-sm text-gray-600 line-clamp-2 truncate">{{ program.description|truncatechars:60 }}</p>
             </div>
           </div>
         {% endfor %}
@@ -208,113 +201,187 @@
     {% endfor %}
   </div>
 
-  <!-- Modal -->
+  <!-- Program Modal -->
   <div id="programModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50 px-4 overflow-y-auto max-h-[90vh]">
-    <div class="bg-white rounded-xl shadow-lg w-full max-w-4xl p-4 sm:p-6 relative">
+    <div class="bg-white rounded-xl shadow-lg w-full max-w-4xl p-4 sm:p-6 relative overflow-auto">
       <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-xl">✖</button>
       <h2 id="modalTitle" class="text-xl sm:text-2xl font-bold mb-4"></h2>
-
-      <!-- Table -->
       <div id="participantsContainer" class="overflow-x-auto text-sm sm:text-base"></div>
-
-      <!-- Export options -->
       <div class="mt-6 border-t pt-4 flex flex-wrap justify-end gap-4 text-sm sm:text-base text-blue-600">
-        <a id="downloadPdfBtn" href="#" target="_blank" class="hover:underline">
-          📄 Judges Slip
-        </a>
-        <a id="downloadAllParticipantPdfBtn" href="#" target="_blank" class="hover:underline">
-          📄 Participants
-        </a>
+        <a id="downloadPdfBtn" href="#" target="_blank" class="hover:underline">📄 Judges Slip</a>
+        <a id="downloadAllParticipantPdfBtn" href="#" target="_blank" class="hover:underline">📄 Participants</a>
       </div>
     </div>
   </div>
 
+
+  <!-- Add Prize Modal -->
+<div id="prizeModal" class="fixed inset-0 hidden flex items-center justify-center bg-black bg-opacity-50 z-50">
+  <div class="bg-white rounded-xl shadow-lg w-full max-w-3xl p-6 relative transform transition-all scale-95 opacity-0 max-h-[90vh] overflow-y-auto">
+
+    <!-- Close button -->
+    <button onclick="closePrizeModal()" class="absolute top-3 right-3 text-gray-500 hover:text-red-600 text-xl">✖</button>
+
+    <!-- Title -->
+    <h2 id="prizeModalTitle" class="text-xl sm:text-2xl font-bold mb-4 text-indigo-700">🏅 Add Prizes</h2>
+
+    <!-- Winners Section -->
+    <div id="prizeWinners" class="mb-6 hidden">
+      <h3 class="text-lg font-bold text-green-700 mb-2">🏆 Winners</h3>
+      <div id="winnersList" class="space-y-2"></div>
+    </div>
+    
+
+    <!-- Prize Selection -->
+    <div class="space-y-4">
+      <div>
+        <label class="block font-semibold mb-1">First Prize</label>
+        <select id="firstPrizeSelect" class="w-full border rounded-lg p-2">
+          <option value="">-- Select Participant --</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block font-semibold mb-1">Second Prize</label>
+        <select id="secondPrizeSelect" class="w-full border rounded-lg p-2">
+          <option value="">-- Select Participant --</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block font-semibold mb-1">Third Prize</label>
+        <select id="thirdPrizeSelect" class="w-full border rounded-lg p-2">
+          <option value="">-- Select Participant --</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Grades (Hidden Section) -->
+    <div class="mt-6">
+      <button onclick="toggleGrades()" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 text-sm">➕ Add Grades</button>
+      <div id="gradesSection" class="hidden mt-3 space-y-3">
+        <div>
+          <label class="block font-semibold mb-1">Grade A</label>
+          <select id="gradeASelect" class="w-full border rounded-lg p-2">
+            <option value="">-- Select Participant --</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">Grade B</label>
+          <select id="gradeBSelect" class="w-full border rounded-lg p-2">
+            <option value="">-- Select Participant --</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Remarks -->
+    <div class="mt-6">
+      <label class="block font-semibold mb-1">Remarks</label>
+      <textarea id="remarksInput" class="w-full border rounded-lg p-2" rows="3" placeholder="Enter remarks..."></textarea>
+    </div>
+
+    <!-- Save Button -->
+    <div class="mt-6 text-right">
+      <button onclick="savePrizes()" class="px-5 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">💾 Save</button>
+    </div>
+
+  </div>
+</div>
+
+
+  <!-- Toast -->
+  <div id="toast" class="hidden fixed top-5 right-5 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg transition transform scale-95 opacity-0 z-[9999]"></div>
+
 </div>
 
  <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    /* -------------------
-       Mobile Menu Toggle
-    ------------------- */
-    const menuBtn = document.getElementById("menu-toggle");
-    const menu = document.getElementById("mobile-menu");
-    const overlay = document.getElementById("overlay");
-    const closeBtn = document.getElementById("menu-close-btn");
+document.addEventListener("DOMContentLoaded", () => {
 
-    function openMenu() {
-      menu.classList.remove("translate-x-full");
-      overlay.classList.remove("hidden");
+  /* -------------------
+     Mobile Menu Toggle
+  ------------------- */
+  const menuBtn = document.getElementById("menu-toggle");
+  const menu = document.getElementById("mobile-menu");
+  const overlay = document.getElementById("overlay");
+  const closeBtn = document.getElementById("menu-close-btn");
+
+  function openMenu() {
+    if(menu) menu.classList.remove("translate-x-full");
+    if(overlay) overlay.classList.remove("hidden");
+  }
+
+  function closeMenu() {
+    if(menu) menu.classList.add("translate-x-full");
+    if(overlay) overlay.classList.add("hidden");
+  }
+
+  if (menuBtn) menuBtn.addEventListener("click", openMenu);
+  if (closeBtn) closeBtn.addEventListener("click", closeMenu);
+  if (overlay) overlay.addEventListener("click", closeMenu);
+
+
+  /* -------------------
+     Copy Form Link
+  ------------------- */
+  window.copyFormLink = function () {
+    const formUrl = "{{ form_url }}"; // Django variable
+    navigator.clipboard.writeText(formUrl)
+      .then(() => alert("Form URL copied to clipboard!"))
+      .catch((err) => {
+        alert("Failed to copy URL. Try manually!");
+        console.error(err);
+      });
+  };
+
+
+  /* -------------------
+     Boys/Girls Tabs
+  ------------------- */
+  function showSection(section) {
+    const boys = document.getElementById("boysSection");
+    const girls = document.getElementById("girlsSection");
+    const boysTab = document.getElementById("boysTab");
+    const girlsTab = document.getElementById("girlsTab");
+    const indicator = document.getElementById("sliderIndicator");
+
+    if(boys) boys.classList.add("hidden");
+    if(girls) girls.classList.add("hidden");
+    const sectionDiv = document.getElementById(section + "Section");
+    if(sectionDiv) sectionDiv.classList.remove("hidden");
+
+    if(boysTab) boysTab.classList.remove("active");
+    if(girlsTab) girlsTab.classList.remove("active");
+
+    if (section === "boys") {
+      if(boysTab) boysTab.classList.add("active");
+      if(indicator) indicator.style.transform = "translateX(0%)";
+    } else {
+      if(girlsTab) girlsTab.classList.add("active");
+      if(indicator) indicator.style.transform = "translateX(100%)";
     }
+  }
 
-    function closeMenu() {
-      menu.classList.add("translate-x-full");
-      overlay.classList.add("hidden");
-    }
+  // default section
+  showSection("boys");
+  window.showSection = showSection;
 
-    if (menuBtn) menuBtn.addEventListener("click", openMenu);
-    if (closeBtn) closeBtn.addEventListener("click", closeMenu);
-    if (overlay) overlay.addEventListener("click", closeMenu);
 
-    /* -------------------
-       Copy Form Link
-    ------------------- */
-    window.copyFormLink = function () {
-      const formUrl = "{{ form_url }}"; // Django variable
-      navigator.clipboard
-        .writeText(formUrl)
-        .then(() => {
-          alert("Form URL copied to clipboard!");
-        })
-        .catch((err) => {
-          alert("Failed to copy URL. Try manually!");
-          console.error(err);
-        });
-    };
+  /* -------------------
+     Modal Handling
+  ------------------- */
+  window.openModal = function(programId, categoryId) {
+    fetch(`/program/${programId}/participants/`)
+      .then(res => res.json())
+      .then(data => {
+        const modalTitle = document.getElementById("modalTitle");
+        if(modalTitle) modalTitle.textContent = data.program;
 
-    /* -------------------
-       Boys/Girls Tabs
-    ------------------- */
-    function showSection(section) {
-      const boys = document.getElementById("boysSection");
-      const girls = document.getElementById("girlsSection");
-      const boysTab = document.getElementById("boysTab");
-      const girlsTab = document.getElementById("girlsTab");
-      const indicator = document.getElementById("sliderIndicator");
-
-      boys.classList.add("hidden");
-      girls.classList.add("hidden");
-      document.getElementById(section + "Section").classList.remove("hidden");
-
-      boysTab.classList.remove("active");
-      girlsTab.classList.remove("active");
-
-      if (section === "boys") {
-        boysTab.classList.add("active");
-        indicator.style.transform = "translateX(0%)";
-      } else {
-        girlsTab.classList.add("active");
-        indicator.style.transform = "translateX(100%)";
-      }
-    }
-
-    // default section
-    showSection("boys");
-
-    // make available globally
-    window.showSection = showSection;
-
-    /* -------------------
-       Modal Handling
-    ------------------- */
-    window.openModal = function (programId, categoryId) {
-      fetch(`/program/${programId}/participants/`)
-        .then((res) => res.json())
-        .then((data) => {
-          document.getElementById("modalTitle").textContent = data.program;
-
-          if (data.participants.length === 0) {
-            document.getElementById("participantsContainer").innerHTML =
-              "<p class='text-gray-600'>No participants yet.</p>";
+        const participantsContainer = document.getElementById("participantsContainer");
+        if(participantsContainer) {
+          if (!data.participants || data.participants.length === 0) {
+            participantsContainer.innerHTML = "<p class='text-gray-600'>No participants yet.</p>";
           } else {
             let table = `
               <table class="min-w-full border-collapse border border-gray-300 text-xs sm:text-sm">
@@ -342,41 +409,223 @@
                 </tr>`;
             });
             table += "</tbody></table>";
-            document.getElementById("participantsContainer").innerHTML = table;
+            participantsContainer.innerHTML = table;
           }
+        }
 
-          // Detect current section (boys/girls)
-          const currentSection = document
-            .getElementById("boysSection")
-            .classList.contains("hidden")
-            ? "girls"
-            : "boys";
+        // Detect current section (boys/girls)
+        const currentSection = document.getElementById("boysSection")?.classList.contains("hidden") ? "girls" : "boys";
 
-          // Update download links
-          document.getElementById("downloadPdfBtn").href =
-            `/program/${programId}/judge-slip/pdf/`;
+        const downloadPdfBtn = document.getElementById("downloadPdfBtn");
+        if(downloadPdfBtn) downloadPdfBtn.href = `/program/${programId}/judge-slip/pdf/${categoryId}/`;
 
-          document.getElementById("downloadAllParticipantPdfBtn").href =
-            `/program/download-participants/${programId}/${currentSection}/${categoryId}/`;
+        const downloadAllParticipantPdfBtn = document.getElementById("downloadAllParticipantPdfBtn");
+        if(downloadAllParticipantPdfBtn) downloadAllParticipantPdfBtn.href = `/program/download-participants/${programId}/${currentSection}/${categoryId}/`;
 
-          // Show modal
-          const modal = document.getElementById("programModal");
+        const modal = document.getElementById("programModal");
+        if(modal) {
           modal.classList.remove("hidden");
           modal.classList.add("flex");
-        })
-        .catch((err) => {
-          console.error(err);
-          alert("Failed to load participants.");
-        });
-    };
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Failed to load participants.");
+      });
+  };
 
-    window.closeModal = function () {
-      const modal = document.getElementById("programModal");
+  window.closeModal = function() {
+    const modal = document.getElementById("programModal");
+    if(modal) {
       modal.classList.add("hidden");
       modal.classList.remove("flex");
-    };
+    }
+  };
+
+
+  /* -------------------
+     Dropdown menu toggle
+  ------------------- */
+  window.toggleMenu = function(event, id) {
+    event.stopPropagation();
+    const menu = document.getElementById(`menu-${id}`);
+    if(!menu) return;
+
+    document.querySelectorAll("[id^='menu-']").forEach(m => {
+      if(m !== menu) m.classList.add("hidden");
+    });
+
+    menu.classList.toggle("hidden");
+  };
+
+  document.addEventListener("click", () => {
+    document.querySelectorAll("[id^='menu-']").forEach(m => m.classList.add("hidden"));
   });
+
+
+  /* -------------------
+     Prize Modal
+  ------------------- */
+  let currentProgramId = null;
+
+  window.openPrizeModal = function(programId) {
+    currentProgramId = programId;
+
+    fetch(`/program/${programId}/participants/`)
+      .then(res => res.json())
+      .then(data => {
+        const selects = [
+          "firstPrizeSelect",
+          "secondPrizeSelect",
+          "thirdPrizeSelect",
+          "gradeASelect",
+          "gradeBSelect"
+        ];
+
+        selects.forEach(id => {
+          const select = document.getElementById(id);
+          if(!select) return;
+          select.innerHTML = '<option value="">-- Select Participant --</option>';
+          data.participants.forEach(p => {
+            const opt = document.createElement("option");
+            opt.value = p.id;
+            opt.textContent = `${p.code_number || ""} - ${p.full_name || ""}`;
+            select.appendChild(opt);
+          });
+        });
+
+        const winnersDiv = document.getElementById("prizeWinners");
+        const winnersList = document.getElementById("winnersList");
+        if(winnersList) winnersList.innerHTML = "";
+
+        if(data.winners && data.winners.length > 0 && winnersDiv && winnersList) {
+          winnersDiv.classList.remove("hidden");
+
+          data.winners.forEach(w => {
+            const item = document.createElement("div");
+            item.className = "p-2 border rounded bg-gray-50";
+            item.innerHTML = `<strong>${w.position}</strong>: ${w.code_number || ""} - ${w.full_name || ""} (${w.team || ""})`;
+            winnersList.appendChild(item);
+
+            const selectIdMap = {
+              "First Prize": "firstPrizeSelect",
+              "Second Prize": "secondPrizeSelect",
+              "Third Prize": "thirdPrizeSelect",
+              "Grade A": "gradeASelect",
+              "Grade B": "gradeBSelect"
+            };
+            const sel = document.getElementById(selectIdMap[w.position]);
+            if(sel) sel.value = w.participant_id;
+          });
+        } else if(winnersDiv) {
+          winnersDiv.classList.add("hidden");
+        }
+      })
+      .catch(err => console.error(err));
+
+    const modal = document.getElementById("prizeModal");
+    if(modal) {
+      modal.classList.remove("hidden");
+      setTimeout(() => {
+        const container = modal.querySelector(".modal-container") || modal.querySelector("div");
+        if(container) {
+          container.classList.remove("scale-95", "opacity-0");
+          container.classList.add("scale-100", "opacity-100");
+        }
+      }, 10);
+    }
+  };
+
+  window.closePrizeModal = function() {
+    const modal = document.getElementById("prizeModal");
+    if(modal) {
+      const container = modal.querySelector(".modal-container") || modal.querySelector("div");
+      if(container) {
+        container.classList.add("scale-95", "opacity-0");
+        container.classList.remove("scale-100", "opacity-100");
+      }
+      setTimeout(() => modal.classList.add("hidden"), 200);
+    }
+  };
+
+  window.toggleGrades = function() {
+    const grades = document.getElementById("gradesSection");
+    if(grades) grades.classList.toggle("hidden");
+  };
+
+  window.savePrizes = function() {
+    const normalize = val => val && val.trim() !== "" ? val : null;
+
+    const payload = {
+      first: normalize(document.getElementById("firstPrizeSelect")?.value),
+      second: normalize(document.getElementById("secondPrizeSelect")?.value),
+      third: normalize(document.getElementById("thirdPrizeSelect")?.value),
+      gradeA: normalize(document.getElementById("gradeASelect")?.value),
+      gradeB: normalize(document.getElementById("gradeBSelect")?.value),
+      remarks: document.getElementById("remarksInput")?.value || "",
+    };
+
+    fetch(`/program/${currentProgramId}/save-prize/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": "{{ csrf_token }}"
+      },
+      body: JSON.stringify(payload),
+    })
+    .then(res => res.json())
+    .then(data => {
+      if(data.message === "success") {
+        alert("Prizes saved successfully!");
+        closePrizeModal();
+      } else {
+        alert("Failed to save prizes.");
+        console.error(data);
+      }
+    })
+    .catch(err => {
+      alert("Failed to save prizes.");
+      console.error(err);
+    });
+  };
+
+
+  /* -------------------
+     Publish Result
+  ------------------- */
+  window.publishResult = function(programId) {
+    fetch(`/program/${programId}/publish_result/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": "{{ csrf_token }}",
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if(data.message === "success") showToast("✅ Result published successfully!");
+      else showToast("❌ Failed to publish result.", true);
+    })
+    .catch(() => showToast("⚠️ Error publishing result.", true));
+  };
+
+  function showToast(message, isError=false) {
+    const toast = document.getElementById("toast");
+    if(!toast) return;
+    toast.textContent = message;
+    toast.classList.remove("hidden", "scale-95", "opacity-0");
+    toast.classList.add("scale-100", "opacity-100");
+    toast.style.backgroundColor = isError ? "#dc2626" : "#16a34a";
+
+    setTimeout(() => {
+      toast.classList.add("scale-95", "opacity-0");
+      setTimeout(() => toast.classList.add("hidden"), 300);
+    }, 2500);
+  }
+
+});
 </script>
+
 
 </body>
 </html>

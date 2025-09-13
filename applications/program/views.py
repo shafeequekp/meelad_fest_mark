@@ -1,3 +1,5 @@
+import json
+
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from reportlab.lib import colors
@@ -12,6 +14,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.template.loader import get_template
+from django.views.decorators.http import require_POST
+from django.db import transaction
 
 from applications.scoreboard.models import Team
 from applications.program.models import Category, Program, Student, Prize, Position, Grade
@@ -295,11 +299,31 @@ class ProgramListView(generic.ListView):
 def program_participants_json(request, pk):
     program = get_object_or_404(Program, pk=pk)
     participants = program.participants.select_related("team").all()
+    winners = program.prize_set.all()
+    winners_list = [
+        {
+            "position": winner.position.get_name_display(),
+            "participant_id": winner.student.id,
+            "code_number": winner.student.code_number,
+            "full_name": winner.student.full_name,
+            "team": winner.student.team.name,
+        }
+        for winner in winners
+    ]
+    order_map = {
+        "First": 1,
+        "Second": 2,
+        "Third": 3,
+        "Grade A": 4,
+        "Grade B": 5,
+    }
+    winners_list.sort(key=lambda w: order_map.get(w["position"], 99))
 
     data = {
         "program": program.title,
         "participants": [
             {
+                "id": p.id,
                 "full_name": p.full_name,
                 "code_number": p.code_number,
                 "chest_number": "",   # if you have it
@@ -308,7 +332,8 @@ def program_participants_json(request, pk):
                 "remarks": "",
             }
             for p in participants
-        ]
+        ],
+        "winners": winners_list
     }
     return JsonResponse(data)
 
@@ -346,7 +371,8 @@ def program_participants_json(request, pk):
 
 
 
-def program_judge_slip_pdf(request, pk):
+def program_judge_slip_pdf(request, pk, category_id):
+    category = Category.objects.get(id=category_id)
     program = get_object_or_404(Program, pk=pk)
     participants = program.participants.all()
 
@@ -359,14 +385,14 @@ def program_judge_slip_pdf(request, pk):
     styles = getSampleStyleSheet()
 
     # -----------------------------
-    # First Table: Judge Slip with Code Number
+    # First Table:  with Code Number
     # -----------------------------
-    heading1 = Paragraph(f"Judge Slip: {program.title} with Category", styles['Heading3'])
-    data1 = [["Sl. No", "Code Number", "Chest Number", "Mark1", "Mark2", "Remarks"]]
+    heading1 = Paragraph(f"{program.title} - {category.name}", styles['Heading3'])
+    data1 = [["Sl. No", "Code No.", "Chest No.", "Mark1", "Mark2", "Remarks"]]
     for i, p in enumerate(participants, start=1):
         data1.append([i, p.code_number or "", "", "", "", ""])
 
-    table1 = Table(data1, colWidths=[30, 60, 60, 50, 50, 130])
+    table1 = Table(data1, colWidths=[35, 60, 60, 50, 50, 125])
     table1.setStyle(TableStyle([
         ("GRID", (0,0), (-1,-1), 0.5, colors.black),
         ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
@@ -376,14 +402,14 @@ def program_judge_slip_pdf(request, pk):
     ]))
 
     # -----------------------------
-    # Second Table: without Code Number (also include header)
+    # Second Table: Judge Slip without Code Number (also include header)
     # -----------------------------
-    heading2 = Paragraph(f"{program.title} with Category", styles['Heading3'])
-    data2 = [["Sl. No", "Code Number", "Chest Number", "Mark1", "Mark2", "Remarks"]]
+    heading2 = Paragraph(f"Judge Slip: {program.title} - {category.name}", styles['Heading3'])
+    data2 = [["Sl. No", "Code No.", "Chest No.", "Mark1", "Mark2", "Remarks"]]
     for i, p in enumerate(participants, start=1):
         data2.append([i, "", "", "", "", ""])
 
-    table2 = Table(data2, colWidths=[30, 60, 60, 50, 50, 130])
+    table2 = Table(data2, colWidths=[35, 60, 60, 50, 50, 125])
     table2.setStyle(TableStyle([
         ("GRID", (0,0), (-1,-1), 0.5, colors.black),
         ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
@@ -470,3 +496,79 @@ def download_participants_pdf(request, program_id, section, category_id):
     doc.build(elements)
 
     return response
+
+
+
+
+@require_POST
+@transaction.atomic
+def save_prize(request, program_id):
+    program = get_object_or_404(Program, id=program_id)
+
+    # Data from request.POST
+    data = json.loads(request.body.decode("utf-8"))
+    first_prize_id = data.get("first")
+    second_prize_id = data.get("second")
+    third_prize_id = data.get("third")
+    gradeA_id = data.get("gradeA")
+    gradeB_id = data.get("gradeB")
+    remarks = data.get("remarks", "")
+
+    created_prizes = []
+
+    # Save prizes
+    if first_prize_id:
+        student = get_object_or_404(Student, id=first_prize_id)
+        pos, _ = Position.objects.get_or_create(name="first")
+        prize, _ = Prize.objects.update_or_create(
+            student=student, program=program,
+            defaults={"position": pos, "remarks": remarks}
+        )
+        created_prizes.append(prize.id)
+
+    if second_prize_id:
+        student = get_object_or_404(Student, id=second_prize_id)
+        pos, _ = Position.objects.get_or_create(name="second")
+        prize, _ = Prize.objects.update_or_create(
+            student=student, program=program,
+            defaults={"position": pos, "remarks": remarks}
+        )
+        created_prizes.append(prize.id)
+
+    if third_prize_id:
+        student = get_object_or_404(Student, id=third_prize_id)
+        pos, _ = Position.objects.get_or_create(name="third")
+        prize, _ = Prize.objects.update_or_create(
+            student=student, program=program,
+            defaults={"position": pos, "remarks": remarks}
+        )
+        created_prizes.append(prize.id)
+
+        # --- Handle Grades ---
+    if gradeA_id:
+        student = get_object_or_404(Student, id=gradeA_id)
+        grade = get_object_or_404(Grade, name="a_grade")
+        prize, _ = Prize.objects.update_or_create(
+            student=student, program=program,
+            defaults={"grade": grade, "remarks": remarks}
+        )
+        created_prizes.append(prize.id)
+
+    if gradeB_id:
+        student = get_object_or_404(Student, id=gradeB_id)
+        grade = get_object_or_404(Grade, name="b_grade")
+        prize, _ = Prize.objects.update_or_create(
+            student=student, program=program,
+            defaults={"grade": grade, "remarks": remarks}
+        )
+        created_prizes.append(prize.id)
+
+    return JsonResponse({"message": "success", "created_prizes": created_prizes})
+
+
+
+def publish_result(request, program_id):
+    program = get_object_or_404(Program, id=program_id)
+    program.is_result_published = True
+    program.save()
+    return JsonResponse({"message": "success"})

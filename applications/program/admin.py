@@ -18,8 +18,8 @@ class StudentAdmin(admin.ModelAdmin):
 
 @admin.register(Program)
 class ProgramAdmin(admin.ModelAdmin):
-    list_display = ('title', 'category_display', 'slug', 'non_stage')
-    list_editable = ['non_stage']
+    list_display = ('title', 'category_display', 'slug', 'non_stage', 'is_result_published')
+    list_editable = ['non_stage', 'is_result_published']
     search_fields = ('title',)
     filter_horizontal = ['participants']
 

@@ -65,6 +65,7 @@ class Program(DateBaseModel):
     non_stage = models.BooleanField(default=False)
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, null=True, blank=True)
     scheduled_time = models.DateTimeField(null=True, blank=True)
+    is_result_published = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title
