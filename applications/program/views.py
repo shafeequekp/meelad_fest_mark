@@ -286,11 +286,11 @@ class ProgramListView(generic.ListView):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        context['non_stage_programs'] = Program.objects.filter(non_stage=True)
-        context['categories'] = Category.objects.all()
-
         request = self.request
         madrasa_id = request.user.madrasa.id
+        context['non_stage_programs'] = Program.objects.filter(non_stage=True)
+        context['categories'] = Category.objects.filter(madrasa_id=madrasa_id)
+
         host_url = f"{request.scheme}://{request.get_host()}"
         context["form_url"] = f'{host_url}/program/student-registration/?madrasa_id={madrasa_id}'
         return context

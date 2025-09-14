@@ -39,7 +39,7 @@ class Student(DateBaseModel):
     def clean(self):
         super().clean()
         if self.code_number:
-            qs = Student.objects.filter(code_number=self.code_number)
+            qs = Student.objects.filter(code_number=self.code_number, team__madrasa=self.team.madrasa)
             if self.pk:
                 qs = qs.exclude(pk=self.pk)
             if qs.exists():

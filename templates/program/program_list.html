@@ -1,4 +1,6 @@
 {% load static %}
+{% load custom_filters %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -95,7 +97,7 @@
         🔗 Copy Form Link
       </button>
       <p class="text-gray-500 text-sm mt-1">
-        Note: Please copy this link and share with team leaders.
+        Note: Please copy this link and share with team leaders to add their members' programs.
       </p>
 
       <a href="{% url 'home' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Home</a>
@@ -125,9 +127,11 @@
   <div id="boysSection" class="section">
     {% for category in categories %}
     {% if category.programs.all %}
-      <h2 class="text-lg sm:text-xl font-semibold mb-3 text-purple-700">{{ category.name }}</h2>
+      <h2 class="text-lg sm:text-xl font-semibold mb-3 text-purple-700 bg-green-400 px-3 py-2 rounded">{{ category.name }}</h2> {% endif %}
+    {% if category.programs.all|stage %}
+    <h2 class="text-lg sm:text-l font-semibold mb-3 text-rose-500">Stage></h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
-        {% for program in category.programs.all %}
+        {% for program in category.programs.all|stage %}
           <div class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
                onclick="openModal('{{ program.id }}', '{{ category.id }}')">
 
@@ -156,6 +160,41 @@
         {% endfor %}
       </div>
     {% endif %}
+
+    {% if category.programs.all|non_stage %}
+    <h2 class="text-lg sm:text-l font-semibold mb-3 text-rose-500">Non Stage></h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        {% for program in category.programs.all|non_stage %}
+          <div class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
+               onclick="openModal('{{ program.id }}', '{{ category.id }}')">
+
+            <!-- Three-dot menu -->
+            <div class="absolute top-2 right-2">
+              <button onclick="toggleMenu(event, '{{ program.id }}')" class="p-1 rounded-full hover:bg-gray-200">⋮</button>
+              <div id="menu-{{ program.id }}" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+                <a href="javascript:void(0)" onclick="event.stopPropagation(); openPrizeModal('{{ program.id }}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🏅 Add Prizes</a>
+                <button onclick="event.stopPropagation(); publishResult({{ program.id }})" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full">📢 Publish Result</button>
+                <a href="/program/{{ program.id }}/download-result/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📥 Result</a>
+              </div>
+            </div>
+
+            <!-- Image -->
+            {% if program.image %}
+              <img src="{{ program.image.url }}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+            {% else %}
+              <img src="{% static 'program_images/art_image2.png' %}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+            {% endif %}
+
+            <div class="flex-1 min-w-0">
+              <h2 class="text-base sm:text-lg font-semibold truncate">{{ program.title }}</h2>
+              <p class="text-xs sm:text-sm text-gray-600 line-clamp-2 truncate">{{ program.description|truncatechars:60 }}</p>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+
     {% endfor %}
   </div>
 
@@ -168,9 +207,11 @@
   <div id="girlsSection" class="section hidden">
     {% for category in categories %}
     {% if category.programs_for_girls.all %}
-      <h2 class="text-lg sm:text-xl font-semibold mb-3 text-purple-700">{{ category.name }}</h2>
+      <h2 class="text-lg sm:text-xl font-semibold mb-3 text-purple-700 bg-green-400 px-3 py-2 rounded">{{ category.name }}</h2>{% endif %}
+    {% if category.programs_for_girls.all|stage %}
+    <h2 class="text-lg sm:text-l font-semibold mb-3 text-rose-500">Stage></h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
-        {% for program in category.programs_for_girls.all %}
+        {% for program in category.programs_for_girls.all|stage %}
           <div class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
                onclick="openModal('{{ program.id }}', '{{ category.id }}')">
 
@@ -198,6 +239,39 @@
         {% endfor %}
       </div>
     {% endif %}
+
+    {% if category.programs_for_girls.all|non_stage %}
+    <h2 class="text-lg sm:text-l font-semibold mb-3 text-rose-500">Non Stage></h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        {% for program in category.programs_for_girls.all|non_stage %}
+          <div class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
+               onclick="openModal('{{ program.id }}', '{{ category.id }}')">
+
+            <!-- Three-dot menu -->
+            <div class="absolute top-2 right-2">
+              <button onclick="toggleMenu(event, '{{ program.id }}')" class="p-1 rounded-full hover:bg-gray-200">⋮</button>
+              <div id="menu-{{ program.id }}" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+                <a href="javascript:void(0)" onclick="event.stopPropagation(); openPrizeModal('{{ program.id }}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🏅 Add Prizes</a>
+                <button onclick="event.stopPropagation(); publishResult({{ program.id }})" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full">📢 Publish Result</button>
+                <a href="/program/{{ program.id }}/download-result/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📥 Result</a>
+              </div>
+            </div>
+
+            {% if program.image %}
+              <img src="{{ program.image.url }}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+            {% else %}
+              <img src="{% static 'program_images/art_image2.png' %}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+            {% endif %}
+
+            <div class="flex-1 min-w-0">
+              <h2 class="text-base sm:text-lg font-semibold truncate">{{ program.title }}</h2>
+              <p class="text-xs sm:text-sm text-gray-600 line-clamp-2 truncate">{{ program.description|truncatechars:60 }}</p>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
     {% endfor %}
   </div>
 
@@ -230,7 +304,7 @@
       <h3 class="text-lg font-bold text-green-700 mb-2">🏆 Winners</h3>
       <div id="winnersList" class="space-y-2"></div>
     </div>
-    
+
 
     <!-- Prize Selection -->
     <div class="space-y-4">

@@ -103,7 +103,9 @@ class MarkView(generic.ListView):
 
         context['teams_with_grand_totals'] = teams.values()
         user = self.request.user
-        context['meelad_fest_name'] = user.madrasa.meelad_fest_name if user.madrasa else None
+        madrasa = user.madrasa
+        context['meelad_fest_name'] = madrasa.meelad_fest_name if user.madrasa else None
+        # context['madrasa_id'] = madrasa.id
         return context
 
 
