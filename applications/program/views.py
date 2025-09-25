@@ -4,6 +4,9 @@ from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
+from openpyxl import load_workbook
 
 # from xhtml2pdf import pisa
 
@@ -572,3 +575,120 @@ def publish_result(request, program_id):
     program.is_result_published = True
     program.save()
     return JsonResponse({"message": "success"})
+
+
+
+class StudentUploadView(generic.TemplateView):
+    template_name = 'program/student_data_upload.html'
+
+    def post(self, request, *args, **kwargs):
+        file = request.FILES.get("file")
+        if not file:
+            return JsonResponse({"error": "No file uploaded"}, status=400)
+
+        try:
+            # Load workbook
+            wb = load_workbook(filename=file, data_only=True)
+            ws = wb["Sheet1"]  # Sheet with student data
+        except Exception as e:
+            return JsonResponse({"error": f"Invalid Excel file: {str(e)}"}, status=400)
+
+        created, skipped = 0, 0
+        errors = []
+
+        # Iterate rows (skip header row)
+        for idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+            code, full_name, gender, team_name, category_name = row
+
+            if not full_name:
+                skipped += 1
+                errors.append(f"Row {idx}: Full Name is required")
+                continue
+
+            # Validate gender
+            if gender not in dict(Student.GENDER).keys():
+                skipped += 1
+                errors.append(f"Row {idx}: Invalid gender '{gender}'")
+                continue
+
+            # Get or create Team
+            team = None
+            if team_name:
+                team, _ = Team.objects.get_or_create(name=team_name)
+
+            # Get Category
+            try:
+                category = Category.objects.get(name=category_name)
+            except Category.DoesNotExist:
+                skipped += 1
+                errors.append(f"Row {idx}: Category '{category_name}' not found")
+                continue
+
+            # Save student
+            Student.objects.create(
+                code_number=code,
+                full_name=full_name,
+                gender=gender,
+                team=team,
+                category=category,
+            )
+            created += 1
+
+        return JsonResponse({
+            "created": created,
+            "skipped": skipped,
+            "errors": errors,
+        })
+
+
+
+
+
+class SampleStudentUploadFileView(View):
+
+    def get(self, request):
+        # Create a new workbook
+        wb = Workbook()
+
+        # --- First sheet: Info ---
+        ws_info = wb.active
+        ws_info.title = "Info"
+
+        user = request.user
+        teams_list = list(user.madrasa.team_set.values_list('name', flat=True))
+        # Data for Info sheet
+        info_data = [
+            ["Category", "Super Senior", "Senior", "Junior", "Sub Junior", "Kiddies"],
+            ["Code", "Should be numbers"],
+            ["Gender", "male", "female"],
+            ["Team"] + teams_list,
+        ]
+
+        for row in info_data:
+            ws_info.append(row)
+
+        # --- Second sheet: Sample Upload ---
+        ws_sample = wb.create_sheet(title="Sheet1")
+
+        # Add header row
+        headers = ["Code", "Full Name", "Gender", "Team", "Category"]
+        ws_sample.append(headers)
+
+        # Example row (optional, remove if you want empty template)
+        # ws_sample.append(["101", "John Doe", "male", "team1", "Junior"])
+
+        # Adjust column widths for readability
+        for i, col in enumerate(headers, start=1):
+            ws_sample.column_dimensions[get_column_letter(i)].width = 20
+
+        # Prepare HTTP response
+        response = HttpResponse(
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response["Content-Disposition"] = 'attachment; filename="sample_student_upload.xlsx"'
+
+        # Save workbook to response
+        wb.save(response)
+
+        return response
+

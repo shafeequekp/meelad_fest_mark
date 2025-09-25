@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Students - Digital: Meelad Program</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+<!-- ✅ Reused Header -->
+<header class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 shadow-lg relative z-50">
+  <div class="flex items-center justify-between">
+    <!-- Center: Title -->
+    <h1 class="text-2xl sm:text-3xl font-bold text-center flex-1">
+      🏆 {{ meelad_fest_name }} Student Upload
+    </h1>
+
+    <!-- Right: Buttons + Mobile Hamburger -->
+    {% if request.user.is_authenticated %}
+    <div class="flex items-center space-x-2">
+      <!-- Desktop Buttons -->
+      <div class="hidden sm:flex space-x-2">
+        <a href="{% url 'teams' %}" class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
+          Teams
+        </a>
+        <a href="{% url 'program_list' %}" class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
+          Programs
+        </a>
+        <a href="{% url 'logout' %}" class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
+          Logout
+        </a>
+      </div>
+      <!-- Mobile Hamburger -->
+      <button id="menu-toggle" class="sm:hidden p-2 rounded-lg hover:bg-indigo-700 focus:outline-none">
+        <svg id="menu-open" class="w-6 h-6 block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+    {% endif %}
+  </div>
+</header>
+
+{% if request.user.is_authenticated %}
+<!-- Sidebar -->
+<div id="mobile-menu"
+     class="fixed top-0 right-0 h-full w-64 bg-white shadow-lg transform translate-x-full transition-transform duration-300 ease-in-out z-50">
+  <div class="p-4 flex justify-between items-center border-b">
+    <h2 class="text-lg font-bold text-indigo-700">Menu</h2>
+    <button id="menu-close-btn" class="text-gray-600 hover:text-indigo-700 focus:outline-none">
+      ✕
+    </button>
+  </div>
+  <nav class="p-4 space-y-3">
+    <a href="{% url 'teams' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Teams</a>
+    <a href="{% url 'program_list' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Programs</a>
+    <a href="{% url 'logout' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Logout</a>
+  </nav>
+</div>
+
+<!-- Overlay -->
+<div id="overlay" class="fixed inset-0 bg-black bg-opacity-40 hidden z-40"></div>
+{% endif %}
+
+<!-- ✅ Student Upload Section -->
+<div class="max-w-2xl mx-auto mt-12 bg-white p-8 rounded-xl shadow-lg">
+  <h2 class="text-2xl font-bold text-indigo-700 mb-6 text-center">Upload Student Data</h2>
+
+<!--  <form method="post" action="{% url 'upload-students' %}" enctype="multipart/form-data" class="space-y-6">-->
+<!--    {% csrf_token %}-->
+
+<!--    <div>-->
+<!--      <label class="block text-gray-700 font-semibold mb-2">Choose Excel File</label>-->
+<!--      <input type="file" name="file" accept=".xls,.xlsx,.csv"-->
+<!--             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">-->
+<!--    </div>-->
+
+<!--    <div class="flex justify-center">-->
+<!--      <button type="submit"-->
+<!--              class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition shadow">-->
+<!--        Upload-->
+<!--      </button>-->
+<!--    </div>-->
+<!--  </form>-->
+
+  <form id="studentUploadForm" enctype="multipart/form-data" class="space-y-6">
+    {% csrf_token %}
+    <div>
+      <label class="block text-gray-700 font-semibold mb-2">Choose Excel File</label>
+      <input type="file" name="file" accept=".xls,.xlsx"
+             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+    </div>
+
+    <div class="flex justify-center">
+      <button type="submit"
+              class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition shadow">
+        Upload
+      </button>
+    </div>
+</form>
+
+<!-- Modal for showing messages -->
+<div id="uploadResultModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
+  <div class="bg-white rounded-lg shadow-lg p-6 w-96">
+    <h2 class="text-xl font-semibold mb-4" id="modalTitle"></h2>
+    <div id="modalBody" class="text-gray-700"></div>
+    <div class="mt-4 flex justify-end">
+      <button onclick="closeModal()"
+              class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+
+  <p class="text-gray-500 text-sm mt-6 text-center">
+    Only Excel files (.xls, .xlsx) are allowed.
+    <a href="{% url 'download-sample-file' %}" class="text-indigo-600 underline hover:text-indigo-800">
+      Download sample template
+    </a>
+  </p>
+</div>
+
+<!-- ✅ Header Menu Script -->
+<script>
+const menuBtn = document.getElementById("menu-toggle");
+const menu = document.getElementById("mobile-menu");
+const overlay = document.getElementById("overlay");
+const closeBtn = document.getElementById("menu-close-btn");
+
+function openMenu() {
+  menu.classList.remove("translate-x-full");
+  overlay.classList.remove("hidden");
+}
+function closeMenu() {
+  menu.classList.add("translate-x-full");
+  overlay.classList.add("hidden");
+}
+if (menuBtn) menuBtn.addEventListener("click", openMenu);
+if (closeBtn) closeBtn.addEventListener("click", closeMenu);
+if (overlay) overlay.addEventListener("click", closeMenu);
+</script>
+
+<script>
+  const form = document.getElementById("studentUploadForm");
+  const modal = document.getElementById("uploadResultModal");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalBody = document.getElementById("modalBody");
+
+  function closeModal() {
+    modal.classList.add("hidden");
+  }
+
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    let formData = new FormData(form);
+
+    try {
+      let response = await fetch("{% url 'upload-students' %}", {
+        method: "POST",
+        body: formData,
+        headers: {
+          "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value
+        }
+      });
+
+      let data = await response.json();
+
+      if (response.ok) {
+        modalTitle.innerText = "✅ Upload Successful";
+        modalBody.innerHTML = `
+          <p><strong>Created:</strong> ${data.created}</p>
+          <p><strong>Skipped:</strong> ${data.skipped}</p>
+          ${data.errors.length ? `<p class="text-red-600 mt-2">Errors:</p><ul class="list-disc ml-5 text-red-600">${data.errors.map(err => `<li>${err}</li>`).join("")}</ul>` : ""}
+        `;
+      } else {
+        modalTitle.innerText = "❌ Upload Failed";
+        modalBody.innerHTML = `<p class="text-red-600">${data.error || "Something went wrong"}</p>`;
+      }
+
+      modal.classList.remove("hidden");
+
+    } catch (err) {
+      modalTitle.innerText = "❌ Upload Failed";
+      modalBody.innerHTML = `<p class="text-red-600">Error: ${err.message}</p>`;
+      modal.classList.remove("hidden");
+    }
+  });
+</script>
+
+
+</body>
+</html>

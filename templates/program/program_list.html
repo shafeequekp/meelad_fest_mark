@@ -464,9 +464,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <th class="border px-2 sm:px-3 py-2">Sl. No</th>
                     <th class="border px-2 sm:px-3 py-2">Code Number</th>
                     <th class="border px-2 sm:px-3 py-2">Chest Number</th>
-                    <th class="border px-2 sm:px-3 py-2">Mark1</th>
-                    <th class="border px-2 sm:px-3 py-2">Mark2</th>
-                    <th class="border px-2 sm:px-3 py-2">Remarks</th>
+                    <th class="border px-2 sm:px-3 py-2">Name</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -477,9 +475,7 @@ document.addEventListener("DOMContentLoaded", () => {
                   <td class="border px-2 sm:px-3 py-2 text-center">${i + 1}</td>
                   <td class="border px-2 sm:px-3 py-2">${p.code_number || ""}</td>
                   <td class="border px-2 sm:px-3 py-2">${p.chest_number || "-"}</td>
-                  <td class="border px-2 sm:px-3 py-2">${p.mark1 || ""}</td>
-                  <td class="border px-2 sm:px-3 py-2">${p.mark2 || ""}</td>
-                  <td class="border px-2 sm:px-3 py-2">${p.remarks || ""}</td>
+                  <td class="border px-2 sm:px-3 py-2">${p.full_name || ""}</td>
                 </tr>`;
             });
             table += "</tbody></table>";

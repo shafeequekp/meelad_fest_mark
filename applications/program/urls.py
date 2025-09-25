@@ -23,4 +23,7 @@ urlpatterns = [
     path("student-registration/", views.StudentRegistrationView.as_view(), name="student_registration"),
     path('programs/', views.ProgramListView.as_view(), name='program_list'),
 
+    path('upload-students/', views.StudentUploadView.as_view(), name='upload-students'),
+    path('download-sample-file/', views.SampleStudentUploadFileView.as_view(), name='download-sample-file'),
+
 ]
