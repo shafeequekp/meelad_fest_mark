@@ -135,13 +135,20 @@
           <div class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
                onclick="openModal('{{ program.id }}', '{{ category.id }}')">
 
+             <!-- ✅ Tick mark at top-left -->
+  {% if program.is_result_published %}
+    <div class="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold rounded-full px-2 py-1 shadow">
+      ✅
+    </div>
+  {% endif %}
+
             <!-- Three-dot menu -->
             <div class="absolute top-2 right-2">
               <button onclick="toggleMenu(event, '{{ program.id }}')" class="p-1 rounded-full hover:bg-gray-200">⋮</button>
               <div id="menu-{{ program.id }}" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-50">
                 <a href="javascript:void(0)" onclick="event.stopPropagation(); openPrizeModal('{{ program.id }}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🏅 Add Prizes</a>
                 <button onclick="event.stopPropagation(); publishResult({{ program.id }})" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full">📢 Publish Result</button>
-                <a href="/program/{{ program.id }}/download-result/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📥 Result</a>
+<!--                <a href="/program/{{ program.id }}/download-result/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📥 Result</a>-->
               </div>
             </div>
 
@@ -149,7 +156,7 @@
             {% if program.image %}
               <img src="{{ program.image.url }}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
             {% else %}
-              <img src="{% static 'program_images/art_image2.png' %}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+              <img src="{% static 'program_images/art_stage.png' %}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
             {% endif %}
 
             <div class="flex-1 min-w-0">
@@ -168,13 +175,20 @@
           <div class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
                onclick="openModal('{{ program.id }}', '{{ category.id }}')">
 
+             <!-- ✅ Tick mark at top-left -->
+  {% if program.is_result_published %}
+    <div class="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold rounded-full px-2 py-1 shadow">
+      ✅
+    </div>
+  {% endif %}
+
             <!-- Three-dot menu -->
             <div class="absolute top-2 right-2">
               <button onclick="toggleMenu(event, '{{ program.id }}')" class="p-1 rounded-full hover:bg-gray-200">⋮</button>
               <div id="menu-{{ program.id }}" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-50">
                 <a href="javascript:void(0)" onclick="event.stopPropagation(); openPrizeModal('{{ program.id }}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🏅 Add Prizes</a>
                 <button onclick="event.stopPropagation(); publishResult({{ program.id }})" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full">📢 Publish Result</button>
-                <a href="/program/{{ program.id }}/download-result/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📥 Result</a>
+<!--                <a href="/program/{{ program.id }}/download-result/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📥 Result</a>-->
               </div>
             </div>
 
@@ -182,7 +196,7 @@
             {% if program.image %}
               <img src="{{ program.image.url }}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
             {% else %}
-              <img src="{% static 'program_images/art_image2.png' %}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+              <img src="{% static 'program_images/articon.png' %}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
             {% endif %}
 
             <div class="flex-1 min-w-0">
@@ -215,20 +229,27 @@
           <div class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
                onclick="openModal('{{ program.id }}', '{{ category.id }}')">
 
+             <!-- ✅ Tick mark at top-left -->
+  {% if program.is_result_published %}
+    <div class="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold rounded-full px-2 py-1 shadow">
+      ✅
+    </div>
+  {% endif %}
+
             <!-- Three-dot menu -->
             <div class="absolute top-2 right-2">
               <button onclick="toggleMenu(event, '{{ program.id }}')" class="p-1 rounded-full hover:bg-gray-200">⋮</button>
               <div id="menu-{{ program.id }}" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-50">
                 <a href="javascript:void(0)" onclick="event.stopPropagation(); openPrizeModal('{{ program.id }}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🏅 Add Prizes</a>
                 <button onclick="event.stopPropagation(); publishResult({{ program.id }})" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full">📢 Publish Result</button>
-                <a href="/program/{{ program.id }}/download-result/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📥 Result</a>
+<!--                <a href="/program/{{ program.id }}/download-result/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📥 Result</a>-->
               </div>
             </div>
 
             {% if program.image %}
               <img src="{{ program.image.url }}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
             {% else %}
-              <img src="{% static 'program_images/art_image2.png' %}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+              <img src="{% static 'program_images/art_stage.png' %}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
             {% endif %}
 
             <div class="flex-1 min-w-0">
@@ -246,6 +267,12 @@
         {% for program in category.programs_for_girls.all|non_stage %}
           <div class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
                onclick="openModal('{{ program.id }}', '{{ category.id }}')">
+             <!-- ✅ Tick mark at top-left -->
+  {% if program.is_result_published %}
+    <div class="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold rounded-full px-2 py-1 shadow">
+      ✅
+    </div>
+  {% endif %}
 
             <!-- Three-dot menu -->
             <div class="absolute top-2 right-2">
@@ -253,14 +280,14 @@
               <div id="menu-{{ program.id }}" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-50">
                 <a href="javascript:void(0)" onclick="event.stopPropagation(); openPrizeModal('{{ program.id }}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🏅 Add Prizes</a>
                 <button onclick="event.stopPropagation(); publishResult({{ program.id }})" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full">📢 Publish Result</button>
-                <a href="/program/{{ program.id }}/download-result/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📥 Result</a>
+<!--                <a href="/program/{{ program.id }}/download-result/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📥 Result</a>-->
               </div>
             </div>
 
             {% if program.image %}
               <img src="{{ program.image.url }}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
             {% else %}
-              <img src="{% static 'program_images/art_image2.png' %}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+              <img src="{% static 'program_images/articon.png' %}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
             {% endif %}
 
             <div class="flex-1 min-w-0">
@@ -663,21 +690,29 @@ document.addEventListener("DOMContentLoaded", () => {
   /* -------------------
      Publish Result
   ------------------- */
-  window.publishResult = function(programId) {
-    fetch(`/program/${programId}/publish_result/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": "{{ csrf_token }}",
-      }
-    })
-    .then(res => res.json())
-    .then(data => {
-      if(data.message === "success") showToast("✅ Result published successfully!");
-      else showToast("❌ Failed to publish result.", true);
-    })
-    .catch(() => showToast("⚠️ Error publishing result.", true));
-  };
+window.publishResult = function(programId) {
+  fetch(`/program/${programId}/publish_result/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": "{{ csrf_token }}",
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.message === "success") {
+      showToast("✅ Result published successfully!");
+      setTimeout(() => {
+        location.reload();  // reload after short delay so toast is visible
+      }, 1000);
+    } else {
+      showToast("❌ Failed to publish result.", true);
+    }
+  })
+  .catch(() => {
+    showToast("⚠️ Something went wrong.", true);
+  });
+};
 
   function showToast(message, isError=false) {
     const toast = document.getElementById("toast");

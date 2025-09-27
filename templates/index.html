@@ -1,3 +1,5 @@
+{% load custom_filters %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -150,20 +152,26 @@
 <div class="relative max-w-4xl mx-auto mt-10">
     <div id="slider" class="relative overflow-hidden">
 
-        {% for mark in marks %}
+        {% for team in teams %}
         <!-- Each Section Slide -->
+
+        <!--  Boys section-->
         <div class="slide hidden fade">
             <div class="p-6">
                 <!-- Team Name -->
 
                 <div class="text-center mb-8">
                     <h2 class="text-4xl font-extrabold tracking-wide animate-fade-in
-           {% if mark.team.name == 'LEHAR' %} text-pink-600 {% else %} text-green-900 {% endif %}">
-                        {{ mark.team.name }}
+                {% if forloop.counter == 1 %} text-pink-600
+                {% elif forloop.counter == 2 %} text-blue-600
+                {% elif forloop.counter == 3 %} text-yellow-600
+                {% elif forloop.counter == 4 %} text-purple-600
+                {% else %} text-green-900 {% endif %}">
+                        {{ team.name }}
                     </h2>
                     <br>
                     <p class="inline-block bg-yellow-200 text-yellow-800 font-semibold px-4 py-1 rounded-lg shadow-md">
-                        Section:  {{ mark.get_section_display }}
+                        Section: Boys
                     </p>
                 </div>
 
@@ -171,51 +179,58 @@
                 <!-- Marks Grid -->
                 <div class="grid md:grid-cols-3 gap-8 mt-8">
 
+                    {% for category in categories %}
+                    {% if category.name == 'Super Senior' %}
                     <!-- Super Senior -->
                     <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-pink-500 to-rose-600
                 transform hover:scale-105 transition card-animate">
                         <h3 class="text-xl font-bold flex items-center gap-2">👑 Super Senior</h3>
                         <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                            <span class="count-up" data-value="{{ mark.super_senior|floatformat:0 }}">0</span>
+                           <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
                         </p>
                     </div>
 
+                    {% elif category.name == 'Senior' %}
                     <!-- Senior -->
                     <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-indigo-500 to-blue-600
                 transform hover:scale-105 transition card-animate">
                         <h3 class="text-xl font-bold flex items-center gap-2">🎓 Senior</h3>
                         <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                            <span class="count-up" data-value="{{ mark.senior|floatformat:0 }}">0</span>
+                            <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
                         </p>
                     </div>
 
+                    {% elif category.name == 'Junior' %}
                     <!-- Junior -->
                     <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-green-500 to-emerald-600
                 transform hover:scale-105 transition card-animate">
                         <h3 class="text-xl font-bold flex items-center gap-2">🌿 Junior</h3>
                         <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                            <span class="count-up" data-value="{{ mark.junior|floatformat:0 }}">0</span>
+                            <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
                         </p>
                     </div>
 
+                    {% elif category.name == 'Sub Junior' %}
                     <!-- Sub Junior -->
                     <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-yellow-400 to-orange-500
                 transform hover:scale-105 transition card-animate">
                         <h3 class="text-xl font-bold flex items-center gap-2">🌟 Sub Junior</h3>
                         <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                            <span class="count-up" data-value="{{ mark.subjunior|floatformat:0 }}">0</span>
+                            <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
                         </p>
                     </div>
 
+                    {% elif category.name == 'Kiddies' %}
                     <!-- Kiddies -->
                     <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-teal-400 to-cyan-500
                 transform hover:scale-105 transition card-animate">
                         <h3 class="text-xl font-bold flex items-center gap-2">🧸 Kiddies</h3>
                         <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                            <span class="count-up" data-value="{{ mark.kiddies|floatformat:0 }}">0</span>
+                             <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
                         </p>
                     </div>
 
+                    {% elif category.name == 'General' %}
                     <!-- General -->
                     <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-red-500 to-pink-600
                 transform hover:scale-105 transition card-animate">
@@ -224,19 +239,121 @@
                             <span class="count-up" data-value="{{ mark.general|floatformat:0 }}">0</span>
                         </p>
                     </div>
+                    {% endif %}
+                    {% endfor %}
 
                 </div>
-
-
 
                 <!-- Section Total -->
                 <div class="mt-10 p-8 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-2xl shadow-xl text-center">
                     <h3 class="text-2xl font-bold">Total Points</h3>
-                    <p class="text-4xl font-extrabold mt-3">{{ mark.get_section_total|floatformat:0 }}</p>
+                    <p class="text-4xl font-extrabold mt-3">{% get_section_total 'male' team %}</p>
                 </div>
             </div>
         </div>
+
+
+
+        <!--        Girls section-->
+        <div class="slide hidden fade">
+        <div class="p-6">
+                <!-- Team Name -->
+
+                <div class="text-center mb-8">
+                    <h2 class="text-4xl font-extrabold tracking-wide animate-fade-in
+                {% if forloop.counter == 1 %} text-pink-600
+                {% elif forloop.counter == 2 %} text-blue-600
+                {% elif forloop.counter == 3 %} text-yellow-600
+                {% elif forloop.counter == 4 %} text-purple-600
+                {% else %} text-green-900 {% endif %}">
+                        {{ team.name }}
+                    </h2>
+                    <br>
+                    <p class="inline-block bg-yellow-200 text-yellow-800 font-semibold px-4 py-1 rounded-lg shadow-md">
+                        Section: Girls
+                    </p>
+                </div>
+
+
+                <!-- Marks Grid -->
+                <div class="grid md:grid-cols-3 gap-8 mt-8">
+
+                    {% for category in categories %}
+                    {% if category.name == 'Super Senior' %}
+                    <!-- Super Senior -->
+                    <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-pink-500 to-rose-600
+                transform hover:scale-105 transition card-animate">
+                        <h3 class="text-xl font-bold flex items-center gap-2">👑 Super Senior</h3>
+                        <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+                           <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
+                        </p>
+                    </div>
+
+                    {% elif category.name == 'Senior' %}
+                    <!-- Senior -->
+                    <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-indigo-500 to-blue-600
+                transform hover:scale-105 transition card-animate">
+                        <h3 class="text-xl font-bold flex items-center gap-2">🎓 Senior</h3>
+                        <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+                            <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
+                        </p>
+                    </div>
+
+                    {% elif category.name == 'Junior' %}
+                    <!-- Junior -->
+                    <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-green-500 to-emerald-600
+                transform hover:scale-105 transition card-animate">
+                        <h3 class="text-xl font-bold flex items-center gap-2">🌿 Junior</h3>
+                        <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+                            <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
+                        </p>
+                    </div>
+
+                    {% elif category.name == 'Sub Junior' %}
+                    <!-- Sub Junior -->
+                    <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-yellow-400 to-orange-500
+                transform hover:scale-105 transition card-animate">
+                        <h3 class="text-xl font-bold flex items-center gap-2">🌟 Sub Junior</h3>
+                        <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+                            <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
+                        </p>
+                    </div>
+
+                    {% elif category.name == 'Kiddies' %}
+                    <!-- Kiddies -->
+                    <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-teal-400 to-cyan-500
+                transform hover:scale-105 transition card-animate">
+                        <h3 class="text-xl font-bold flex items-center gap-2">🧸 Kiddies</h3>
+                        <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+                             <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
+                        </p>
+                    </div>
+
+                    {% elif category.name == 'General' %}
+                    <!-- General -->
+                    <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-red-500 to-pink-600
+                transform hover:scale-105 transition card-animate">
+                        <h3 class="text-xl font-bold flex items-center gap-2">🌍 General</h3>
+                        <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+                            <span class="count-up" data-value="{{ mark.general|floatformat:0 }}">0</span>
+                        </p>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+
+                </div>
+
+                <!-- Section Total -->
+                <div class="mt-10 p-8 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-2xl shadow-xl text-center">
+                    <h3 class="text-2xl font-bold">Total Points</h3>
+                    <p class="text-4xl font-extrabold mt-3">{% get_section_total 'female' team %}</p>
+                </div>
+            </div>
+        </div>
+
         {% endfor %}
+
+
 
         <!-- ✅ Single Grand Total Slide (All Teams Together) -->
         <div class="slide hidden animate-finalSlide flex items-start justify-center min-h-screen pt-12">
@@ -248,7 +365,7 @@
                     <div class="p-12 bg-white text-gray-800 rounded-2xl shadow-2xl transform hover:scale-105 transition-transform duration-300">
                         <h4 class="text-2xl font-bold
                {% if team_data.team.name == 'LEHAR' %} text-rose-600 {% else %} text-green-800 {% endif %}">
-                            {{ team_data.team.name }}
+                            {{ team_data.student__team__name }}
                         </h4>
 
                         <p class="mt-6 text-5xl font-extrabold text-pink-600 drop-shadow-md count"

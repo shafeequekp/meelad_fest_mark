@@ -7,7 +7,9 @@ from . import views
 urlpatterns = [
     path('teams/add/', views.add_team_and_marks, name='add_team'),
     # path("add/", views.add_team_with_marks, name="add_team_marks"),
-    path("teams/<int:team_id>/edit-marks/", views.edit_marks_view, name="edit_marks"),
+    # path("teams/<int:team_id>/edit-marks/", views.edit_marks_view, name="edit_marks"),
+
+
     path('', login_required(views.MarkView.as_view()), name='home'),
     path('teams/', views.TeamsView.as_view(), name='teams'),
 

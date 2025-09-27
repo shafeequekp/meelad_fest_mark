@@ -120,6 +120,7 @@ class CategoryView(LoginRequiredMixin, generic.ListView):
         context = super().get_context_data(*args, **kwargs)
         team_id = self.request.GET.get('team')
         context['team_name'] = Team.objects.get(id=team_id).name
+        context['team_id'] = team_id
         return context
 
 
@@ -132,12 +133,14 @@ class AddCategoryView(LoginRequiredMixin, View):
 
     def post(self, request):
         form = CategoryForm(request.POST)
+        team_id = request.GET.get('team')
         if form.is_valid():
             category = form.save(commit=False)
             category.madrasa = request.user.madrasa
             category.save()
             form.save_m2m()
-            return redirect('categories')  # name of your url for CategoryView
+            url = f"{reverse('categories')}?team={team_id}"  # reverse() gets the URL from name
+            return redirect(url)
         return render(request, self.template_name, {'form': form})
 
 
@@ -153,9 +156,11 @@ class EditCategoryView(View):
     def post(self, request, pk):
         category = get_object_or_404(Category, pk=pk)
         form = CategoryForm(request.POST, instance=category)
+        team_id = self.request.GET.get('team')
         if form.is_valid():
             form.save()
-            return redirect("categories")  # adjust to your list view name
+            url = f"{reverse('categories')}?team={team_id}"  # reverse() gets the URL from name
+            return redirect(url)
         return render(request, self.template_name, {"form": form, "category": category})
 
 
@@ -581,6 +586,17 @@ def publish_result(request, program_id):
 class StudentUploadView(generic.TemplateView):
     template_name = 'program/student_data_upload.html'
 
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        user = self.request.user
+        madrasa = user.madrasa
+        teams = Team.objects.filter(madrasa=madrasa)
+        categories = Category.objects.filter(madrasa=madrasa)
+        context['teams'] = teams
+        context['categories'] = categories
+        context['needs_setup'] = (not teams.exists() or not categories.exists())
+        return context
+
     def post(self, request, *args, **kwargs):
         file = request.FILES.get("file")
         if not file:
@@ -655,10 +671,12 @@ class SampleStudentUploadFileView(View):
         ws_info.title = "Info"
 
         user = request.user
-        teams_list = list(user.madrasa.team_set.values_list('name', flat=True))
+        madrasa = user.madrasa
+        categories = Category.objects.filter(madrasa=madrasa).values_list('name', flat=True)
+        teams_list = list(madrasa.team_set.values_list('name', flat=True))
         # Data for Info sheet
         info_data = [
-            ["Category", "Super Senior", "Senior", "Junior", "Sub Junior", "Kiddies"],
+            ["Category"] + list(categories),
             ["Code", "Should be numbers"],
             ["Gender", "male", "female"],
             ["Team"] + teams_list,

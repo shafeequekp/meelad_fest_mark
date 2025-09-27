@@ -70,24 +70,10 @@
 <div class="max-w-2xl mx-auto mt-12 bg-white p-8 rounded-xl shadow-lg">
   <h2 class="text-2xl font-bold text-indigo-700 mb-6 text-center">Upload Student Data</h2>
 
-<!--  <form method="post" action="{% url 'upload-students' %}" enctype="multipart/form-data" class="space-y-6">-->
-<!--    {% csrf_token %}-->
+<form id="studentUploadForm" enctype="multipart/form-data"
+      class="space-y-6 {% if needs_setup %}opacity-50 pointer-events-none{% endif %}">
 
-<!--    <div>-->
-<!--      <label class="block text-gray-700 font-semibold mb-2">Choose Excel File</label>-->
-<!--      <input type="file" name="file" accept=".xls,.xlsx,.csv"-->
-<!--             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">-->
-<!--    </div>-->
 
-<!--    <div class="flex justify-center">-->
-<!--      <button type="submit"-->
-<!--              class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition shadow">-->
-<!--        Upload-->
-<!--      </button>-->
-<!--    </div>-->
-<!--  </form>-->
-
-  <form id="studentUploadForm" enctype="multipart/form-data" class="space-y-6">
     {% csrf_token %}
     <div>
       <label class="block text-gray-700 font-semibold mb-2">Choose Excel File</label>
@@ -155,6 +141,20 @@ if (overlay) overlay.addEventListener("click", closeMenu);
   function closeModal() {
     modal.classList.add("hidden");
   }
+
+
+
+  // ✅ Show modal on page load if teams/categories missing
+  document.addEventListener("DOMContentLoaded", function() {
+    const needsSetup = {{ needs_setup|yesno:"true,false" }};
+    if (needsSetup) {
+      modalTitle.innerText = "⚠️ Setup Required";
+      modalBody.innerHTML = `<p class="text-red-600">Please add <strong>teams</strong> and <strong>categories</strong> first!</p>`;
+      modal.classList.remove("hidden");
+    }
+  });
+
+
 
   form.addEventListener("submit", async function (e) {
     e.preventDefault();

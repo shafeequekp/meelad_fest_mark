@@ -1,6 +1,8 @@
 from django.db import models
 from django_extensions.db.fields import AutoSlugField
 from django.core.exceptions import ValidationError
+from django.db.models import Sum, F, Value, FloatField, ExpressionWrapper, IntegerField
+from django.db.models.functions import Coalesce
 
 from utils.db import DateBaseModel
 from applications.scoreboard.models import Team
@@ -107,4 +109,69 @@ class Prize(DateBaseModel):
 
     def __str__(self):
         return f'{self.program} > {self.position}'
+
+    @staticmethod
+    def get_team_grand_totals(madrasa):
+        """
+        Returns each team in the given madrasa with total position + grade points.
+        """
+        return (
+            Prize.objects
+            .filter(student__team__madrasa=madrasa)  # <-- filter by madrasa
+            .values("student__team__id", "student__team__name")
+            .annotate(
+                pos_total=Coalesce(Sum("position__mark"), 0.0),
+                grade_total=Coalesce(Sum("grade__mark"), 0.0)
+            )
+            .annotate(
+                grand_total=ExpressionWrapper(
+                    F("pos_total") + F("grade_total"),
+                    output_field=FloatField()
+                )
+            )
+            .order_by("student__team__name")
+        )
+
+    # @staticmethod
+    # def get_team_grand_totals():
+    #     """
+    #     Returns each team with total position + grade points.
+    #     """
+    #     return (
+    #         Prize.objects
+    #         .values("student__team__id", "student__team__name")
+    #         .annotate(
+    #             pos_total=Coalesce(Sum("position__mark"), 0.0),
+    #             grade_total=Coalesce(Sum("grade__mark"), 0.0)
+    #         )
+    #         .annotate(
+    #             grand_total=ExpressionWrapper(
+    #                 F("pos_total") + F("grade_total"),
+    #                 output_field=FloatField()
+    #             )
+    #         )
+    #         .order_by("student__team__name")
+    #     )
+
+    # @classmethod
+    # def get_team_total(cls, team):
+    #     """
+    #     Return the grand total (boys + girls, all categories) for a given team.
+    #     """
+    #     # Position marks
+    #     pos_total = (
+    #             cls.objects.filter(student__team=team, position__isnull=False)
+    #             .aggregate(total=Sum("position__mark"))
+    #             .get("total") or 0
+    #     )
+    #
+    #     # Grade marks
+    #     grade_total = (
+    #             cls.objects.filter(student__team=team, grade__isnull=False)
+    #             .aggregate(total=Sum("grade__mark"))
+    #             .get("total") or 0
+    #     )
+    #
+    #     return pos_total + grade_total
+
 

@@ -2,9 +2,10 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.views import generic, View
 from django.http import HttpResponseRedirect, FileResponse, HttpResponse
 
-from applications.scoreboard.models import Mark, Team
-from .forms import TeamForm, MarksForm, MarkEditForm
+from applications.scoreboard.models import Team
+from .forms import TeamForm
 from applications.accounts.models import Madrasa, User
+from applications.program.models import Category, Prize
 
 
 def add_team_and_marks(request):
@@ -44,68 +45,59 @@ def add_team_and_marks(request):
             return redirect('teams')  # redirect to team list page after save
     else:
         team_form = TeamForm()
-        marks_form = MarksForm()
+        # marks_form = MarksForm()
 
     return render(request, 'teams/add_team.html', {
         'team_form': team_form,
-        'marks_form': marks_form,
+        # 'marks_form': marks_form,
     })
 
 
-def edit_marks_view(request, team_id):
-    team = get_object_or_404(Team, id=team_id)
-
-    boys_mark, _ = Mark.objects.get_or_create(team=team, section="boys")
-    girls_mark, _ = Mark.objects.get_or_create(team=team, section="girls")
-
-    if request.method == "POST":
-        boys_form = MarkEditForm(request.POST, prefix="boys", instance=boys_mark)
-        girls_form = MarkEditForm(request.POST, prefix="girls", instance=girls_mark)
-
-        if boys_form.is_valid() and girls_form.is_valid():
-            boys_form.save()
-            girls_form.save()
-            return redirect("teams")  # or wherever you want
-    else:
-        boys_form = MarkEditForm(prefix="boys", instance=boys_mark)
-        girls_form = MarkEditForm(prefix="girls", instance=girls_mark)
-
-    return render(request, "teams/edit_team_marks.html", {
-        "team": team,
-        "boys_form": boys_form,
-        "girls_form": girls_form,
-    })
+# def edit_marks_view(request, team_id):
+#     team = get_object_or_404(Team, id=team_id)
+#
+#     boys_mark, _ = Mark.objects.get_or_create(team=team, section="boys")
+#     girls_mark, _ = Mark.objects.get_or_create(team=team, section="girls")
+#
+#     if request.method == "POST":
+#         boys_form = MarkEditForm(request.POST, prefix="boys", instance=boys_mark)
+#         girls_form = MarkEditForm(request.POST, prefix="girls", instance=girls_mark)
+#
+#         if boys_form.is_valid() and girls_form.is_valid():
+#             boys_form.save()
+#             girls_form.save()
+#             return redirect("teams")  # or wherever you want
+#     else:
+#         boys_form = MarkEditForm(prefix="boys", instance=boys_mark)
+#         girls_form = MarkEditForm(prefix="girls", instance=girls_mark)
+#
+#     return render(request, "teams/edit_team_marks.html", {
+#         "team": team,
+#         "boys_form": boys_form,
+#         "girls_form": girls_form,
+#     })
 
 class MarkView(generic.ListView):
     template_name = 'index.html'
-    context_object_name = 'marks'
+    context_object_name = 'teams'
 
     def get_queryset(self):
         if not self.request.user.is_authenticated:
-            return Mark.objects.none()
+            return Team.objects.none()
         if hasattr(self.request.user, "madrasa") and self.request.user.madrasa:
             madrasa = self.request.user.madrasa
-            teams = Team.objects.filter(madrasa=madrasa)  # ✅ correct filter
-            return Mark.objects.filter(team__in=teams)
-        return Mark.objects.none()
+            teams = Team.objects.filter(madrasa=madrasa)
+            return teams
+        return Team.objects.none()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        # collect unique teams and compute their grand total
-        teams = {}
-        for mark in context['marks']:
-            if mark.team.id not in teams:
-                teams[mark.team.id] = {
-                    "team": mark.team,
-                    "grand_total": Mark.get_team_grand_total(mark.team)
-                }
-
-        context['teams_with_grand_totals'] = teams.values()
         user = self.request.user
         madrasa = user.madrasa
+        teams_with_totals = Prize.get_team_grand_totals(madrasa)
         context['meelad_fest_name'] = madrasa.meelad_fest_name if user.madrasa else None
-        # context['madrasa_id'] = madrasa.id
+        context['categories'] = Category.objects.filter(madrasa=madrasa)
+        context['teams_with_grand_totals'] = teams_with_totals
         return context
 
 
