@@ -747,3 +747,35 @@ class SampleStudentUploadFileView(View):
 
         return response
 
+
+
+class ResultDetailsView(generic.TemplateView):
+    template_name = 'program/result_details.html'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        madrasa = self.request.user.madrasa
+        context['meelad_fest_name'] = madrasa.meelad_fest_name
+        context['categories'] = Category.objects.filter(madrasa=madrasa)
+        return context
+
+
+
+def category_program_list(request):
+    category_id = request.GET.get('category')
+    madrasa = request.user.madrasa
+    categories = Category.objects.filter(madrasa=madrasa)
+
+    if category_id:
+        selected_category = get_object_or_404(Category, id=category_id)
+        programs = selected_category.programs.all().union(selected_category.programs_for_girls.all())
+    else:
+        programs = Program.objects.all()
+        selected_category = None
+
+    context = {
+        'categories': categories,
+        'programs': programs,
+        'selected_category': selected_category,
+    }
+    return render(request, 'program/result_details.html', context)

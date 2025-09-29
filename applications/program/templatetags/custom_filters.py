@@ -17,6 +17,28 @@ def stage(programs):
 
 
 @register.simple_tag
+def get_participants_count(program):
+    return program.participants.all().count()
+
+
+@register.simple_tag
+def get_results(program, prize='First'):
+    if prize == 'First':
+        first_result = program.prize_set.filter(position__name='first').first()
+        if first_result:
+            return first_result.student.full_name
+    elif prize == 'Second':
+        second_result = program.prize_set.filter(position__name='second').first()
+        if second_result:
+            return second_result.student.full_name
+    elif prize == 'Third':
+        third_result = program.prize_set.filter(position__name='third').first()
+        if third_result:
+            return third_result.student.full_name
+    return None
+
+
+@register.simple_tag
 def get_category_total(category, gender=None, team=None):
     students = Student.objects.filter(category=category)
 

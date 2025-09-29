@@ -1,0 +1,88 @@
+{% extends 'program/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+
+<!-- Dropdown filter -->
+<!-- Dropdown filter (form submits to same page) -->
+<form method="get" action="{% url 'category-programs' %}" class="px-4 mb-6">
+    <label for="category" class="block mb-2 text-gray-700 font-medium">Filter by Category</label>
+    <select id="category" name="category" class="w-full sm:w-64 border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            onchange="this.form.submit()">
+        <option value="">All Categories</option>
+        {% for category in categories %}
+          <option value="{{ category.id }}" {% if selected_category and selected_category.id == category.id %}selected{% endif %}>
+            {{ category.name }}
+          </option>
+        {% endfor %}
+    </select>
+</form>
+
+
+<!-- Table -->
+<div class="px-4 overflow-x-auto">
+  <table class="min-w-full bg-white border rounded-lg shadow">
+    <thead class="bg-indigo-600 text-white">
+      <tr>
+        <th class="px-4 py-3 text-left">Program Name</th>
+        <th class="px-4 py-3 text-left">Participants</th>
+        <th class="px-4 py-3 text-left">First Prize</th>
+        <th class="px-4 py-3 text-left">Second Prize</th>
+        <th class="px-4 py-3 text-left">Third Prize</th>
+        <th class="px-4 py-3 text-center">Result Published</th>
+
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200">
+      {% for program in programs %}
+      <tr data-category="{{ program.category.id }}" class="hover:bg-gray-50 transition">
+        <td class="px-4 py-3">{{ program.title }}</td>
+       <td class="px-4 py-3">{% get_participants_count program %}</td>
+        <td class="px-4 py-3">{% get_results program 'First' %}</td>
+        <td class="px-4 py-3">{% get_results program 'Second' %}</td>
+        <td class="px-4 py-3">{% get_results program 'Third' %}</td>
+        <td class="px-4 py-3 text-center">
+          <input type="checkbox" class="result-toggle cursor-pointer" data-program-id="{{ program.id }}" {% if program.is_result_published %}checked{% endif %}>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" class="px-4 py-3 text-center text-gray-500">No programs available</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+  // Filter logic
+
+
+// Result toggle (editable)
+document.querySelectorAll('.result-toggle').forEach(checkbox => {
+  checkbox.addEventListener('change', async function() {
+    const programId = this.dataset.programId;
+    const isPublished = this.checked;
+
+    try {
+      const response = await fetch(`/program/${programId}/publish_result/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ is_published: isPublished })
+      });
+
+      if (!response.ok) throw new Error('Failed to update result status');
+    } catch (err) {
+      alert(err.message);
+      this.checked = !isPublished;  // revert on error
+    }
+  });
+});
+
+</script>
+
+{% endblock %}
