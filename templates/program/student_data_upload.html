@@ -112,6 +112,13 @@
   </p>
 </div>
 
+
+<!-- Loader Overlay -->
+<div id="loader" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+  <div class="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+</div>
+
+
 <!-- ✅ Header Menu Script -->
 <script>
 const menuBtn = document.getElementById("menu-toggle");
@@ -138,6 +145,9 @@ if (overlay) overlay.addEventListener("click", closeMenu);
   const modalTitle = document.getElementById("modalTitle");
   const modalBody = document.getElementById("modalBody");
 
+  const loader = document.getElementById("loader");
+
+
   function closeModal() {
     modal.classList.add("hidden");
   }
@@ -160,6 +170,8 @@ if (overlay) overlay.addEventListener("click", closeMenu);
     e.preventDefault();
 
     let formData = new FormData(form);
+
+    loader.classList.remove("hidden");
 
     try {
       let response = await fetch("{% url 'upload-students' %}", {
@@ -190,7 +202,10 @@ if (overlay) overlay.addEventListener("click", closeMenu);
       modalTitle.innerText = "❌ Upload Failed";
       modalBody.innerHTML = `<p class="text-red-600">Error: ${err.message}</p>`;
       modal.classList.remove("hidden");
-    }
+    }finally {
+    // Hide loader regardless of success/failure
+    loader.classList.add("hidden");
+  }
   });
 </script>
 

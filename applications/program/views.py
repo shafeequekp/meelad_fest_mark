@@ -615,8 +615,8 @@ class StudentUploadView(generic.TemplateView):
         created, skipped = 0, 0
         errors = []
 
+        to_create = []
         madrasa = request.user.madrasa
-
 
         # Iterate rows (skip header row)
         for idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
@@ -666,25 +666,35 @@ class StudentUploadView(generic.TemplateView):
                 errors.append(f"Row {idx}: Student code '{code}' already registered!")
                 continue
 
-            # Save student
-            student, created = Student.objects.get_or_create(
-                code_number=code,
+            exists = Student.objects.filter(
                 full_name=full_name,
                 gender=gender,
+                code_number=code,
                 team=team,
-                category=category,
-            )
-            if created:
-                created += 1
+                category=category
+            ).exists()
+
+            if not exists:
+                to_create.append(
+                    Student(
+                        code_number=code,
+                        full_name=full_name,
+                        gender=gender,
+                        team=team,
+                        category=category,
+                    )
+                )
+
+        # bulk create only if needed
+        if to_create:
+            Student.objects.bulk_create(to_create)
+            created = len(to_create)
 
         return JsonResponse({
             "created": created,
             "skipped": skipped,
             "errors": errors,
         })
-
-
-
 
 
 class SampleStudentUploadFileView(View):
