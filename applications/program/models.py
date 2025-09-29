@@ -40,13 +40,16 @@ class Student(DateBaseModel):
 
     def clean(self):
         super().clean()
-        if self.code_number:
-            qs = Student.objects.filter(code_number=self.code_number, team__madrasa=self.team.madrasa)
+        if self.code_number and self.team:
+            qs = Student.objects.filter(
+                code_number=self.code_number,
+                team__madrasa=self.team.madrasa
+            )
             if self.pk:
                 qs = qs.exclude(pk=self.pk)
             if qs.exists():
                 raise ValidationError(
-                    {"code_number": _(f"Code number {self.code_number} is already assigned to another student.")}
+                    {"code_number": f"Code number {self.code_number} is already assigned to another student."}
                 )
 
 

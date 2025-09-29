@@ -177,6 +177,7 @@ class CategoryDetailView(generic.DetailView):
         team_id = self.request.GET.get("team")
         try:
             context['team_name'] = Team.objects.get(id=team_id).name
+            context['team_id'] = team_id
         except:
             pass
 
@@ -204,26 +205,28 @@ class CategoryDetailView(generic.DetailView):
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()  # required for DetailView
         category = self.object
-
         team_id = request.GET.get("team")
+        team = Team.objects.get(id=team_id) if team_id else None
 
         if "student_form" in request.POST:
-            student_form = StudentForm(request.POST)
-
+            student_form = StudentForm(request.POST, team=team)
             if student_form.is_valid():
                 student = student_form.save(commit=False)
                 student.category = category
-                if team_id:
-                    student.team = Team.objects.get(id=team_id)
+                if team:
+                    student.team = team
                 student.save()
                 url = reverse("category_detail", kwargs={"pk": category.pk})
                 # Add query param
                 if team_id:
                     url = f"{url}?team={team_id}"
                 return redirect(url)
-            return self.render_to_response(
-                self.get_context_data(student_form=student_form)
-            )
+            else:
+                errors = student_form.errors.as_text()
+                # print(errors)
+                context = self.get_context_data(student_form=student_form)
+                context['errors'] = errors
+                return self.render_to_response(context)
 
         elif "program_form" in request.POST:
             program_form = ProgramForm(request.POST)
@@ -612,14 +615,24 @@ class StudentUploadView(generic.TemplateView):
         created, skipped = 0, 0
         errors = []
 
+        madrasa = request.user.madrasa
+
+
         # Iterate rows (skip header row)
         for idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+            if all(cell is None for cell in row):
+                continue
+
             code, full_name, gender, team_name, category_name = row
+
+            if gender:
+                gender = gender.strip().lower()
 
             if not full_name:
                 skipped += 1
                 errors.append(f"Row {idx}: Full Name is required")
                 continue
+            full_name = full_name.strip()
 
             # Validate gender
             if gender not in dict(Student.GENDER).keys():
@@ -630,25 +643,39 @@ class StudentUploadView(generic.TemplateView):
             # Get or create Team
             team = None
             if team_name:
-                team, _ = Team.objects.get_or_create(name=team_name)
+                team_name = team_name.strip()
+                try:
+                    team = Team.objects.get(name=team_name, madrasa=madrasa)
+                except Team.DoesNotExist:
+                    skipped += 1
+                    errors.append(f"Row {idx}: Team '{team_name}' not found")
+                    continue
 
             # Get Category
+            if category_name:
+                category_name = category_name.strip()
             try:
-                category = Category.objects.get(name=category_name)
+                category = Category.objects.get(name=category_name, madrasa=madrasa)
             except Category.DoesNotExist:
                 skipped += 1
                 errors.append(f"Row {idx}: Category '{category_name}' not found")
                 continue
 
+            if Student.objects.exclude(full_name__iexact=full_name).filter(code_number=code, team__madrasa=team.madrasa).exists():
+                skipped += 1
+                errors.append(f"Row {idx}: Student code '{code}' already registered!")
+                continue
+
             # Save student
-            Student.objects.create(
+            student, created = Student.objects.get_or_create(
                 code_number=code,
                 full_name=full_name,
                 gender=gender,
                 team=team,
                 category=category,
             )
-            created += 1
+            if created:
+                created += 1
 
         return JsonResponse({
             "created": created,
@@ -703,7 +730,7 @@ class SampleStudentUploadFileView(View):
         response = HttpResponse(
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-        response["Content-Disposition"] = 'attachment; filename="sample_student_upload.xlsx"'
+        response["Content-Disposition"] = 'attachment; filename="student_upload.xlsx"'
 
         # Save workbook to response
         wb.save(response)

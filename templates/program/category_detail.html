@@ -138,6 +138,7 @@ function toggleModal(id, gender = null) {
         <a href="{% url 'home' %}" class="text-sm md:text-base text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg shadow">Home</a>
         <a href="{% url 'teams' %}" class="text-sm md:text-base text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg shadow">Teams</a>
         <a href="{% url 'program_list' %}" class="text-sm md:text-base text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg shadow">Programs</a>
+         <a href="{% url 'upload-students' %}" class="text-sm md:text-base text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg shadow">Upload Students</a>
         <a href="{{ category_url }}" class="text-sm md:text-base text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg shadow">Categories</a>
       </div>
 
@@ -160,6 +161,7 @@ function toggleModal(id, gender = null) {
       <a href="{% url 'home' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-gray-50">Home</a>
       <a href="{% url 'teams' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-gray-50">Teams</a>
       <a href="{% url 'program_list' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-gray-50">Programs</a>
+      <a href="{% url 'upload-students' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-gray-50">Upload Students</a>
       <a href="{{ category_url }}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-gray-50">Categories</a>
     </nav>
   </div>
@@ -178,7 +180,11 @@ function toggleModal(id, gender = null) {
   </div>
 </div>
 
-
+   {% if errors %}
+  <div class="bg-red-100 text-red-700 p-2 rounded mb-2">
+      <p>{{ errors }}</p>
+  </div>
+{% endif %}
 
 
 <!-- Boys Section -->
@@ -436,7 +442,7 @@ function toggleModal(id, gender = null) {
 <div id="studentModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
   <div class="modal-content bg-white rounded-xl shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto relative">
     <h3 class="text-lg font-semibold mb-4 text-center">Add Student</h3>
-    <form method="post" class="space-y-4">
+    <form method="post" action="{% url 'category_detail' category.id %}?team={{ team_id }}" class="space-y-4">
       {% csrf_token %}
       {{ student_form.as_p }}
       <div class="flex justify-center gap-4">

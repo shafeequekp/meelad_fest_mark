@@ -26,11 +26,31 @@ class StudentForm(forms.ModelForm):
             ),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, team=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['gender'].required = True
         # Optional: add a placeholder like "-- Select Gender --"
         self.fields['gender'].empty_label = "-- Select Gender --"
+        self.team = team  # inject team from view
+
+    def clean(self):
+        cleaned_data = super().clean()
+        code_number = cleaned_data.get("code_number")
+
+        if code_number and self.team:
+            qs = Student.objects.filter(
+                code_number=code_number,
+                team__madrasa=self.team.madrasa
+            )
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                self.add_error(
+                    "code_number",
+                    f"Code number {code_number} is already assigned to another student."
+                )
+
+        return cleaned_data
 
 
 class ProgramForm(forms.ModelForm):
