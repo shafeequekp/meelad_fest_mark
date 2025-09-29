@@ -12,7 +12,7 @@ class CategoryAdmin(admin.ModelAdmin):
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
     list_display = ('full_name', 'gender', 'code_number', 'category', 'team', 'total_point')
-    list_filter = ('gender', 'category', 'team')
+    list_filter = ('gender', 'category', 'team', 'team__madrasa')
     search_fields = ('full_name', 'code_number')
 
 

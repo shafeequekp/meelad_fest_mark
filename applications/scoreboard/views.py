@@ -96,8 +96,12 @@ class MarkView(generic.ListView):
         madrasa = user.madrasa
         teams_with_totals = Prize.get_team_grand_totals(madrasa)
         context['meelad_fest_name'] = madrasa.meelad_fest_name if user.madrasa else None
-        context['categories'] = Category.objects.filter(madrasa=madrasa)
+        categories = Category.objects.filter(madrasa=madrasa)
+        context['categories'] = categories
         context['teams_with_grand_totals'] = teams_with_totals
+        from applications.program.models import Student, Program
+        context["total_students"] = Student.objects.filter(team__madrasa=madrasa).count()
+        context["total_programs"] = Program.objects.filter(category__in=categories).distinct().count()
         return context
 
 
