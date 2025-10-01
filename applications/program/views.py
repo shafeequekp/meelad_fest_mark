@@ -19,6 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.template.loader import get_template
 from django.views.decorators.http import require_POST
 from django.db import transaction
+from django.db.models import Case, When, Value, BooleanField, Q
 
 from applications.scoreboard.models import Team
 from applications.program.models import Category, Program, Student, Prize, Position, Grade
@@ -258,8 +259,12 @@ class AddProgramToStudentView(View):
 
         program_ids = request.POST.getlist("programs")  # multi-select
         programs = Program.objects.filter(id__in=program_ids)
-        for program in programs:
-            program.participants.add(student)
+
+        # reset student programs
+        student.program_set.set(programs)
+
+        # for program in programs:
+        #     program.participants.add(student)
 
         # Redirect back to the same page or student detail page
         team_id = student.team.id if student.team else None
@@ -341,6 +346,7 @@ def program_participants_json(request, pk):
                 "mark1": "",
                 "mark2": "",
                 "remarks": "",
+                "team": p.team.name
             }
             for p in participants
         ],
@@ -518,15 +524,19 @@ def save_prize(request, program_id):
 
     # Data from request.POST
     data = json.loads(request.body.decode("utf-8"))
+    print(data, 'dddddddddddd')
     first_prize_id = data.get("first")
     second_prize_id = data.get("second")
     third_prize_id = data.get("third")
     gradeA_id = data.get("gradeA")
     gradeB_id = data.get("gradeB")
+    gradeC_id = data.get("gradeC")
     remarks = data.get("remarks", "")
+
 
     created_prizes = []
 
+    print(first_prize_id, 'ffffffffffff')
     # Save prizes
     if first_prize_id:
         student = get_object_or_404(Student, id=first_prize_id)
@@ -573,6 +583,15 @@ def save_prize(request, program_id):
             defaults={"grade": grade, "remarks": remarks}
         )
         created_prizes.append(prize.id)
+    if gradeC_id:
+        student = get_object_or_404(Student, id=gradeC_id)
+        grade = get_object_or_404(Grade, name="c_grade")
+        prize, _ = Prize.objects.update_or_create(
+            student=student, program=program,
+            defaults={"grade": grade, "remarks": remarks}
+        )
+        created_prizes.append(prize.id)
+    print(created_prizes, 'aaaaaaaaa')
 
     return JsonResponse({"message": "success", "created_prizes": created_prizes})
 
@@ -580,7 +599,10 @@ def save_prize(request, program_id):
 
 def publish_result(request, program_id):
     program = get_object_or_404(Program, id=program_id)
-    program.is_result_published = True
+    if program.is_result_published:
+        program.is_result_published = False
+    else:
+        program.is_result_published = True
     program.save()
     return JsonResponse({"message": "success"})
 
@@ -757,6 +779,7 @@ class ResultDetailsView(generic.TemplateView):
         madrasa = self.request.user.madrasa
         context['meelad_fest_name'] = madrasa.meelad_fest_name
         context['categories'] = Category.objects.filter(madrasa=madrasa)
+        context['result_page'] = True
         return context
 
 
@@ -768,14 +791,45 @@ def category_program_list(request):
 
     if category_id:
         selected_category = get_object_or_404(Category, id=category_id)
-        programs = selected_category.programs.all().union(selected_category.programs_for_girls.all())
+        programs_for_boys = (
+            selected_category.programs.all()
+            .annotate(
+                published=Case(
+                    When(prize__isnull=False, then=Value(True)),
+                    default=Value(False),
+                    output_field=BooleanField()
+                )
+            )
+            .order_by('-published').distinct()  # Descending: True (has prize) comes first
+        )
+        programs_for_girls = (selected_category.programs_for_girls.all().annotate(
+                published=Case(
+                    When(prize__isnull=False, then=Value(True)),
+                    default=Value(False),
+                    output_field=BooleanField()
+                )
+            )
+            .order_by('-published').distinct()
+                              )
     else:
-        programs = Program.objects.all()
+        programs_for_boys = programs_for_girls = Program.objects.all()
         selected_category = None
 
     context = {
         'categories': categories,
-        'programs': programs,
+        'programs_for_boys': programs_for_boys,
+        'programs_for_girls': programs_for_girls,
         'selected_category': selected_category,
+        'result_page': True,
     }
     return render(request, 'program/result_details.html', context)
+
+
+def participant_search(request, program_id):
+    q = request.GET.get("q", "")
+    participants = (
+        Program.objects.get(id=program_id).participants
+        .filter(Q(full_name__icontains=q) | Q(code_number__startswith=q))
+        .values("id", "full_name", "code_number")[:20]  # limit results
+    )
+    return JsonResponse({"participants": list(participants)})

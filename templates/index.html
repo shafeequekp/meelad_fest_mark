@@ -96,13 +96,10 @@
             <div class="hidden sm:flex space-x-2">
 
                 <button id="profile-btn" class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow hover:scale-105 transition">
-  <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-full h-full object-cover">
-</button>
+                    <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-full h-full object-cover">
+                </button>
 
-                 <a href="{% url 'results' %}"
-                   class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
-                    Results
-                </a>
+
                 <a href="{% url 'teams' %}"
                    class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
                     Teams
@@ -112,14 +109,15 @@
                     Programs
                 </a>
 
-                 <a href="{% url 'upload-students' %}"
+                <a href="{% url 'upload-students' %}"
                    class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
                     Upload Data
                 </a>
-                <a href="{% url 'logout' %}"
+                <a href="{% url 'results' %}"
                    class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
-                    Logout
+                    Results
                 </a>
+
             </div>
 
             <!-- Mobile Hamburger (now on right side) -->
@@ -146,14 +144,14 @@
     </div>
     <nav class="p-4 space-y-3">
         <a href="javascript:void(0)" id="profile-btn-mobile" class="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-indigo-50">
-  <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-8 h-8 rounded-full object-cover border">
-  <span class="text-indigo-600 font-semibold">Profile</span>
-</a>
+            <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-8 h-8 rounded-full object-cover border">
+            <span class="text-indigo-600 font-semibold">Profile</span>
+        </a>
 
         <a href="{% url 'teams' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Teams</a>
         <a href="{% url 'program_list' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Programs</a>
-        <a href="{% url 'upload-students' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Upload Data</a>
-        <a href="{% url 'logout' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Logout</a>
+        <a href="{% url 'upload-students' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Upload Students</a>
+
     </nav>
 </div>
 
@@ -167,6 +165,7 @@
 <div class="relative max-w-4xl mx-auto mt-10">
     <div id="slider" class="relative overflow-hidden">
 
+        {% if teams and categories %}
         {% for team in teams %}
         <!-- Each Section Slide -->
 
@@ -201,7 +200,7 @@
                 transform hover:scale-105 transition card-animate">
                         <h3 class="text-xl font-bold flex items-center gap-2">👑 Super Senior</h3>
                         <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                           <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
+                            <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
                         </p>
                     </div>
 
@@ -241,7 +240,7 @@
                 transform hover:scale-105 transition card-animate">
                         <h3 class="text-xl font-bold flex items-center gap-2">🧸 Kiddies</h3>
                         <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                             <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
+                            <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
                         </p>
                     </div>
 
@@ -271,7 +270,7 @@
 
         <!--        Girls section-->
         <div class="slide hidden fade">
-        <div class="p-6">
+            <div class="p-6">
                 <!-- Team Name -->
 
                 <div class="text-center mb-8">
@@ -300,7 +299,7 @@
                 transform hover:scale-105 transition card-animate">
                         <h3 class="text-xl font-bold flex items-center gap-2">👑 Super Senior</h3>
                         <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                           <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
+                            <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
                         </p>
                     </div>
 
@@ -340,7 +339,7 @@
                 transform hover:scale-105 transition card-animate">
                         <h3 class="text-xl font-bold flex items-center gap-2">🧸 Kiddies</h3>
                         <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                             <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
+                            <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
                         </p>
                     </div>
 
@@ -397,6 +396,13 @@
         </div>
 
 
+        {% else %}
+
+        <div class="p-6">
+            <h1 style="color:red" class="text-2xl sm:text-3xl font-bold text-center flex-1">No teams added!<br> please add teams and categories</h1>
+           <img src="{% static 'images/no-data.gif' %}" style="display: block; margin: 0 auto;">
+
+        {% endif %}
     </div>
 </div>
 
@@ -553,31 +559,39 @@ function startCountersIn(container) {
 
 <!-- Profile Popup -->
 <div id="profileModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-xl shadow-2xl p-6 w-96">
-    <div class="flex items-center space-x-4 mb-6">
-      <img src="{% static 'images/profile.png' %}" alt="Profile"
-           class="w-16 h-16 rounded-full object-cover border-4 border-indigo-600 shadow">
-      <div>
-        <h2 class="text-xl font-bold text-indigo-700">{{ request.user.get_full_name }}</h2>
-        <p class="text-gray-500">{{ request.user.email }}</p>
-      </div>
-    </div>
+    <div class="bg-white rounded-xl shadow-2xl p-6 w-96">
+        <div class="flex items-center space-x-4 mb-6">
+            <img src="{% static 'images/profile.png' %}" alt="Profile"
+                 class="w-16 h-16 rounded-full object-cover border-4 border-indigo-600 shadow">
+            <div>
+                <h2 class="text-xl font-bold text-indigo-700">{{ request.user.get_full_name }}</h2>
+                <p class="text-gray-500">{{ request.user.email }}</p>
+            </div>
+        </div>
 
-    <div class="space-y-2 text-gray-700">
-      <p><strong>📞 Phone:</strong> {{ request.user.phone }}</p>
-      <p><strong>🏫 Madrasa:</strong> {{ request.user.madrasa.name }}</p>
-      <p><strong>🎉 Fest:</strong> {{ meelad_fest_name }}</p>
-      <p><strong>👨‍🎓 Total Students:</strong> {{ total_students }}</p>
-      <p><strong>📚 Total Programs:</strong> {{ total_programs }}</p>
-    </div>
+        <div class="space-y-2 text-gray-700">
+            <p><strong>📞 Phone:</strong> {{ request.user.phone }}</p>
+            <p><strong>🏫 Madrasa:</strong> {{ request.user.madrasa.name }}</p>
+            <p><strong>🎉 Fest:</strong> {{ meelad_fest_name }}</p>
+            <p><strong>👨‍🎓 Total Students:</strong> {{ total_students }}</p>
+            <p><strong>📚 Total Programs:</strong> {{ total_programs }}</p>
+        </div>
 
-    <div class="mt-6 flex justify-end">
-      <button onclick="closeProfile()"
-              class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 shadow">
-        Close
-      </button>
+        <div class="mt-6 flex justify-center gap-4">
+            <!-- Logout Button -->
+            <a href="{% url 'logout' %}"
+               class="px-5 py-2 bg-red-500 text-white font-semibold rounded-lg shadow-lg hover:bg-red-600 transition transform hover:-translate-y-0.5">
+                🔓 Logout
+            </a>
+
+            <!-- Close Button -->
+            <button onclick="closeProfile()"
+                    class="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:bg-indigo-700 transition transform hover:-translate-y-0.5">
+                ✖ Close
+            </button>
+        </div>
+
     </div>
-  </div>
 </div>
 
 

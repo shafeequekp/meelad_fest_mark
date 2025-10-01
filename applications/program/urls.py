@@ -23,11 +23,12 @@ urlpatterns = [
     path("student-registration/", views.StudentRegistrationView.as_view(), name="student_registration"),
     path('programs/', views.ProgramListView.as_view(), name='program_list'),
 
+    path("<int:program_id>/participants/search/", views.participant_search, name="participant_search"),
+
     path('upload-students/', views.StudentUploadView.as_view(), name='upload-students'),
     path('download-sample-file/', views.SampleStudentUploadFileView.as_view(), name='download-sample-file'),
 
     path('results/', views.ResultDetailsView.as_view(), name='results'),
-
-    path('category-programs/', views.category_program_list, name='category-programs'),
+    path('results/category-programs/', views.category_program_list, name='category-programs'),
 
 ]

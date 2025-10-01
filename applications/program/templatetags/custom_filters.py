@@ -21,6 +21,10 @@ def get_participants_count(program):
     return program.participants.all().count()
 
 
+@register.filter
+def is_result_added(program):
+    return program.prize_set.exists()
+
 @register.simple_tag
 def get_results(program, prize='First'):
     if prize == 'First':
@@ -35,7 +39,7 @@ def get_results(program, prize='First'):
         third_result = program.prize_set.filter(position__name='third').first()
         if third_result:
             return third_result.student.full_name
-    return None
+    return 'Not Published'
 
 
 @register.simple_tag
@@ -50,12 +54,16 @@ def get_category_total(category, gender=None, team=None):
     student_ids = students.values_list("id", flat=True)
 
     # Sum position marks
-    pos_marks = Prize.objects.filter(student_id__in=student_ids, position__isnull=False).aggregate(
+    pos_marks = Prize.objects.filter(
+        student_id__in=student_ids, position__isnull=False, program__is_result_published=True
+    ).aggregate(
         total=Sum("position__mark")
     )["total"] or 0
 
     # Sum grade marks
-    grade_marks = Prize.objects.filter(student_id__in=student_ids, grade__isnull=False).aggregate(
+    grade_marks = Prize.objects.filter(
+        student_id__in=student_ids, grade__isnull=False, program__is_result_published=True
+    ).aggregate(
         total=Sum("grade__mark")
     )["total"] or 0
 
@@ -69,12 +77,16 @@ def get_section_total(gender, team):
     student_ids = students.values_list("id", flat=True)
 
     # Sum position marks
-    pos_marks = Prize.objects.filter(student_id__in=student_ids, position__isnull=False).aggregate(
+    pos_marks = Prize.objects.filter(
+        student_id__in=student_ids, position__isnull=False, program__is_result_published=True
+    ).aggregate(
         total=Sum("position__mark")
     )["total"] or 0
 
     # Sum grade marks
-    grade_marks = Prize.objects.filter(student_id__in=student_ids, grade__isnull=False).aggregate(
+    grade_marks = Prize.objects.filter(
+        student_id__in=student_ids, grade__isnull=False, program__is_result_published=True
+    ).aggregate(
         total=Sum("grade__mark")
     )["total"] or 0
 

@@ -20,6 +20,7 @@ class StudentAdmin(admin.ModelAdmin):
 class ProgramAdmin(admin.ModelAdmin):
     list_display = ('title', 'category_display', 'slug', 'non_stage', 'is_result_published')
     list_editable = ['non_stage', 'is_result_published']
+    list_filter = ['non_stage', 'venue']
     search_fields = ('title',)
     filter_horizontal = ['participants']
 

@@ -1,6 +1,6 @@
 {% load static %}
 
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -66,11 +66,15 @@
         <button id="profile-btn" class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow hover:scale-105 transition">
           <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-full h-full object-cover">
         </button>
-        <a href="{% url 'results' %}" class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">Results</a>
+
+        {% if not home_page %}
+         <a href="{% url 'home' %}" class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">Home</a>
+        {% endif %}
         <a href="{% url 'teams' %}" class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">Teams</a>
         <a href="{% url 'program_list' %}" class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">Programs</a>
         <a href="{% url 'upload-students' %}" class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">Upload Data</a>
-        <a href="{% url 'logout' %}" class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">Logout</a>
+ {% if not result_page %}
+        <a href="{% url 'results' %}" class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">Results</a>{% endif %}
       </div>
 
       <!-- Mobile Hamburger -->
@@ -97,10 +101,12 @@
       <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-8 h-8 rounded-full object-cover border">
       <span class="text-indigo-600 font-semibold">Profile</span>
     </a>
-    <a href="{% url 'results' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Results</a>
+
     <a href="{% url 'teams' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Teams</a>
     <a href="{% url 'program_list' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Programs</a>
     <a href="{% url 'upload-students' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Upload Data</a>
+     {% if not result_page %}
+    <a href="{% url 'results' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Results</a>{% endif %}
     <a href="{% url 'logout' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Logout</a>
   </nav>
 </div>
