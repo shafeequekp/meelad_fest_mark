@@ -184,8 +184,8 @@ class CategoryDetailView(generic.DetailView):
 
         host_url = f"{self.request.scheme}://{self.request.get_host()}"
         context['category_url'] = f'{host_url}/program/categories?team={team_id}'
-        context["boys"] = Student.objects.filter(category=category, gender='male', team_id=team_id)
-        context['girls'] = Student.objects.filter(category=category, gender='female', team_id=team_id)
+        context["boys"] = Student.objects.filter(category=category, gender='male', team_id=team_id).order_by('-total_point')
+        context['girls'] = Student.objects.filter(category=category, gender='female', team_id=team_id).order_by('-total_point')
 
         boys_programs = category.programs.all()
         girls_programs = category.programs_for_girls.all()
@@ -200,6 +200,8 @@ class CategoryDetailView(generic.DetailView):
         # forms (empty forms for GET)
         context["student_form"] = kwargs.get("student_form") or StudentForm()
         context["program_form"] = kwargs.get("program_form") or ProgramForm()
+
+        context["form_url"] = f'{host_url}/program/student-registration/?madrasa_id={self.request.user.madrasa.id}'
 
         return context
 
@@ -524,7 +526,6 @@ def save_prize(request, program_id):
 
     # Data from request.POST
     data = json.loads(request.body.decode("utf-8"))
-    print(data, 'dddddddddddd')
     first_prize_id = data.get("first")
     second_prize_id = data.get("second")
     third_prize_id = data.get("third")
@@ -536,7 +537,6 @@ def save_prize(request, program_id):
 
     created_prizes = []
 
-    print(first_prize_id, 'ffffffffffff')
     # Save prizes
     if first_prize_id:
         student = get_object_or_404(Student, id=first_prize_id)
@@ -545,6 +545,8 @@ def save_prize(request, program_id):
             student=student, program=program,
             defaults={"position": pos, "remarks": remarks}
         )
+        student.total_point += pos.mark
+        student.save()
         created_prizes.append(prize.id)
 
     if second_prize_id:
@@ -554,6 +556,8 @@ def save_prize(request, program_id):
             student=student, program=program,
             defaults={"position": pos, "remarks": remarks}
         )
+        student.total_point += pos.mark
+        student.save()
         created_prizes.append(prize.id)
 
     if third_prize_id:
@@ -563,6 +567,8 @@ def save_prize(request, program_id):
             student=student, program=program,
             defaults={"position": pos, "remarks": remarks}
         )
+        student.total_point += pos.mark
+        student.save()
         created_prizes.append(prize.id)
 
         # --- Handle Grades ---
@@ -573,6 +579,8 @@ def save_prize(request, program_id):
             student=student, program=program,
             defaults={"grade": grade, "remarks": remarks}
         )
+        student.total_point += grade.mark
+        student.save()
         created_prizes.append(prize.id)
 
     if gradeB_id:
@@ -582,6 +590,8 @@ def save_prize(request, program_id):
             student=student, program=program,
             defaults={"grade": grade, "remarks": remarks}
         )
+        student.total_point += grade.mark
+        student.save()
         created_prizes.append(prize.id)
     if gradeC_id:
         student = get_object_or_404(Student, id=gradeC_id)
@@ -590,6 +600,8 @@ def save_prize(request, program_id):
             student=student, program=program,
             defaults={"grade": grade, "remarks": remarks}
         )
+        student.total_point += grade.mark
+        student.save()
         created_prizes.append(prize.id)
     print(created_prizes, 'aaaaaaaaa')
 
@@ -821,6 +833,7 @@ def category_program_list(request):
         'programs_for_girls': programs_for_girls,
         'selected_category': selected_category,
         'result_page': True,
+        'meelad_fest_name': madrasa.meelad_fest_name,
     }
     return render(request, 'program/result_details.html', context)
 
@@ -833,3 +846,32 @@ def participant_search(request, program_id):
         .values("id", "full_name", "code_number")[:20]  # limit results
     )
     return JsonResponse({"participants": list(participants)})
+
+
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_object_or_404
+from .models import Program, Student
+
+def get_program_participants(request, pk):
+    program = get_object_or_404(Program, pk=pk)
+    participants = program.participants.values("id", "full_name", "code_number")
+    students = Student.objects.filter(team__madrasa=request.user.madrasa).values("id", "full_name", "code_number")
+
+    return JsonResponse({
+        "title": program.title,
+        "participants": list(participants),
+        "students": list(students),
+    })
+
+@csrf_exempt
+def save_program_participants(request, pk):
+    program = get_object_or_404(Program, pk=pk)
+    if request.method == "POST":
+        ids = request.POST.getlist("participants")
+        program.participants.set(ids)
+        return JsonResponse({"message": "Participants saved successfully!"})
+    return JsonResponse({"error": "Invalid request"}, status=400)
+

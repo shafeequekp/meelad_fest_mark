@@ -50,10 +50,6 @@
         <!-- Desktop Buttons -->
         <div class="hidden md:flex items-center space-x-3">
 
- <button id="profile-btn" class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow hover:scale-105 transition">
-  <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-full h-full object-cover">
-</button>
-
           <a href="{% url 'home' %}" class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">
             Home
           </a>
@@ -74,6 +70,9 @@
               Note: Please copy this link and share with team leaders to add their members' programs.
             </div>
           </div>
+           <button id="profile-btn" class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow hover:scale-105 transition">
+  <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-full h-full object-cover">
+</button>
 
         </div>
 

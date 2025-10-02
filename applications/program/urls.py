@@ -28,7 +28,10 @@ urlpatterns = [
     path('upload-students/', views.StudentUploadView.as_view(), name='upload-students'),
     path('download-sample-file/', views.SampleStudentUploadFileView.as_view(), name='download-sample-file'),
 
-    path('results/', views.ResultDetailsView.as_view(), name='results'),
-    path('results/category-programs/', views.category_program_list, name='category-programs'),
+    path('results/category-programs/', views.category_program_list, name='results'),
+
+
+    path("<int:pk>/participant-data/", views.get_program_participants, name="get_program_participant_data"),
+    path("<int:pk>/participants/save/", views.save_program_participants, name="save_program_participants"),
 
 ]

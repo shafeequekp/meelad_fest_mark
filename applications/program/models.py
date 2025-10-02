@@ -120,7 +120,7 @@ class Prize(DateBaseModel):
         """
         return (
             Prize.objects
-            .filter(student__team__madrasa=madrasa)  # <-- filter by madrasa
+            .filter(student__team__madrasa=madrasa, program__is_result_published=True)
             .values("student__team__id", "student__team__name")
             .annotate(
                 pos_total=Coalesce(Sum("position__mark"), 0.0),

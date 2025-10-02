@@ -1,3 +1,5 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -122,8 +124,8 @@ function toggleModal(id, gender = null) {
 <body class="bg-gray-50 min-h-screen p-4 md:p-6">
 
 <!-- Header -->
-<header class="mb-6 md:mb-8 bg-white shadow relative z-50">
-  <div class="flex justify-between items-center max-w-5xl mx-auto px-4 py-3">
+<header class="mb-10 bg-white shadow relative z-50">
+  <div class="flex items-center justify-between px-4 py-3">
 
     <!-- Left: Title -->
     <h1 class="text-xl md:text-2xl font-bold text-indigo-700">
@@ -135,11 +137,26 @@ function toggleModal(id, gender = null) {
 
       <!-- Desktop Buttons -->
       <div class="hidden md:flex items-center space-x-2">
+
         <a href="{% url 'home' %}" class="text-sm md:text-base text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg shadow">Home</a>
         <a href="{% url 'teams' %}" class="text-sm md:text-base text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg shadow">Teams</a>
         <a href="{% url 'program_list' %}" class="text-sm md:text-base text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg shadow">Programs</a>
          <a href="{% url 'results' %}" class="text-sm md:text-base text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg shadow">Results</a>
+        <a href="{% url 'upload-students' %}" class="text-sm md:text-base text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg shadow">Student upload</a>
         <a href="{{ category_url }}" class="text-sm md:text-base text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg shadow">Categories</a>
+
+        <div class="relative group">
+            <button onclick="copyFormLink()" class="px-3 md:px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">
+              🔗 Copy Form Link
+            </button>
+            <div class="absolute right-0 mt-2 w-64 p-2 bg-gray-100 text-gray-700 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 hidden md:block">
+              Note: Please copy this link and share with team leaders to add their members' programs.
+            </div>
+          </div>
+
+         <button id="profile-btn" class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow hover:scale-105 transition">
+  <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-full h-full object-cover">
+</button>
       </div>
 
       <!-- Mobile Hamburger -->
@@ -158,11 +175,23 @@ function toggleModal(id, gender = null) {
       <button id="menu-close-btn" class="text-gray-600 hover:text-indigo-700 focus:outline-none">✕</button>
     </div>
     <nav class="p-4 space-y-3">
+      <a href="javascript:void(0)" id="profile-btn-mobile" class="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-indigo-50">
+  <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-8 h-8 rounded-full object-cover border">
+  <span class="text-indigo-600 font-semibold">Profile</span>
+</a>
       <a href="{% url 'home' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-gray-50">Home</a>
       <a href="{% url 'teams' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-gray-50">Teams</a>
       <a href="{% url 'program_list' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-gray-50">Programs</a>
-      <a href="{% url 'results' %}" class="text-sm md:text-base text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg shadow">Results</a>
+      <a href="{% url 'results' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-gray-50">Results</a>
+      <a href="{% url 'upload-students' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-gray-50">Student upload</a>
       <a href="{{ category_url }}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-gray-50">Categories</a>
+
+      <button onclick="copyFormLink()" class="w-full text-left px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">
+        🔗 Copy Form Link
+      </button>
+      <p class="text-gray-500 text-sm mt-1">
+        Note: Please copy this link and share with team leaders to add their members' programs.
+      </p>
     </nav>
   </div>
 
@@ -226,10 +255,24 @@ function toggleModal(id, gender = null) {
   </div>
   <ul class="space-y-2">
     {% for student in boys %}
-    <li>
-      <button onclick="toggleModal('modal-{{ student.id }}')" class="w-full p-2 text-left bg-gray-100 rounded hover:bg-gray-200">
-        {{ student.full_name }} ({{ student.code_number }})
-      </button>
+    <li class="relative">
+       {% if forloop.counter == 1 and student.total_point %}
+    <span class="absolute -top-1 -left-1 bg-yellow-500 text-white text-xs px-2 py-0.8 rounded-tr-lg rounded-bl-lg shadow">
+      ⭐
+    </span>
+  {% endif %}
+
+  <button onclick="toggleModal('modal-{{ student.id }}')"
+    class="w-full p-2 text-left bg-gray-100 rounded hover:bg-gray-200 flex justify-between items-center">
+
+    <span>
+      {{ student.full_name }} ({{ student.code_number }})
+    </span>
+    <span class="text-sm font-semibold text-indigo-700">
+      {{ student.total_point|floatformat:0 }} pts
+    </span>
+  </button>
+
       <!-- Student Programs Modal -->
       <div id="modal-{{ student.id }}" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div class="modal-content bg-white rounded-xl shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto relative">
@@ -284,16 +327,27 @@ function toggleModal(id, gender = null) {
         </div>
 
         <h3 class="text-lg md:text-xl font-semibold text-red-400">Stage</h3><br>
+
+
         <ul class="space-y-2">
-          {% for program in boys_stage_programs %}
-          <li class="p-2 bg-gray-100 rounded">
-            <strong>{{ program.title }}</strong><br>
-            <span class="text-sm text-gray-500">{{ program.description }}</span>
-          </li>
-          {% empty %}
-          <li class="text-gray-400 italic">No programs yet.</li>
-          {% endfor %}
-        </ul>
+  {% for program in boys_stage_programs %}
+    <li class="p-2 bg-gray-100 rounded">
+      {% if category.name|lower == 'general' %}
+        <button onclick="openProgramModal({{ program.id }})"
+                class="w-full text-left font-semibold hover:text-indigo-600">
+          {{ program.title }}
+        </button>
+        <p class="text-sm text-gray-500">{{ program.description }}</p>
+      {% else %}
+        <strong>{{ program.title }}</strong><br>
+        <span class="text-sm text-gray-500">{{ program.description }}</span>
+      {% endif %}
+    </li>
+  {% empty %}
+    <li class="text-gray-400 italic">No programs yet.</li>
+  {% endfor %}
+</ul>
+
 
         <br>
         <h3 class="text-lg md:text-xl font-semibold text-red-400">Non Stage</h3><br>
@@ -356,10 +410,23 @@ function toggleModal(id, gender = null) {
         </div>
         <ul class="space-y-2">
           {% for student in girls %}
-          <li>
-            <button onclick="toggleModal('modal-{{ student.id }}')" class="w-full p-2 text-left bg-gray-100 rounded hover:bg-gray-200">
-              {{ student.full_name }} ({{ student.code_number }})
-            </button>
+          <li class="relative">
+       {% if forloop.counter == 1 and student.total_point %}
+    <span class="absolute -top-1 -left-1 bg-yellow-500 text-white text-xs px-2 py-0.8 rounded-tr-lg rounded-bl-lg shadow">
+      ⭐
+    </span>
+  {% endif %}
+
+  <button onclick="toggleModal('modal-{{ student.id }}')"
+    class="w-full p-2 text-left bg-gray-100 rounded hover:bg-gray-200 flex justify-between items-center">
+
+    <span>
+      {{ student.full_name }} ({{ student.code_number }})
+    </span>
+    <span class="text-sm font-semibold text-indigo-700">
+      {{ student.total_point|floatformat:0 }} pts
+    </span>
+  </button>
             <!-- Student Programs Modal (same as above) -->
              <div id="modal-{{ student.id }}" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div class="modal-content bg-white rounded-xl shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto relative">
@@ -468,6 +535,171 @@ function toggleModal(id, gender = null) {
     </form>
   </div>
 </div>
+
+
+<!-- Reusable Modal -->
+<div id="program-modal"
+     class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
+    <h3 class="text-lg font-semibold mb-4" id="modal-title">Add Participants</h3>
+
+    <!-- Already Selected -->
+    <div id="already-selected" class="mb-4 hidden p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+      <h4 class="text-sm font-semibold text-indigo-700 mb-2">Already Selected:</h4>
+      <ul id="selected-list" class="list-disc list-inside text-sm text-gray-700 space-y-1"></ul>
+    </div>
+
+    <!-- Form -->
+    <form id="program-form">
+      {% csrf_token %}
+      <label class="block mb-2 text-gray-700">Select Participants:</label>
+      <select name="participants" id="participants-select" multiple
+              class="w-full border rounded-lg p-2 h-40"></select>
+
+      <div class="mt-4 flex justify-end gap-2">
+        <button type="button" onclick="closeModal()"
+                class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+        <button type="submit"
+                class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+
+<!-- Profile Popup -->
+<div id="profileModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-2xl p-6 w-96">
+    <div class="flex items-center space-x-4 mb-6">
+      <img src="{% static 'images/profile.png' %}" alt="Profile"
+           class="w-16 h-16 rounded-full object-cover border-4 border-indigo-600 shadow">
+      <div>
+        <h2 class="text-xl font-bold text-indigo-700">{{ request.user.get_full_name }}</h2>
+        <p class="text-gray-500">{{ request.user.email }}</p>
+      </div>
+    </div>
+
+    <div class="space-y-2 text-gray-700">
+      <p><strong>📞 Phone:</strong> {{ request.user.phone }}</p>
+      <p><strong>🏫 Madrasa:</strong> {{ request.user.madrasa.name }}</p>
+      <p><strong>🎉 Fest:</strong> {{ meelad_fest_name }}</p>
+      <p><strong>👨‍🎓 Total Students:</strong> {{ total_students }}</p>
+      <p><strong>📚 Total Programs:</strong> {{ total_programs }}</p>
+    </div>
+
+ <div class="mt-6 flex justify-center gap-4">
+  <!-- Logout Button -->
+  <a href="{% url 'logout' %}"
+     class="px-5 py-2 bg-red-500 text-white font-semibold rounded-lg shadow-lg hover:bg-red-600 transition transform hover:-translate-y-0.5">
+    🔓 Logout
+  </a>
+
+  <!-- Close Button -->
+  <button onclick="closeProfile()"
+          class="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:bg-indigo-700 transition transform hover:-translate-y-0.5">
+    ✖ Close
+  </button>
+</div>
+
+  </div>
+</div>
+
+
+<script>
+        const profileBtn = document.getElementById("profile-btn");
+const profileBtnMobile = document.getElementById("profile-btn-mobile");
+const profileModal = document.getElementById("profileModal");
+
+function openProfile() {
+  profileModal.classList.remove("hidden");
+}
+function closeProfile() {
+  profileModal.classList.add("hidden");
+}
+
+if (profileBtn) profileBtn.addEventListener("click", openProfile);
+if (profileBtnMobile) profileBtnMobile.addEventListener("click", openProfile);
+
+
+
+
+function copyFormLink() {
+  const formUrl = "{{ form_url }}";
+  navigator.clipboard.writeText(formUrl).then(() => { alert("Form URL copied to clipboard!"); })
+  .catch(() => { alert("Failed to copy URL."); });
+}
+
+
+</script>
+
+
+
+<script>
+function openProgramModal(programId) {
+  // Open modal
+  const modal = document.getElementById("program-modal");
+  modal.classList.remove("hidden");
+
+  // Fetch program details via AJAX
+  fetch(`/program/${programId}/participant-data/`)  // <-- Django view URL
+    .then(res => res.json())
+    .then(data => {
+      // Set modal title
+      document.getElementById("modal-title").innerText = `Add Participants for ${data.title}`;
+
+      // Already selected participants
+      const selectedList = document.getElementById("selected-list");
+      selectedList.innerHTML = "";
+      if (data.participants && data.participants.length > 0) {
+        document.getElementById("already-selected").classList.remove("hidden");
+        data.participants.forEach(p => {
+          selectedList.innerHTML += `<li>${p.full_name} (${p.code_number})</li>`;
+        });
+      } else {
+        document.getElementById("already-selected").classList.add("hidden");
+      }
+
+      // Populate dropdown with ALL students (not pre-select)
+      const select = document.getElementById("participants-select");
+      select.innerHTML = "";
+      if (data.students && data.students.length > 0) {
+        data.students.forEach(stu => {
+          select.innerHTML += `<option value="${stu.id}">${stu.full_name} (${stu.code_number})</option>`;
+        });
+      }
+
+      // Update form submit
+      const form = document.getElementById("program-form");
+      form.onsubmit = function(e) {
+        e.preventDefault();
+        saveParticipants(programId, new FormData(form));
+      }
+    });
+}
+
+function saveParticipants(programId, formData) {
+  fetch(`/program/${programId}/participants/save/`, {
+    method: "POST",
+    headers: {
+      "X-CSRFToken": formData.get("csrfmiddlewaretoken"),
+    },
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert(data.message || "Participants updated!");
+    closeModal();
+  });
+}
+
+function closeModal() {
+  document.getElementById("program-modal").classList.add("hidden");
+}
+</script>
+
+
 
 </body>
 </html>
