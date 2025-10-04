@@ -40,8 +40,9 @@ def register_program(request):
             student = Student.objects.get(id=student_id)
             programs = Program.objects.filter(id__in=program_ids)
 
-            for program in programs:
-                program.participants.add(student)
+            # for program in programs:
+            #     program.participants.add(student)
+            student.program_set.set(programs)
 
             return JsonResponse({"message": "success"})
         except Student.DoesNotExist:
