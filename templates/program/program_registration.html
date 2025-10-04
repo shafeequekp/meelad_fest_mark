@@ -175,6 +175,20 @@ $('#categorySelect, #genderSelect').change(function(){
   });
 });
 
+
+// Limit program selection
+const MAX_PROGRAMS = {{ max_programs|default:4 }};
+
+$('#programsContainer input[type="checkbox"]').on('change', function() {
+  const checkedCount = $('#programsContainer input[type="checkbox"]:checked').length;
+
+  if (checkedCount > MAX_PROGRAMS) {
+    alert(`You can select up to ${MAX_PROGRAMS} programs only.`);
+    this.checked = false; // uncheck the last one
+  }
+});
+
+
 // Form submission
 $('#multiStepForm').submit(function(e){
   e.preventDefault();
@@ -184,12 +198,18 @@ $('#multiStepForm').submit(function(e){
     return;
   }
 
-  if($('#programsContainer input[type="checkbox"]:checked').length === 0){
+  const checkedPrograms = $('#programsContainer input[type="checkbox"]:checked').length;
+  if(checkedPrograms === 0){
     alert('Please select at least one program.');
     return;
   }
 
-  const studentId = $('#studentSelect').val();   // fixed: use studentSelect not id_student
+  if(checkedPrograms > MAX_PROGRAMS){
+    alert(`You can select up to ${MAX_PROGRAMS} programs only.`);
+    return;
+  }
+
+  const studentId = $('#studentSelect').val();
   const programIds = $('input[name="programs"]:checked').map(function(){
     return $(this).val();
   }).get();
@@ -222,6 +242,7 @@ $('#multiStepForm').submit(function(e){
     }
   });
 });
+
 </script>
 
 

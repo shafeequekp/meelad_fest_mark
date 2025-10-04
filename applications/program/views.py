@@ -22,7 +22,7 @@ from django.db import transaction
 from django.db.models import Case, When, Value, BooleanField, Q
 
 from applications.scoreboard.models import Team
-from applications.program.models import Category, Program, Student, Prize, Position, Grade
+from applications.program.models import Category, Program, Student, Prize, Position, Grade, GroupPosition, GeneralPosition, ProgramRule
 from .forms import CategoryForm, ProgramForm, StudentForm
 from applications.accounts.models import Madrasa
 
@@ -290,6 +290,11 @@ class StudentRegistrationView(generic.TemplateView):
             madrasa = Madrasa.objects.get(id=madrasa_id)
             context['madrasa_name'] = madrasa.name
             context['fest_name'] = madrasa.meelad_fest_name
+            program_rule = ProgramRule.objects.filter(madrasa_id=madrasa_id).last()
+            if program_rule:
+                context['max_programs'] = program_rule.max_program_per_head
+            else:
+                context['max_programs'] = 3
         else:
             context['madrasa_name'] = None
 
@@ -534,8 +539,67 @@ def save_prize(request, program_id):
     gradeC_id = data.get("gradeC")
     remarks = data.get("remarks", "")
 
-
     created_prizes = []
+
+    if program.is_general:
+        if first_prize_id:
+            student = get_object_or_404(Student, id=first_prize_id)
+            team = student.team
+            general_first_score, _ = GeneralPosition.objects.get_or_create(name='first')
+            prize, _ = Prize.objects.update_or_create(
+                team=team, program=program,
+                defaults={"general_program_position": general_first_score, "remarks": remarks}
+            )
+            created_prizes.append(prize.id)
+        if second_prize_id:
+            student = get_object_or_404(Student, id=second_prize_id)
+            team = student.team
+            general_sec_score = GeneralPosition.objects.get_or_create(name='second')
+            prize, _ = Prize.objects.update_or_create(
+                team=team, program=program,
+                defaults={"general_program_position": general_sec_score, "remarks": remarks}
+            )
+            created_prizes.append(prize.id)
+        if third_prize_id:
+            student = get_object_or_404(Student, id=third_prize_id)
+            team = student.team
+            general_third_score = GeneralPosition.objects.get_or_create(name='third')
+            prize, _ = Prize.objects.update_or_create(
+                team=team, program=program,
+                defaults={"general_program_position": general_third_score, "remarks": remarks}
+            )
+            created_prizes.append(prize.id)
+        return JsonResponse({"message": "success", "created_prizes": created_prizes})
+
+    elif program.is_group:
+        if first_prize_id:
+            student = get_object_or_404(Student, id=first_prize_id)
+            team = student.team
+            group_first_score, _ = GroupPosition.objects.get_or_create(name='first')
+            prize, _ = Prize.objects.update_or_create(
+                team=team, program=program,
+                defaults={"group_program_position": group_first_score, "remarks": remarks}
+            )
+            created_prizes.append(prize.id)
+        if second_prize_id:
+            student = get_object_or_404(Student, id=first_prize_id)
+            team = student.team
+            group_second_score, _ = GroupPosition.objects.get_or_create(name='second')
+            prize, _ = Prize.objects.update_or_create(
+                team=team, program=program,
+                defaults={"group_program_position": group_second_score, "remarks": remarks}
+            )
+            created_prizes.append(prize.id)
+        if third_prize_id:
+            student = get_object_or_404(Student, id=first_prize_id)
+            team = student.team
+            group_third_score, _ = GroupPosition.objects.get_or_create(name='third')
+            prize, _ = Prize.objects.update_or_create(
+                team=team, program=program,
+                defaults={"group_program_position": group_third_score, "remarks": remarks}
+            )
+            created_prizes.append(prize.id)
+        return JsonResponse({"message": "success", "created_prizes": created_prizes})
 
     # Save prizes
     if first_prize_id:

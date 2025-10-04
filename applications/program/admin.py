@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Category, Student, Program, Prize, Position, Grade, Venue
+from .models import Category, Student, Program, Prize, Position, Grade, Venue, GeneralPosition, GroupPosition, ProgramRule
 
 
 @admin.register(Category)
@@ -50,3 +50,7 @@ class PrizeAdmin(admin.ModelAdmin):
 @admin.register(Venue)
 class VenueAdmin(admin.ModelAdmin):
     pass
+
+admin.site.register(GeneralPosition)
+admin.site.register(GroupPosition)
+admin.site.register(ProgramRule)

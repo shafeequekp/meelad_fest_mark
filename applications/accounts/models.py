@@ -23,6 +23,7 @@ class Madrasa(DateBaseModel):
     reg_number = models.CharField(max_length=30, null=True, blank=True)
     sadr = models.CharField(max_length=123, null=True, blank=True)
     meelad_fest_name = models.CharField(max_length=123, null=True, blank=True)
+    topper = models.ManyToManyField('program.Student', blank=True)
 
     def __str__(self):
         return self.name

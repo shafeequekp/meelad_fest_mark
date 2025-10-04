@@ -57,7 +57,7 @@ class ProgramForm(forms.ModelForm):
 
     class Meta:
         model = Program
-        fields = ['title', 'description', 'non_stage']
+        fields = ['title', 'description', 'non_stage', 'is_group', 'is_general']
         widgets = {
             'title': forms.TextInput(
                 attrs={'class': 'w-full border rounded-lg p-2'}
@@ -65,7 +65,9 @@ class ProgramForm(forms.ModelForm):
             'description': forms.TextInput(
                 attrs={'class': 'w-full border rounded-lg p-2'}
             ),
-            'non_stage': forms.RadioSelect(choices=[(True, 'Yes'), (False, 'No')])
+            'non_stage': forms.RadioSelect(choices=[(True, 'Yes'), (False, 'No')]),
+            'is_group': forms.RadioSelect(choices=[(True, 'Yes'), (False, 'No')]),
+            'is_general': forms.RadioSelect(choices=[(True, 'Yes'), (False, 'No')]),
         }
 
 

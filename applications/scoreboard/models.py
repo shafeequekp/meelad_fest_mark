@@ -7,10 +7,11 @@ class Team(models.Model):
     madrasa = models.ForeignKey(Madrasa, on_delete=models.CASCADE, null=True, blank=True)
     leader = models.CharField(max_length=125, null=True, blank=True)
     assistant = models.CharField(max_length=125, null=True, blank=True)
+    # general_point = models.FloatField(default=0)
+    # group_point = models.FloatField(default=0)
 
     def __str__(self):
         return self.name
-
 
 
 

@@ -12,6 +12,15 @@ from applications.accounts.models import Madrasa
 # User = get_user_model()
 
 
+class ProgramRule(DateBaseModel):
+    madrasa = models.ForeignKey(Madrasa, on_delete=models.CASCADE, null=True, blank=True)
+    max_program_per_head = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return self.madrasa.name
+
+
+
 class Category(DateBaseModel):
     name = models.CharField(max_length=125)
     description = models.CharField(max_length=255, null=True, blank=True)
@@ -68,6 +77,8 @@ class Program(DateBaseModel):
     image = models.ImageField(max_length=1000, null=True, blank=True)
     participants = models.ManyToManyField(Student, blank=True)
     non_stage = models.BooleanField(default=False)
+    is_group = models.BooleanField(default=False)
+    is_general = models.BooleanField(default=False)
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, null=True, blank=True)
     scheduled_time = models.DateTimeField(null=True, blank=True)
     is_result_published = models.BooleanField(default=False)
@@ -102,11 +113,40 @@ class Grade(DateBaseModel):
         return f'{self.name} > {self.mark}'
 
 
+class GeneralPosition(DateBaseModel):
+    POSITIONS = (
+        ('first', 'First'),
+        ('second', 'Second'),
+        ('third', 'Third'),
+    )
+    name = models.CharField(max_length=15, choices=POSITIONS)
+    mark = models.FloatField(default=0)
+
+    def __str__(self):
+        return self.name
+
+
+class GroupPosition(DateBaseModel):
+    POSITIONS = (
+        ('first', 'First'),
+        ('second', 'Second'),
+        ('third', 'Third'),
+    )
+    name = models.CharField(max_length=15, choices=POSITIONS)
+    mark = models.FloatField(default=0)
+
+    def __str__(self):
+        return self.name
+
+
 class Prize(DateBaseModel):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True, blank=True)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, null=True, blank=True)  # for group and general programs
     program = models.ForeignKey(Program, on_delete=models.CASCADE)
-    position = models.ForeignKey(Position, on_delete=models.CASCADE, null=True, blank=True)
+    position = models.ForeignKey(Position, on_delete=models.CASCADE, null=True, blank=True)  # for individual programs
     grade = models.ForeignKey(Grade, on_delete=models.CASCADE, null=True, blank=True)
+    group_program_position = models.ForeignKey(GroupPosition, on_delete=models.CASCADE, null=True, blank=True)  # for group programs
+    general_program_position = models.ForeignKey(GeneralPosition, on_delete=models.CASCADE, null=True, blank=True)  # for general programs
     remarks = models.CharField(max_length=255, null=True, blank=True)
 
 
@@ -124,15 +164,17 @@ class Prize(DateBaseModel):
             .values("student__team__id", "student__team__name")
             .annotate(
                 pos_total=Coalesce(Sum("position__mark"), 0.0),
-                grade_total=Coalesce(Sum("grade__mark"), 0.0)
+                grade_total=Coalesce(Sum("grade__mark"), 0.0),
+                group_prgrm_total=Coalesce(Sum("group_program_position__mark"), 0.0),
+                general_prgrm_total=Coalesce(Sum("general_program_position__mark"), 0.0),
             )
             .annotate(
                 grand_total=ExpressionWrapper(
-                    F("pos_total") + F("grade_total"),
+                    F("pos_total") + F("grade_total") + F('group_prgrm_total') + F('general_prgrm_total'),
                     output_field=FloatField()
                 )
             )
-            .order_by("student__team__name")
+            .order_by("grand_total")
         )
 
     # @staticmethod
@@ -178,3 +220,18 @@ class Prize(DateBaseModel):
     #     return pos_total + grade_total
 
 
+# class GeneralScore(DateBaseModel):
+#     first = models.FloatField(default=0)
+#     second = models.FloatField(default=0)
+#     third = models.FloatField(default=0)
+#
+#     def __str__(self):
+#         return 'General Score'
+#
+# class GroupScore(DateBaseModel):
+#     first = models.FloatField(default=0)
+#     second = models.FloatField(default=0)
+#     third = models.FloatField(default=0)
+#
+#     def __str__(self):
+#         return 'Group Score'
