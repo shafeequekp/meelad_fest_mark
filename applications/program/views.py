@@ -289,6 +289,7 @@ class StudentRegistrationView(generic.TemplateView):
         madrasa_id = self.request.GET.get('madrasa_id')
         if madrasa_id:
             madrasa = Madrasa.objects.get(id=madrasa_id)
+            context['madrasa'] = madrasa
             context['madrasa_name'] = madrasa.name
             context['fest_name'] = madrasa.meelad_fest_name
             program_rule = ProgramRule.objects.filter(madrasa_id=madrasa_id).last()

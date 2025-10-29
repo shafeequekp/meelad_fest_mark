@@ -33,7 +33,7 @@
       <select id="teamSelect" name="team" required class="w-full border border-gray-300 rounded-lg p-3 mb-4 text-sm sm:text-base
 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
         <option value="" disabled selected>Select team</option>
-        {% for team in user.madrasa.team_set.all %}
+        {% for team in madrasa.team_set.all %}
           <option value="{{ team.id }}">{{ team.name }}</option>
         {% endfor %}
       </select>
