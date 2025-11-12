@@ -15,6 +15,8 @@ from applications.accounts.models import Madrasa
 class ProgramRule(DateBaseModel):
     madrasa = models.ForeignKey(Madrasa, on_delete=models.CASCADE, null=True, blank=True)
     max_program_per_head = models.IntegerField(null=True, blank=True)
+    program_reg_link_active = models.BooleanField(default=False)
+    
 
     def __str__(self):
         return self.madrasa.name

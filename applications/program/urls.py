@@ -34,4 +34,7 @@ urlpatterns = [
     path("<int:pk>/participant-data/", views.get_program_participants, name="get_program_participant_data"),
     path("<int:pk>/participants/save/", views.save_program_participants, name="save_program_participants"),
 
+    path('revoke_program_link/', views.revoke_program_link, name='revoke_program_link'),
+    path('generate_program_link/', views.generate_program_reg_link, name='generate_program_link'),
+
 ]

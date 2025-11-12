@@ -123,7 +123,7 @@ class TeamsView(generic.ListView):
         request = self.request
         madrasa_id = request.user.madrasa.id
         host_url = f"{request.scheme}://{request.get_host()}"
-        context["form_url"] = f'{host_url}/program/student-registration/?madrasa_id={madrasa_id}'
+        context["form_url"] = f'{host_url}/program/student-registration/?institution_id={madrasa_id}'
         return context
 
 

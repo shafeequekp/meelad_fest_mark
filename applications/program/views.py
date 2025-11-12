@@ -44,10 +44,53 @@ def register_program(request):
             #     program.participants.add(student)
             student.program_set.set(programs)
 
-            return JsonResponse({"message": "success"})
+            program_names = list(student.program_set.values_list('title', flat=True))
+
+            return JsonResponse({"message": "success", "programs": program_names})
         except Student.DoesNotExist:
             return JsonResponse({"message": "error", "details": "Invalid student"})
     return JsonResponse({"message": "error", "details": "Invalid request"})
+
+
+def generate_program_reg_link(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            madrasa_id = data.get('institution_id')
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+        if not madrasa_id:
+            return JsonResponse({'error': 'Missing madrasa_id'}, status=400)
+        
+        madrasa = Madrasa.objects.get(id=madrasa_id)
+        rule, _ = ProgramRule.objects.get_or_create(madrasa=madrasa)
+        rule.program_reg_link_active = True
+        rule.save()
+        host_url = f"{request.scheme}://{request.get_host()}"
+        link_generated = f'{host_url}/program/student-registration/?institution_id={madrasa_id}'
+
+        return JsonResponse({"message": "success", "link": link_generated})
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
+
+def revoke_program_link(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            madrasa_id = data.get('institution_id')
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+  
+        rule = ProgramRule.objects.filter(madrasa_id=madrasa_id).last()
+        if rule:
+            rule.program_reg_link_active = False
+            rule.save()
+            return JsonResponse({"success": True, "message": "success"})
+        return JsonResponse({"message": "error", "details": "Please add rule first"})
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
 
 
 # Ajax endpoint to get categories for team
@@ -178,8 +221,15 @@ class CategoryDetailView(generic.DetailView):
         # related objects
         team_id = self.request.GET.get("team")
         try:
-            context['team_name'] = Team.objects.get(id=team_id).name
+            team_obj = Team.objects.get(id=team_id)
+            context['team_name'] = team_obj.name
             context['team_id'] = team_id
+            madrasa_id = team_obj.madrasa.id
+            context['madrasa_id'] = madrasa_id
+            rule = ProgramRule.objects.filter(madrasa_id=madrasa_id).last()
+            context['reg_link_active'] = False
+            if rule:
+                context['reg_link_active'] = rule.program_reg_link_active
         except:
             pass
 
@@ -202,7 +252,7 @@ class CategoryDetailView(generic.DetailView):
         context["student_form"] = kwargs.get("student_form") or StudentForm()
         context["program_form"] = kwargs.get("program_form") or ProgramForm()
 
-        context["form_url"] = f'{host_url}/program/student-registration/?madrasa_id={self.request.user.madrasa.id}'
+        context["form_url"] = f'{host_url}/program/student-registration/?institution_id={self.request.user.madrasa.id}'
 
         return context
 
@@ -286,7 +336,7 @@ class StudentRegistrationView(generic.TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        madrasa_id = self.request.GET.get('madrasa_id')
+        madrasa_id = self.request.GET.get('institution_id')
         if madrasa_id:
             madrasa = Madrasa.objects.get(id=madrasa_id)
             context['madrasa'] = madrasa
@@ -301,7 +351,13 @@ class StudentRegistrationView(generic.TemplateView):
             context['madrasa_name'] = None
 
         return context
-
+    
+    def get(self, request, *args, **kwargs):
+        madrasa_id = self.request.GET.get('institution_id')
+        program_rule = ProgramRule.objects.filter(madrasa_id=madrasa_id).last()
+        if program_rule and not program_rule.program_reg_link_active:
+            return HttpResponse("Link expired!")
+        return super().get(request, *args, **kwargs)
 
 
 class ProgramListView(generic.ListView):
@@ -317,7 +373,7 @@ class ProgramListView(generic.ListView):
         context['categories'] = Category.objects.filter(madrasa_id=madrasa_id)
 
         host_url = f"{request.scheme}://{request.get_host()}"
-        context["form_url"] = f'{host_url}/program/student-registration/?madrasa_id={madrasa_id}'
+        context["form_url"] = f'{host_url}/program/student-registration/?institution_id={madrasa_id}'
         return context
 
 
@@ -940,4 +996,8 @@ def save_program_participants(request, pk):
         program.participants.set(ids)
         return JsonResponse({"message": "Participants saved successfully!"})
     return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+
+
 
