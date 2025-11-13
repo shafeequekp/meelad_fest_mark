@@ -5,7 +5,7 @@ from django.http import HttpResponseRedirect, FileResponse, HttpResponse
 from applications.scoreboard.models import Team
 from .forms import TeamForm
 from applications.accounts.models import Madrasa, User
-from applications.program.models import Category, Prize
+from applications.program.models import Category, Prize, Position, Grade, ProgramRule
 
 
 def add_team_and_marks(request):
@@ -103,6 +103,28 @@ class MarkView(generic.ListView):
         context["total_students"] = Student.objects.filter(team__madrasa=madrasa).count()
         context["total_programs"] = Program.objects.filter(category__in=categories).distinct().count()
         context['home_page'] = True
+        context['config_done'] = user.config_done
+
+        first_obj = Position.objects.filter(name='first').last()
+        second_obj = Position.objects.filter(name='second').last()
+        third_obj = Position.objects.filter(name='third').last()
+        a_grade = Grade.objects.filter(name='a_grade').last()
+        b_grade = Grade.objects.filter(name='b_grade').last()
+        c_grade = Grade.objects.filter(name='c_grade').last()
+        if first_obj:
+            context['first'] = first_obj.mark
+        if second_obj:
+            context['second'] = second_obj.mark
+        if third_obj:
+            context['third'] = third_obj.mark
+        if a_grade:
+            context['a_grade'] = a_grade.mark
+        if b_grade:
+            context['b_grade'] = b_grade.mark
+        if c_grade:
+            context['c_grade'] = c_grade.mark
+        
+        context['rule'] = ProgramRule.objects.filter(madrasa=madrasa).last()
         return context
 
 

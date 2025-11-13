@@ -37,4 +37,7 @@ urlpatterns = [
     path('revoke_program_link/', views.revoke_program_link, name='revoke_program_link'),
     path('generate_program_link/', views.generate_program_reg_link, name='generate_program_link'),
 
+    path("save-config/", views.save_config, name="save_config"),
+
+
 ]

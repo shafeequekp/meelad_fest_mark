@@ -65,6 +65,8 @@ class User(AbstractUser):
     permanent_address = models.CharField(max_length=255, null=True, blank=True)
     madrasa = models.OneToOneField(Madrasa, on_delete=models.CASCADE, null=True, blank=True)
 
+    config_done = models.BooleanField(default=False)
+
     # user_role = models.ForeignKey(UserRole, on_delete=models.SET_NULL, null=True, blank=True)
 
     USERNAME_FIELD = 'email'  # Default login is via email

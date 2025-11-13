@@ -11,6 +11,9 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+
     <style>
     .fade {
       animation: fadeEffect 1s ease-in-out;
@@ -567,6 +570,65 @@ function startCountersIn(container) {
                 <h2 class="text-xl font-bold text-indigo-700">{{ request.user.get_full_name }}</h2>
                 <p class="text-gray-500">{{ request.user.email }}</p>
             </div>
+
+
+
+        <div x-data="{ showConfig: false }">
+            <button 
+            @click="showConfig = true"
+            {% comment %} class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition" {% endcomment %}
+            >
+            ⚙️
+          </button>
+
+            <!-- View Config Modal -->
+
+          <div 
+            x-show="showConfig" 
+            class="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50"
+            x-transition
+          >
+            <div @click.away="showConfig = false"
+                class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
+
+              <!-- Close Button -->
+              <button @click="showConfig = false"
+                      class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+
+              <h2 class="text-2xl font-bold text-indigo-700 mb-4 text-center">Current Configuration</h2>
+
+              <div class="space-y-4 text-gray-700">
+                <div class="grid grid-cols-3 gap-3">
+                  <p><strong>🥇 1st Prize:</strong> {{ first}}</p>
+                  <p><strong>🥈 2nd Prize:</strong> {{ second }}</p>
+                  <p><strong>🥉 3rd Prize:</strong> {{ third }}</p>
+                </div>
+
+                {% if a_grade %}
+                <div class="grid grid-cols-3 gap-3">
+                  <p><strong>Grade A:</strong> {{ a_grade }}</p>
+                  <p><strong>Grade B:</strong> {{ b_grade }}</p>
+                  <p><strong>Grade C:</strong> {{ c_grade }}</p>
+                </div> {% endif %}
+
+                <p><strong>🎭 Max Programs per Participant:</strong> {{ rule.max_program_per_head }}</p>
+                {% comment %} <p><strong>👩‍🎓 Fest Type:</strong> 
+                  {{ config.fest_type|title }}
+                </p> {% endcomment %}
+              </div>
+
+              <div class="mt-6 text-right">
+                <button @click="showConfig = false"
+                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+
         </div>
 
         <div class="space-y-2 text-gray-700">
@@ -611,6 +673,120 @@ if (profileBtn) profileBtn.addEventListener("click", openProfile);
 if (profileBtnMobile) profileBtnMobile.addEventListener("click", openProfile);
 
 </script>
+
+
+
+
+<!-- modal for config -->
+
+{% if not config_done %}
+<!-- Config Setup Modal -->
+<div id="configModal" class="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
+    <h2 class="text-2xl font-bold text-indigo-700 mb-4 text-center">Initial Configuration</h2>
+
+    <form id="configForm" method="POST" action="{% url 'save_config' %}">
+      {% csrf_token %}
+      
+      <!-- Prize Positions -->
+      <div class="grid grid-cols-3 gap-3 mb-6">
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">🥇 1st Prize</label>
+          <input type="number" name="first_prize" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+        </div>
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">🥈 2nd Prize</label>
+          <input type="number" name="second_prize" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+        </div>
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">🥉 3rd Prize</label>
+          <input type="number" name="third_prize" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+        </div>
+      </div>
+
+      <!-- Grades -->
+      <div class="grid grid-cols-3 gap-3 mb-6">
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">Grade A</label>
+          <input type="number" name="grade_a" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" placeholder='Optional'>
+        </div>
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">Grade B</label>
+          <input type="number" name="grade_b" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" placeholder='Optional'>
+        </div>
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">Grade C</label>
+          <input type="number" name="grade_c" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" placeholder='Optional'>
+        </div>
+      </div>
+
+      <!-- Max Programs -->
+      <div class="mb-6">
+        <label class="block text-gray-700 font-semibold mb-1">🎭 Max Programs per Participant</label>
+        <input type="number" name="max_programs" min="1" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+      </div>
+
+      <!-- Fest Type -->
+      {% comment %} <div class="mb-6">
+        <label class="block text-gray-700 font-semibold mb-2">👩‍🎓 Fest Type</label>
+        <select name="fest_type" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          <option value="">Select</option>
+          <option value="boys">Boys Only</option>
+          <option value="girls">Girls Only</option>
+          <option value="both">Both</option>
+        </select>
+      </div> {% endcomment %}
+
+      <!-- Buttons -->
+      <div class="flex justify-end gap-3">
+        <button type="submit" class="bg-indigo-600 text-white font-semibold px-5 py-2 rounded-lg shadow hover:bg-indigo-700 transition">
+          Save
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const configModal = document.getElementById("configModal");
+    if (configModal) {
+      configModal.classList.remove("hidden");
+    }
+  
+    // Optional: close modal after submitting
+    const configForm = document.getElementById("configForm");
+    if (configForm) {
+      configForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+  
+        const formData = new FormData(configForm);
+        fetch(configForm.action, {
+          method: "POST",
+          body: formData,
+        })
+        .then(res => res.ok ? res.json() : Promise.reject(res))
+        .then(data => {
+          alert("Configuration saved successfully!");
+          configModal.remove(); // hide modal
+          window.location.reload(); // reload page to mark config_done=True
+        })
+        .catch(() => alert("Failed to save config. Please try again."));
+      });
+    }
+  });
+  </script>
+  
+
+
+
+
+
+
+
 
 </body>
 </html>

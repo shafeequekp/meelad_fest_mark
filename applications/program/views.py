@@ -20,6 +20,7 @@ from django.template.loader import get_template
 from django.views.decorators.http import require_POST
 from django.db import transaction
 from django.db.models import Case, When, Value, BooleanField, Q
+from django.contrib.auth.decorators import login_required
 
 from applications.scoreboard.models import Team
 from applications.program.models import Category, Program, Student, Prize, Position, Grade, GroupPosition, GeneralPosition, ProgramRule
@@ -946,7 +947,7 @@ def category_program_list(request):
             .order_by('-published').distinct()
                               )
     else:
-        programs_for_boys = programs_for_girls = Program.objects.all()
+        programs_for_boys = programs_for_girls = Program.objects.filter(Q(category__madrasa=madrasa) | Q(girls_categories__madrasa=madrasa))
         selected_category = None
 
     context = {
@@ -1000,4 +1001,46 @@ def save_program_participants(request, pk):
 
 
 
+@login_required
+@csrf_exempt
+def save_config(request):
+    if request.method == "POST":
+        # example fields — you can save to your Config model or Settings table
+        first_prize = request.POST.get("first_prize")
+        second_prize = request.POST.get("second_prize")
+        third_prize = request.POST.get("third_prize")
+        grade_a = request.POST.get("grade_a")
+        grade_b = request.POST.get("grade_b")
+        grade_c = request.POST.get("grade_c")
+        max_programs = request.POST.get("max_programs")
+        fest_type = request.POST.get("fest_type")
 
+        # Save in your model (pseudo code)
+        user = request.user
+        config, _ = ProgramRule.objects.get_or_create(madrasa=user.madrasa)
+        
+        positions = {
+            'first': first_prize,
+            'second': second_prize,
+            'third': third_prize,
+        }
+        for name, mark in positions.items():
+            if mark:
+                Position.objects.update_or_create(name=name, defaults={'mark': mark})
+        grades = {
+            'a_grade': grade_a,
+            'b_grade': grade_b,
+            'c_grade': grade_c,
+        }
+        for name, mark in grades.items():
+            if mark:
+                Grade.objects.update_or_create(name=name, defaults={'mark': mark})
+
+        config.max_program_per_head = max_programs
+        config.fest_type = fest_type
+        config.save()
+        user.config_done = True
+        user.save()
+
+        return JsonResponse({"status": "success"})
+    
