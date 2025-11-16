@@ -5,7 +5,8 @@ from django.http import HttpResponseRedirect, FileResponse, HttpResponse
 from applications.scoreboard.models import Team
 from .forms import TeamForm
 from applications.accounts.models import Madrasa, User
-from applications.program.models import Category, Prize, Position, Grade, ProgramRule
+from applications.program.models import Category, Prize, Position, Grade, ProgramRule, GroupPosition, GeneralPosition
+from applications.subscription.models import Subscription, Transaction
 
 
 def add_team_and_marks(request):
@@ -104,6 +105,10 @@ class MarkView(generic.ListView):
         context["total_programs"] = Program.objects.filter(category__in=categories).distinct().count()
         context['home_page'] = True
         context['config_done'] = user.config_done
+        context['subscribed'] = True
+        subscription = Subscription.objects.filter(institution=madrasa).last()
+        if not subscription or not subscription.is_active:
+            context['subscribed'] = False
 
         first_obj = Position.objects.filter(name='first').last()
         second_obj = Position.objects.filter(name='second').last()
@@ -111,6 +116,12 @@ class MarkView(generic.ListView):
         a_grade = Grade.objects.filter(name='a_grade').last()
         b_grade = Grade.objects.filter(name='b_grade').last()
         c_grade = Grade.objects.filter(name='c_grade').last()
+        group_first = GroupPosition.objects.filter(name='first').last()
+        group_second = GroupPosition.objects.filter(name='second').last()
+        group_third = GroupPosition.objects.filter(name='third').last()
+        general_first = GeneralPosition.objects.filter(name='first').last()
+        general_second = GeneralPosition.objects.filter(name='second').last()
+        general_third = GeneralPosition.objects.filter(name='third').last()
         if first_obj:
             context['first'] = first_obj.mark
         if second_obj:
@@ -123,9 +134,35 @@ class MarkView(generic.ListView):
             context['b_grade'] = b_grade.mark
         if c_grade:
             context['c_grade'] = c_grade.mark
+        if group_first:
+            context['group_first'] = group_first.mark
+        if group_second:
+            context['group_second'] = group_second.mark
+        if group_third:
+            context['group_third'] = group_third.mark
+        if general_first:
+            context['gen_first'] = general_first.mark
+        if general_second:
+            context['gen_second'] = general_second.mark
+        if general_third:
+            context['gen_third'] = general_third.mark
         
         context['rule'] = ProgramRule.objects.filter(madrasa=madrasa).last()
         return context
+    
+    # need to add redirect url if subscribed is False
+
+    
+    def get(self, request, *args, **kwargs):
+        madrasa_id = request.user.madrasa.id
+        subscription = Subscription.objects.filter(institution_id=madrasa_id).last()
+
+        # subscription.is_active → not subscription.is_active  (NO parentheses!)
+        if not subscription or not subscription.is_active:
+            return redirect("subscription:subscribe")
+
+        return super().get(request, *args, **kwargs)
+
 
 
 class TeamsView(generic.ListView):

@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'applications.accounts',
     'applications.scoreboard',
     'applications.program',
+    'applications.subscription',
 ]
 
 MIDDLEWARE = [
@@ -139,6 +140,39 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
+
+
+
+
+
+
+DOCKER_HUB_USERNAME = 'shafeequekp'
+DOCKER_HUB_ACCESS_TOKEN = 'dckr_pat_JOnOWRldWMy3XkCdXE8QzhMMkgs'
+DEPLOY_SSH_PRIVATE_KEY = ''
+DEPLOY_HOST = ''
+DEPLOY_USER = 'ubuntu'
+DEPLOY_PATH = '/home/ubuntu/myapp'
+
+
+
+
+
+
+# # Cashfree config for prod
+# CASHFREE_CLIENT_ID = os.getenv("CASHFREE_CLIENT_ID", "1127747ca3c786b5844ad78a74a7477211")
+# CASHFREE_CLIENT_SECRET = os.getenv("CASHFREE_CLIENT_SECRET", "cfsk_ma_prod_c88cfa6eae8f32188a65f50c6bb883cf_82f004fb")
+# CASHFREE_API_BASE = os.getenv("CASHFREE_API_BASE", "https://sandbox.cashfree.com/pg")  # sandbox; switch to https://api.cashfree.com/pg for production
+# # Example webhook secret (same as client secret or separate webhook secret from dashboard)
+# CASHFREE_WEBHOOK_SECRET = os.getenv("CASHFREE_WEBHOOK_SECRET", CASHFREE_CLIENT_SECRET)
+
+
+## cashfree for testing
+CASHFREE_CLIENT_ID = os.getenv("CASHFREE_CLIENT_ID", "TEST10879016c9eb7f0a0d2d4cb15fb761097801")
+CASHFREE_CLIENT_SECRET = os.getenv("CASHFREE_CLIENT_SECRET", "cfsk_ma_test_cc81df8c2f0109453a734242b9fc77e8_5915bf9f")
+CASHFREE_API_BASE = os.getenv("CASHFREE_API_BASE", "https://sandbox.cashfree.com/pg")  # sandbox; switch to https://api.cashfree.com/pg for production 
+CASHFREE_API_VERSION = os.getenv("CASHFREE_API_VERSION", "2025-01-01")
+# Example webhook secret (same as client secret or separate webhook secret from dashboard)
+CASHFREE_WEBHOOK_SECRET = os.getenv("CASHFREE_WEBHOOK_SECRET", CASHFREE_CLIENT_SECRET)
 
 
 

@@ -37,7 +37,10 @@ def login_view(request):
             print(user)
             if user is not None:
                 login(request, user)
-                return redirect("home")
+                if user.subscribed:
+                    return redirect("home")
+                else:
+                    return redirect("subscription:subscribe")
             else:
                 messages.error(request, "Invalid login credentials")
         else:

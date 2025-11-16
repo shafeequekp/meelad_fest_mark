@@ -24,6 +24,7 @@ urlpatterns = [
     path('', include('applications.scoreboard.urls')),
     path('accounts/', include('applications.accounts.urls')),
     path('program/', include('applications.program.urls')),
+    path('subscription/', include('applications.subscription.urls')),
 
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

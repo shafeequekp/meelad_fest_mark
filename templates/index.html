@@ -611,6 +611,18 @@ function startCountersIn(container) {
                   <p><strong>Grade C:</strong> {{ c_grade }}</p>
                 </div> {% endif %}
 
+                <div class="grid grid-cols-3 gap-3">
+                  <p><strong>Group 1st:</strong> {{ group_first }}</p>
+                  <p><strong>Group 2nd:</strong> {{ group_second }}</p>
+                  <p><strong>Group 3rd:</strong> {{ group_third }}</p>
+                </div> 
+
+                <div class="grid grid-cols-3 gap-3">
+                  <p><strong>General 1st:</strong> {{ gen_first }}</p>
+                  <p><strong>General 2nd:</strong> {{ gen_second }}</p>
+                  <p><strong>General 3rd:</strong> {{ gen_third }}</p>
+                </div> 
+
                 <p><strong>🎭 Max Programs per Participant:</strong> {{ rule.max_program_per_head }}</p>
                 {% comment %} <p><strong>👩‍🎓 Fest Type:</strong> 
                   {{ config.fest_type|title }}
@@ -719,6 +731,37 @@ if (profileBtnMobile) profileBtnMobile.addEventListener("click", openProfile);
           <input type="number" name="grade_c" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" placeholder='Optional'>
         </div>
       </div>
+
+      <div class="grid grid-cols-3 gap-3 mb-6">
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">Group First</label>
+          <input type="number" name="group_first" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+        </div>
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">Group Sec</label>
+          <input type="number" name="group_second" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+        </div>
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">Group Third</label>
+          <input type="number" name="group_third" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3 mb-6">
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">General First</label>
+          <input type="number" name="general_first" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+        </div>
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">General Sec</label>
+          <input type="number" name="general_second" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+        </div>
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">General Third</label>
+          <input type="number" name="general_third" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+        </div>
+      </div>
+
 
       <!-- Max Programs -->
       <div class="mb-6">

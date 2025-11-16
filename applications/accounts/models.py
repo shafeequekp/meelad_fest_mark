@@ -66,6 +66,7 @@ class User(AbstractUser):
     madrasa = models.OneToOneField(Madrasa, on_delete=models.CASCADE, null=True, blank=True)
 
     config_done = models.BooleanField(default=False)
+    subscribed = models.BooleanField(default=False)
 
     # user_role = models.ForeignKey(UserRole, on_delete=models.SET_NULL, null=True, blank=True)
 

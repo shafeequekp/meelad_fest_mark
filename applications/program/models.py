@@ -1,8 +1,11 @@
+from datetime import timedelta
+
 from django.db import models
 from django_extensions.db.fields import AutoSlugField
 from django.core.exceptions import ValidationError
 from django.db.models import Sum, F, Value, FloatField, ExpressionWrapper, IntegerField
 from django.db.models.functions import Coalesce
+from django.utils import timezone
 
 from utils.db import DateBaseModel
 from applications.scoreboard.models import Team
@@ -222,18 +225,3 @@ class Prize(DateBaseModel):
     #     return pos_total + grade_total
 
 
-# class GeneralScore(DateBaseModel):
-#     first = models.FloatField(default=0)
-#     second = models.FloatField(default=0)
-#     third = models.FloatField(default=0)
-#
-#     def __str__(self):
-#         return 'General Score'
-#
-# class GroupScore(DateBaseModel):
-#     first = models.FloatField(default=0)
-#     second = models.FloatField(default=0)
-#     third = models.FloatField(default=0)
-#
-#     def __str__(self):
-#         return 'Group Score'

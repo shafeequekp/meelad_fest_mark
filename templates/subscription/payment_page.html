@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head>
+  <script src="https://sdk.cashfree.com/js/v1/cashfree.js"></script> <!-- check docs for latest -->
+</head>
+<body>
+  <h2>Redirecting to payment...</h2>
+
+  <script>
+    const paymentSessionId = "{{ payment_session_id }}";
+    const orderId = "{{ order_id }}";
+
+    // If Cashfree JS SDK supports opening hosted checkout with payment_session_id:
+    if (paymentSessionId) {
+      // Example pseudo-code — adapt per Cashfree SDK docs
+      const cf = new Cashfree();
+      cf.openCheckout({ paymentSessionId });
+    } else {
+      // If response contained a payment_link url:
+      const link = "{{ payment_session_id|escapejs }}";
+      if (link) {
+        window.location.href = link;
+      } else {
+        console.error("No payment id or link returned");
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1015,6 +1015,13 @@ def save_config(request):
         max_programs = request.POST.get("max_programs")
         fest_type = request.POST.get("fest_type")
 
+        group_first = request.POST.get("group_first")
+        group_second = request.POST.get("group_second")
+        group_third = request.POST.get("group_third")
+        general_first = request.POST.get("general_first")
+        general_second = request.POST.get("general_second")
+        general_third = request.POST.get("general_third")
+
         # Save in your model (pseudo code)
         user = request.user
         config, _ = ProgramRule.objects.get_or_create(madrasa=user.madrasa)
@@ -1035,6 +1042,23 @@ def save_config(request):
         for name, mark in grades.items():
             if mark:
                 Grade.objects.update_or_create(name=name, defaults={'mark': mark})
+
+        group_positions = {
+            'first': group_first,
+            'second': group_second,
+            'third': group_third,
+        }
+        for name, mark in group_positions.items():
+            if mark:
+                GroupPosition.objects.update_or_create(name=name, defaults={'mark': mark})
+        general_prizes = {
+            'first': general_first,
+            'second': general_second,
+            'third': general_third,
+        }
+        for name, mark in general_prizes.items():
+            if mark:
+                GeneralPosition.objects.update_or_create(name=name, defaults={'mark': mark})
 
         config.max_program_per_head = max_programs
         config.fest_type = fest_type
