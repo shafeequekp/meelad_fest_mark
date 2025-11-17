@@ -87,14 +87,14 @@ def create_order(request):
     "customer_details": {
         "customer_id": str(request.user.id),
         "customer_email": request.user.email or "",
-        "customer_phone": getattr(request.user, "phone", "") or "9544443981"
+        "customer_phone": getattr(request.user, "phone_number", "") or "9544443981"
     }
 }
 
 
     headers = {
         "Content-Type": "application/json",
-        "x-api-version": settings.CASHFREE_API_VERSION,           # use recommended version or remove if not necessary
+        "x-api-version": settings.CASHFREE_API_VERSION,
         "x-client-id": settings.CASHFREE_CLIENT_ID,
         "x-client-secret": settings.CASHFREE_CLIENT_SECRET,
     }
@@ -180,7 +180,9 @@ def webhook_listener(request):
         tx.cf_payment_id = cf_payment_id
         tx.save()
         # activate subscription for the institution (example)
-        sub, _ = Subscription.objects.get_or_create(institution=tx.institution)
+        sub = Subscription.objects.filter(institution=tx.institution).last()
+        if not sub:
+            sub = Subscription.objects.create(institution=tx.institution)
         sub.activate_for_year()
     else:
         tx.status = "FAILED"

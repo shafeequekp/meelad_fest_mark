@@ -25,7 +25,7 @@
   </div>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const cashfree = new Cashfree({ mode: "sandbox" });  // ✅ new syntax
+      const cashfree = new Cashfree({ mode: "production" });  // sandbox for testing
   
       document.getElementById("payBtn").addEventListener("click", () => {
         const sessionId = "{{ payment_session_id }}";
