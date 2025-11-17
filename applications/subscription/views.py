@@ -12,6 +12,7 @@ from django.shortcuts import render
 import requests
 
 from .models import Transaction, Subscription
+from applications.accounts.models import Madrasa
 from django.utils import timezone
 
 SUBSCRIPTION_FEE = 299.00  # INR
@@ -32,7 +33,7 @@ def create_order(request):
         return HttpResponseBadRequest("Invalid method")
     
     user = request.user
-    if not getattr(user, "phone", "9544443981"):
+    if not getattr(user, "phone_number", "9544443981"):
         return HttpResponseBadRequest("Phone number is required before payment")
 
     # Create a unique order id for your system
@@ -70,8 +71,8 @@ def create_order(request):
     "order_currency": currency,
 
     "order_meta": {
-    "return_url": f"https://wanted-chigger-radically.ngrok-free.app/subscription/success/?order_id={order_id}",
-    "notify_url": "https://wanted-chigger-radically.ngrok-free.app/subscription/webhook/"
+    "return_url": return_url,
+    "notify_url": notify_url
   },
 
     # ✔ REQUIRED for hosted checkout
@@ -91,8 +92,6 @@ def create_order(request):
 }
 
 
-    print(f"https://wanted-chigger-radically.ngrok-free.app/subscription/success/?order_id={order_id}", 'urlllllllll')
-
     headers = {
         "Content-Type": "application/json",
         "x-api-version": settings.CASHFREE_API_VERSION,           # use recommended version or remove if not necessary
@@ -106,12 +105,12 @@ def create_order(request):
         print(resp.status_code, resp.text)
         return HttpResponse("Failed to create order with payment gateway", status=500)
     
-    # debug logs
-    print("Create URL:", create_url)
-    print("Outgoing headers:", getattr(resp.request, "headers", None))
-    print("Outgoing body:", getattr(resp.request, "body", None))
-    print("Response code:", resp.status_code)
-    print("Response text:", resp.text)
+    # # debug logs
+    # print("Create URL:", create_url)
+    # print("Outgoing headers:", getattr(resp.request, "headers", None))
+    # print("Outgoing body:", getattr(resp.request, "body", None))
+    # print("Response code:", resp.status_code)
+    # print("Response text:", resp.text)
 
     data = resp.json()
     # `payment_session_id` (or payment link) will be in response (docs say payment_session_id)
@@ -191,13 +190,19 @@ def webhook_listener(request):
 
 
 def payment_success(request):
-    print('jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj')
     order_id = request.GET.get("order_id")
     tx = None
     if order_id:
         tx = Transaction.objects.filter(order_id=order_id).first()
         if tx:
-            
-            subcription = Subscription.objects.get_or_create()
+            madrasa = Madrasa.objects.filter(id=tx.institution.id).last()
+            if madrasa:
+                subcription = Subscription.objects.filter(institution=madrasa).last()
+                # if not subcription:
+                #     subcription = Subscription.objects.create(institution=madrasa)
+                user = madrasa.user
+                if user:
+                    user.subscribed = True
+                    user.save()
     return render(request, "subscription/success.html", {"tx": tx})
 
