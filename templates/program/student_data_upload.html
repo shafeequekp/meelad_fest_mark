@@ -167,14 +167,15 @@ if (overlay) overlay.addEventListener("click", closeMenu);
 
 
   // ✅ Show modal on page load if teams/categories missing
-  document.addEventListener("DOMContentLoaded", function() {
-    const needsSetup = {{ needs_setup|yesno:"true,false" }};
-    if (needsSetup) {
-      modalTitle.innerText = "⚠️ Setup Required";
-      modalBody.innerHTML = `<p class="text-red-600">Please add <strong>teams</strong> and <strong>categories</strong> first!</p>`;
-      modal.classList.remove("hidden");
-    }
-  });
+document.addEventListener("DOMContentLoaded", function() {
+  const needsSetup = "{{ needs_setup|yesno:'true,false' }}" === "true";
+
+  if (needsSetup) {
+    modalTitle.innerText = "⚠️ Setup Required";
+    modalBody.innerHTML = `<p class="text-red-600">Please add <strong>teams</strong> and <strong>categories</strong> first!</p>`;
+    modal.classList.remove("hidden");
+  }
+});
 
 
 
