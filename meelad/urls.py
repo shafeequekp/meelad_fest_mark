@@ -18,10 +18,12 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+from applications.program.views import program_reg_short_link_redirect
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('applications.scoreboard.urls')),
+    path("x/<str:code>/", program_reg_short_link_redirect),
     path('accounts/', include('applications.accounts.urls')),
     path('program/', include('applications.program.urls')),
     path('subscription/', include('applications.subscription.urls')),

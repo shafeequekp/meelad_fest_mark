@@ -25,9 +25,7 @@
     <div class="flex items-center space-x-2">
       <!-- Desktop Buttons -->
       <div class="hidden sm:flex space-x-2">
-        <button id="profile-btn" class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow hover:scale-105 transition">
-  <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-full h-full object-cover">
-</button>
+        
          <a href="{% url 'home' %}" class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
           Home
         </a>
@@ -37,6 +35,9 @@
         <a href="{% url 'program_list' %}" class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
           Programs
         </a>
+        <button id="profile-btn" class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow hover:scale-105 transition">
+          <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-full h-full object-cover">
+        </button>
 
       </div>
       <!-- Mobile Hamburger -->
@@ -166,14 +167,15 @@ if (overlay) overlay.addEventListener("click", closeMenu);
 
 
   // ✅ Show modal on page load if teams/categories missing
-  document.addEventListener("DOMContentLoaded", function() {
-    const needsSetup = {{ needs_setup|yesno:"true,false" }};
-    if (needsSetup) {
-      modalTitle.innerText = "⚠️ Setup Required";
-      modalBody.innerHTML = `<p class="text-red-600">Please add <strong>teams</strong> and <strong>categories</strong> first!</p>`;
-      modal.classList.remove("hidden");
-    }
-  });
+document.addEventListener("DOMContentLoaded", function() {
+  const needsSetup = "{{ needs_setup|yesno:'true,false' }}" === "true";
+
+  if (needsSetup) {
+    modalTitle.innerText = "⚠️ Setup Required";
+    modalBody.innerHTML = `<p class="text-red-600">Please add <strong>teams</strong> and <strong>categories</strong> first!</p>`;
+    modal.classList.remove("hidden");
+  }
+});
 
 
 

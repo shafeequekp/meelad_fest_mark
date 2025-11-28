@@ -12,7 +12,7 @@ from openpyxl import load_workbook
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import generic, View
-from django.http import HttpResponseRedirect, FileResponse, HttpResponse, JsonResponse
+from django.http import HttpResponseRedirect, FileResponse, HttpResponse, JsonResponse, Http404
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
@@ -21,6 +21,8 @@ from django.views.decorators.http import require_POST
 from django.db import transaction
 from django.db.models import Case, When, Value, BooleanField, Q
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_GET
+from django.shortcuts import redirect, get_object_or_404
 
 from applications.scoreboard.models import Team
 from applications.program.models import Category, Program, Student, Prize, Position, Grade, GroupPosition, GeneralPosition, ProgramRule
@@ -68,8 +70,14 @@ def generate_program_reg_link(request):
         rule, _ = ProgramRule.objects.get_or_create(madrasa=madrasa)
         rule.program_reg_link_active = True
         rule.save()
-        host_url = f"{request.scheme}://{request.get_host()}"
-        link_generated = f'{host_url}/program/student-registration/?institution_id={madrasa_id}'
+
+        encoded = encode_base62(int(madrasa_id)) 
+        scheme = "https" if request.is_secure() else "http"
+        host = request.META.get('HTTP_HOST')
+        short_link = f"{scheme}://{host}/x/{encoded}"
+
+        # host_url = f"{request.scheme}://{request.get_host()}"
+        link_generated = short_link
 
         return JsonResponse({"message": "success", "link": link_generated})
     
@@ -253,7 +261,13 @@ class CategoryDetailView(generic.DetailView):
         context["student_form"] = kwargs.get("student_form") or StudentForm()
         context["program_form"] = kwargs.get("program_form") or ProgramForm()
 
-        context["form_url"] = f'{host_url}/program/student-registration/?institution_id={self.request.user.madrasa.id}'
+        institution_id = self.request.user.madrasa.id
+        encoded = encode_base62(institution_id) 
+        scheme = "https" if self.request.is_secure() else "http"
+        host = self.request.META.get('HTTP_HOST')
+        short_link = f"{scheme}://{host}/x/{encoded}"
+        # context["form_url"] = f'{host_url}/program/student-registration/?institution_id={institution_id}'
+        context['form_url'] = short_link
 
         return context
 
@@ -339,7 +353,7 @@ class StudentRegistrationView(generic.TemplateView):
 
         madrasa_id = self.request.GET.get('institution_id')
         if madrasa_id:
-            madrasa = Madrasa.objects.get(id=madrasa_id)
+            madrasa = get_object_or_404(Madrasa, id=madrasa_id)
             context['madrasa'] = madrasa
             context['madrasa_name'] = madrasa.name
             context['fest_name'] = madrasa.meelad_fest_name
@@ -1067,4 +1081,39 @@ def save_config(request):
         user.save()
 
         return JsonResponse({"status": "success"})
-    
+
+
+
+# program register link shortening and redirecting
+BASE62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+def encode_base62(num):
+    if num == 0:
+        return BASE62[0]
+    base62 = []
+    while num > 0:
+        num, r = divmod(num, 62)
+        base62.append(BASE62[r])
+    return ''.join(reversed(base62))
+
+
+def decode_base62(encoded):
+    num = 0
+    for char in encoded:
+        num = num * 62 + BASE62.index(char)
+    return num
+
+
+
+def program_reg_short_link_redirect(request, code):
+    try:
+        institution_id = decode_base62(code)
+    except Exception:
+        raise Http404("Invalid link")
+
+    final_url = (
+        f"/program/student-registration/?institution_id={institution_id}"
+    )
+    return redirect(final_url)
+
+   
