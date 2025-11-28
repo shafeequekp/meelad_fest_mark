@@ -149,7 +149,7 @@ class Prize(DateBaseModel):
     team = models.ForeignKey(Team, on_delete=models.CASCADE, null=True, blank=True)  # for group and general programs
     program = models.ForeignKey(Program, on_delete=models.CASCADE)
     position = models.ForeignKey(Position, on_delete=models.CASCADE, null=True, blank=True)  # for individual programs
-    grade = models.ForeignKey(Grade, on_delete=models.CASCADE, null=True, blank=True)
+    grade = models.ForeignKey(Grade, on_delete=models.CASCADE, null=True, blank=True)  # grades also for individual programs
     group_program_position = models.ForeignKey(GroupPosition, on_delete=models.CASCADE, null=True, blank=True)  # for group programs
     general_program_position = models.ForeignKey(GeneralPosition, on_delete=models.CASCADE, null=True, blank=True)  # for general programs
     remarks = models.CharField(max_length=255, null=True, blank=True)
