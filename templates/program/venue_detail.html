@@ -18,7 +18,7 @@
     <!-- Left Title -->
     <div>
       <h1 class="text-4xl font-extrabold text-indigo-700 drop-shadow-sm">
-        📍 Venue Details
+        📍 Venue Management
       </h1>
       <p class="text-gray-500 mt-1">Manage programs for this venue</p>
     </div>
@@ -61,10 +61,43 @@
 
   <hr class="my-6">
 
-  <button onclick="openProgramModal()"
-    class="px-5 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow hover:bg-indigo-700 transition">
-    ➕ Add Program to Venue
-  </button>
+ 
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+
+      <button onclick="openProgramModal()"
+        class="px-5 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow hover:bg-indigo-700 transition w-full sm:w-auto">
+        ➕ Add Program to Venue
+      </button>
+
+          <!-- DOWNLOAD BUTTON & DROPDOWN -->
+      <div class="relative w-full sm:w-auto sm:ml-auto">
+
+        <button onclick="toggleDownloadsMenu()"
+          class="px-5 py-3 bg-green-600 text-white font-semibold rounded-xl shadow hover:bg-green-700 transition w-full sm:w-auto">
+          ⬇️ Downloads
+        </button>
+
+        <div id="downloadsMenu"
+            class="hidden absolute left-0 mt-2 w-full bg-white shadow-lg rounded-xl border z-50">
+
+          <a href="{% url 'download-venue-programs' venue.id %}"
+            class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-t-xl">
+            📄 Programs
+          </a>
+
+          <!-- <a href="{% url 'download-venue-programs' venue.id %}"
+            class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-t-xl">
+            📄 Programs
+          </a> -->
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+  <!-- </div> -->
 </div>
 
 <!-- ================= PROGRAMS LIST ================= -->
@@ -80,8 +113,8 @@
     {% for vp in venue_programs %}
     <div class="p-5 rounded-xl shadow bg-indigo-50 hover:bg-indigo-100 transition">
       <h4 class="text-xl font-semibold text-indigo-700">{{ vp.title }}</h4>
-      <p class="text-gray-600 mt-1"><strong>Category:</strong> {{ vp.category }}</p>
-      <!-- <p class="text-gray-600"><strong>Team:</strong> {{ vp.program.team.name }}</p> -->
+      <p class="text-gray-600 mt-1"><strong>Category:</strong> {{ vp.program_category }}</p>
+      <p class="text-gray-600"><strong>Participants:</strong> {{ vp.participants_count }}</p>
 
       <p class="text-gray-500 text-sm mt-2">{{ vp.program.description|truncatewords:20 }}</p>
     </div>
@@ -93,7 +126,6 @@
 </div>
 
 
-<!-- ================= ADD PROGRAM MODAL ================= -->
 <!-- ================= ADD PROGRAM MODAL ================= -->
 <div id="programModal"
     class="fixed inset-0 hidden bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -116,7 +148,7 @@
                 class="w-full border rounded-lg p-2 mt-1"
                 multiple size="6">
           {% for program in all_programs %}
-          <option value="{{ program.id }}">{{ program.title }} ({{ program.category.name }})</option>
+          <option value="{{ program.id }}">{{ program.title }} ({{ program.program_category }})</option>
           {% endfor %}
         </select>
 
@@ -181,11 +213,32 @@ document.getElementById("ajaxProgramForm").addEventListener("submit", function(e
             }
 
             alert("Programs added successfully!");
+
+            // Reload the page after success
+            window.location.reload();
         }
     })
     .catch(err => console.error(err));
 });
 </script>
+
+
+<script>
+function toggleDownloadsMenu() {
+    document.getElementById("downloadsMenu").classList.toggle("hidden");
+}
+
+// Close dropdown when clicking outside
+document.addEventListener("click", function(event) {
+    const menu = document.getElementById("downloadsMenu");
+    const button = event.target.closest("button[onclick='toggleDownloadsMenu()']");
+    
+    if (!menu.contains(event.target) && !button) {
+        menu.classList.add("hidden");
+    }
+});
+</script>
+
 
 
 
@@ -267,6 +320,45 @@ document.addEventListener("DOMContentLoaded", function () {
       <span>Profile</span>
     </button>
   </nav>
+</div>
+
+
+
+<!-- Profile Popup -->
+<div id="profileModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-2xl p-6 w-96">
+    <div class="flex items-center space-x-4 mb-6">
+      <img src="{% static 'images/profile.png' %}" alt="Profile"
+           class="w-16 h-16 rounded-full object-cover border-4 border-indigo-600 shadow">
+      <div>
+        <h2 class="text-xl font-bold text-indigo-700">{{ request.user.get_full_name }}</h2>
+        <p class="text-gray-500">{{ request.user.email }}</p>
+      </div>
+    </div>
+
+    <div class="space-y-2 text-gray-700">
+      <p><strong>📞 Phone:</strong> {{ request.user.phone }}</p>
+      <p><strong>🏫 Madrasa:</strong> {{ request.user.madrasa.name }}</p>
+      <p><strong>🎉 Fest:</strong> {{ meelad_fest_name }}</p>
+      <p><strong>👨‍🎓 Total Students:</strong> {{ total_students }}</p>
+      <p><strong>📚 Total Programs:</strong> {{ total_programs }}</p>
+    </div>
+
+ <div class="mt-6 flex justify-center gap-4">
+  <!-- Logout Button -->
+  <a href="{% url 'logout' %}"
+     class="px-5 py-2 bg-red-500 text-white font-semibold rounded-lg shadow-lg hover:bg-red-600 transition transform hover:-translate-y-0.5">
+    🔓 Logout
+  </a>
+
+  <!-- Close Button -->
+  <button onclick="closeProfile()"
+          class="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:bg-indigo-700 transition transform hover:-translate-y-0.5">
+    ✖ Close
+  </button>
+</div>
+
+  </div>
 </div>
 
 </body>

@@ -90,6 +90,17 @@ class Program(DateBaseModel):
 
     def __str__(self):
         return self.title
+    
+    def participants_count(self):
+        return self.participants.count()
+    
+    def program_category(self):
+        if self.category_set.exists():
+            return self.category_set.last().name
+            # return f'{self.category_set.last().name} (Boys)'
+        if self.girls_categories.exists():
+            return self.girls_categories.last().name
+            # return f'{self.girls_categories.last().name} (Girls)'
 
 
 class Position(DateBaseModel):

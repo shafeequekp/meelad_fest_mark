@@ -4,6 +4,10 @@ from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+
+from datetime import datetime
+
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl import load_workbook
@@ -1137,7 +1141,6 @@ def add_venue(request):
 #     return JsonResponse({'message': 'Method Not Allowed'})
 
 def update_venue_with_program(request, pk):
-    print(pk, 'sssssss')
     venue = get_object_or_404(Venue, id=pk)
 
     if request.method == "POST":
@@ -1177,3 +1180,71 @@ def venue_detail(request, venue_id):
     return render(request, "program/venue_detail.html", {"venue": venue, 'all_programs': programs,
                                                          'venue_programs': venue_programs})
 
+
+
+def download_venue_programs(request, venue_id):
+    venue = Venue.objects.get(id=venue_id)
+    programs = venue.program_set.all().order_by('scheduled_time')
+
+    # HTTP response for PDF
+    response = HttpResponse(content_type='application/pdf')
+    filename = f"{venue.name}_programs.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    # PDF document
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=A4,
+        title="Venue Programs Report",
+    )
+
+    styles = getSampleStyleSheet()
+    elements = []
+
+    # Title
+    title = Paragraph(f"{venue.name}: <b>Programs</b>", styles['Title'])
+    elements.append(title)
+    elements.append(Spacer(1, 12))
+
+    # Table heading
+    data = [
+        ["SL No", "Program Title", "Scheduled Time"]
+    ]
+
+    # Table data
+    for idx, program in enumerate(programs, start=1):
+        # Format time
+        if program.scheduled_time:
+            scheduled = program.scheduled_time.strftime("%I:%M %p")  # 12-hour format
+        else:
+            scheduled = "-"
+
+        data.append([
+            idx,
+            program.title,
+            scheduled
+        ])
+
+    # Create table
+    table = Table(data, colWidths=[1*inch, 3*inch, 2*inch])
+
+    # Style
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.lightgrey]),
+    ]))
+
+    elements.append(table)
+
+    # Build PDF
+    doc.build(elements)
+
+    return response

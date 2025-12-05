@@ -45,6 +45,7 @@ urlpatterns = [
     path("venues/add/", views.add_venue, name="add_venue"),
     path("venues/<int:venue_id>/", login_required(views.venue_detail), name="venue_detail"),
     path("add-programs-to-venue/<int:pk>/", views.update_venue_with_program, name="add-programs-to-venue"),
+    path("download-venue-programs/<int:venue_id>/", views.download_venue_programs, name="download-venue-programs"),
 
 
 
