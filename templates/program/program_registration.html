@@ -99,6 +99,8 @@ focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
   </form>
 </div>
 
+
+
 <script>
 const steps = document.querySelectorAll('.form-step');
 const progress = document.getElementById('progress');
@@ -230,7 +232,7 @@ $('#multiStepForm').submit(function(e){
         formContainer.html(`
           <div class="text-center py-10">
             <h2 class="text-2xl font-bold mb-4 text-green-600">Thanks! Your programs were selected!</h2>
-            <a href="#" id="resetForm" class="text-indigo-600 underline hover:text-indigo-800">Submit another response</a>
+            <a href="#" id="resetForm" class="text-indigo-600 underline hover:text-indigo-800">Submit another response or edit</a>
           </div>
         `);
 
@@ -260,7 +262,7 @@ $('#multiStepForm').submit(function(e){
               ${programList}
             </ul>
             <a href="#" id="resetForm" class="text-indigo-600 underline hover:text-indigo-800">
-              Submit another response
+              Submit another response or edit
             </a>
           </div>
         `);

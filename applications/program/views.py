@@ -4,6 +4,10 @@ from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+
+from datetime import datetime
+
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl import load_workbook
@@ -25,7 +29,8 @@ from django.views.decorators.http import require_GET
 from django.shortcuts import redirect, get_object_or_404
 
 from applications.scoreboard.models import Team
-from applications.program.models import Category, Program, Student, Prize, Position, Grade, GroupPosition, GeneralPosition, ProgramRule
+from applications.program.models import Category, Program, Student, Prize, Position, Grade, GroupPosition, GeneralPosition, \
+    ProgramRule, Venue
 from .forms import CategoryForm, ProgramForm, StudentForm
 from applications.accounts.models import Madrasa
 
@@ -614,6 +619,7 @@ def save_prize(request, program_id):
 
     created_prizes = []
 
+    # no grade option for general and group programs
     if program.is_general:
         if first_prize_id:
             student = get_object_or_404(Student, id=first_prize_id)
@@ -674,73 +680,73 @@ def save_prize(request, program_id):
             created_prizes.append(prize.id)
         return JsonResponse({"message": "success", "created_prizes": created_prizes})
 
-    # Save prizes
-    if first_prize_id:
-        student = get_object_or_404(Student, id=first_prize_id)
-        pos, _ = Position.objects.get_or_create(name="first")
-        prize, _ = Prize.objects.update_or_create(
-            student=student, program=program,
-            defaults={"position": pos, "remarks": remarks}
-        )
-        student.total_point += pos.mark
-        student.save()
-        created_prizes.append(prize.id)
+    else:
+        # for single programs
+        if first_prize_id:
+            student = get_object_or_404(Student, id=first_prize_id)
+            pos, _ = Position.objects.get_or_create(name="first")
+            prize, _ = Prize.objects.update_or_create(
+                student=student, program=program,
+                defaults={"position": pos, "remarks": remarks}
+            )
+            student.total_point += pos.mark
+            student.save()
+            created_prizes.append(prize.id)
 
-    if second_prize_id:
-        student = get_object_or_404(Student, id=second_prize_id)
-        pos, _ = Position.objects.get_or_create(name="second")
-        prize, _ = Prize.objects.update_or_create(
-            student=student, program=program,
-            defaults={"position": pos, "remarks": remarks}
-        )
-        student.total_point += pos.mark
-        student.save()
-        created_prizes.append(prize.id)
+        if second_prize_id:
+            student = get_object_or_404(Student, id=second_prize_id)
+            pos, _ = Position.objects.get_or_create(name="second")
+            prize, _ = Prize.objects.update_or_create(
+                student=student, program=program,
+                defaults={"position": pos, "remarks": remarks}
+            )
+            student.total_point += pos.mark
+            student.save()
+            created_prizes.append(prize.id)
 
-    if third_prize_id:
-        student = get_object_or_404(Student, id=third_prize_id)
-        pos, _ = Position.objects.get_or_create(name="third")
-        prize, _ = Prize.objects.update_or_create(
-            student=student, program=program,
-            defaults={"position": pos, "remarks": remarks}
-        )
-        student.total_point += pos.mark
-        student.save()
-        created_prizes.append(prize.id)
+        if third_prize_id:
+            student = get_object_or_404(Student, id=third_prize_id)
+            pos, _ = Position.objects.get_or_create(name="third")
+            prize, _ = Prize.objects.update_or_create(
+                student=student, program=program,
+                defaults={"position": pos, "remarks": remarks}
+            )
+            student.total_point += pos.mark
+            student.save()
+            created_prizes.append(prize.id)
 
-        # --- Handle Grades ---
-    if gradeA_id:
-        student = get_object_or_404(Student, id=gradeA_id)
-        grade = get_object_or_404(Grade, name="a_grade")
-        prize, _ = Prize.objects.update_or_create(
-            student=student, program=program,
-            defaults={"grade": grade, "remarks": remarks}
-        )
-        student.total_point += grade.mark
-        student.save()
-        created_prizes.append(prize.id)
+            # --- Handle Grades ---
+        if gradeA_id:
+            student = get_object_or_404(Student, id=gradeA_id)
+            grade = get_object_or_404(Grade, name="a_grade")
+            prize, _ = Prize.objects.update_or_create(
+                student=student, program=program,
+                defaults={"grade": grade, "remarks": remarks}
+            )
+            student.total_point += grade.mark
+            student.save()
+            created_prizes.append(prize.id)
 
-    if gradeB_id:
-        student = get_object_or_404(Student, id=gradeB_id)
-        grade = get_object_or_404(Grade, name="b_grade")
-        prize, _ = Prize.objects.update_or_create(
-            student=student, program=program,
-            defaults={"grade": grade, "remarks": remarks}
-        )
-        student.total_point += grade.mark
-        student.save()
-        created_prizes.append(prize.id)
-    if gradeC_id:
-        student = get_object_or_404(Student, id=gradeC_id)
-        grade = get_object_or_404(Grade, name="c_grade")
-        prize, _ = Prize.objects.update_or_create(
-            student=student, program=program,
-            defaults={"grade": grade, "remarks": remarks}
-        )
-        student.total_point += grade.mark
-        student.save()
-        created_prizes.append(prize.id)
-    print(created_prizes, 'aaaaaaaaa')
+        if gradeB_id:
+            student = get_object_or_404(Student, id=gradeB_id)
+            grade = get_object_or_404(Grade, name="b_grade")
+            prize, _ = Prize.objects.update_or_create(
+                student=student, program=program,
+                defaults={"grade": grade, "remarks": remarks}
+            )
+            student.total_point += grade.mark
+            student.save()
+            created_prizes.append(prize.id)
+        if gradeC_id:
+            student = get_object_or_404(Student, id=gradeC_id)
+            grade = get_object_or_404(Grade, name="c_grade")
+            prize, _ = Prize.objects.update_or_create(
+                student=student, program=program,
+                defaults={"grade": grade, "remarks": remarks}
+            )
+            student.total_point += grade.mark
+            student.save()
+            created_prizes.append(prize.id)
 
     return JsonResponse({"message": "success", "created_prizes": created_prizes})
 
@@ -986,12 +992,6 @@ def participant_search(request, program_id):
 
 
 
-
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import get_object_or_404
-from .models import Program, Student
-
 def get_program_participants(request, pk):
     program = get_object_or_404(Program, pk=pk)
     participants = program.participants.values("id", "full_name", "code_number")
@@ -1117,3 +1117,134 @@ def program_reg_short_link_redirect(request, code):
     return redirect(final_url)
 
    
+
+
+# for adding program to venue
+def add_venue(request):
+    if request.method == 'POST':
+        data = request.POST()
+        name = data.get('name')
+        venue, _ = Venue.objects.get_or_create(name=name)
+        venue.description = data.get('description')
+        venue.save()
+        return JsonResponse({'message':'success'})
+    return JsonResponse({'message': 'Method Not Allowed'})
+
+
+# def update_venue_with_program(request, pk):
+#     venue = get_object_or_404(Venue, id=pk)
+#     if request.method == 'POST':
+#         programs = request.POST.get('programs')
+#         if programs:
+#             venue.program_set.set(programs)
+#         return JsonResponse({'message': 'success'})
+#     return JsonResponse({'message': 'Method Not Allowed'})
+
+def update_venue_with_program(request, pk):
+    venue = get_object_or_404(Venue, id=pk)
+
+    if request.method == "POST":
+        body = json.loads(request.body.decode("utf-8"))
+        program_ids = body.get("programs", [])
+
+        # Convert to integers
+        programs = Program.objects.filter(id__in=program_ids)
+
+        venue.program_set.set(programs)
+
+        return JsonResponse({
+            "status": "success",
+        })
+
+    return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
+
+
+
+def venue_list(request):
+    venues = Venue.objects.all()
+    return render(request, "program/venue_list.html", {"venues": venues})
+
+def add_venue(request):
+    if request.method == "POST":
+        Venue.objects.create(
+            name=request.POST["name"],
+            description=request.POST["description"],
+        )
+        return redirect("venue_list")
+
+def venue_detail(request, venue_id):
+    venue = Venue.objects.get(id=venue_id)
+    madrasa = request.user.madrasa
+    programs = Program.objects.filter(Q(category__madrasa=madrasa) | Q(girls_categories__madrasa=madrasa))
+    venue_programs = Program.objects.filter(venue=venue)
+    return render(request, "program/venue_detail.html", {"venue": venue, 'all_programs': programs,
+                                                         'venue_programs': venue_programs})
+
+
+
+def download_venue_programs(request, venue_id):
+    venue = Venue.objects.get(id=venue_id)
+    programs = venue.program_set.all().order_by('scheduled_time')
+
+    # HTTP response for PDF
+    response = HttpResponse(content_type='application/pdf')
+    filename = f"{venue.name}_programs.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    # PDF document
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=A4,
+        title="Venue Programs Report",
+    )
+
+    styles = getSampleStyleSheet()
+    elements = []
+
+    # Title
+    title = Paragraph(f"{venue.name}: <b>Programs</b>", styles['Title'])
+    elements.append(title)
+    elements.append(Spacer(1, 12))
+
+    # Table heading
+    data = [
+        ["SL No", "Program Title", "Scheduled Time"]
+    ]
+
+    # Table data
+    for idx, program in enumerate(programs, start=1):
+        # Format time
+        if program.scheduled_time:
+            scheduled = program.scheduled_time.strftime("%I:%M %p")  # 12-hour format
+        else:
+            scheduled = "-"
+
+        data.append([
+            idx,
+            program.title,
+            scheduled
+        ])
+
+    # Create table
+    table = Table(data, colWidths=[1*inch, 3*inch, 2*inch])
+
+    # Style
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.lightgrey]),
+    ]))
+
+    elements.append(table)
+
+    # Build PDF
+    doc.build(elements)
+
+    return response

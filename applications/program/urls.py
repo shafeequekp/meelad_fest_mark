@@ -12,6 +12,7 @@ urlpatterns = [
     path("<int:pk>/participants/", views.program_participants_json, name="program_participants_json"),
     path("<int:pk>/judge-slip/pdf/<int:category_id>/", views.program_judge_slip_pdf, name="program_participants_pdf"),
     path("download-participants/<int:program_id>/<str:section>/<int:category_id>/", views.download_participants_pdf, name="download_participants_pdf"),
+
     path('<int:program_id>/save-prize/', views.save_prize, name='save-prize'),
     path('<int:program_id>/publish_result/', views.publish_result, name='publish_result'),
 
@@ -38,6 +39,14 @@ urlpatterns = [
     path('generate_program_link/', views.generate_program_reg_link, name='generate_program_link'),
 
     path("save-config/", views.save_config, name="save_config"),
+
+    # for venues
+    path("venues/", views.venue_list, name="venue_list"),
+    path("venues/add/", views.add_venue, name="add_venue"),
+    path("venues/<int:venue_id>/", login_required(views.venue_detail), name="venue_detail"),
+    path("add-programs-to-venue/<int:pk>/", views.update_venue_with_program, name="add-programs-to-venue"),
+    path("download-venue-programs/<int:venue_id>/", views.download_venue_programs, name="download-venue-programs"),
+
 
 
 ]
