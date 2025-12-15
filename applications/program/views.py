@@ -252,8 +252,9 @@ class CategoryDetailView(generic.DetailView):
         context["boys"] = Student.objects.filter(category=category, gender='male', team_id=team_id).order_by('-total_point')
         context['girls'] = Student.objects.filter(category=category, gender='female', team_id=team_id).order_by('-total_point')
 
-        boys_programs = category.programs.all()
-        girls_programs = category.programs_for_girls.all()
+        general_programs = Program.objects.filter(is_general=True)
+        boys_programs = (category.programs.all() | general_programs).distinct()
+        girls_programs = (category.programs_for_girls.all() | general_programs).distinct()
         context["boys_stage_programs"] = boys_programs.filter(non_stage=False)
         context["boys_non_stage_programs"] = boys_programs.filter(non_stage=True)
         context['boys_programs'] = boys_programs
@@ -308,10 +309,11 @@ class CategoryDetailView(generic.DetailView):
                 program = program_form.save(commit=False)
                 program.save()
                 gender = request.POST.get('gender')
-                if gender == 'male':
-                    category.programs.add(program)
-                elif gender == 'female':
-                    category.programs_for_girls.add(program)
+                if not program.is_general:
+                    if gender == 'male':
+                        category.programs.add(program)
+                    elif gender == 'female':
+                        category.programs_for_girls.add(program)
                 url = reverse("category_detail", kwargs={"pk": category.pk})
                 # Add query param
                 if team_id:
