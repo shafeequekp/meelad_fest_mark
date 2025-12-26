@@ -1161,6 +1161,16 @@ def update_venue_with_program(request, pk):
     return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
 
 
+@csrf_exempt
+def remove_program_from_venue(request, program_id):
+    if request.method == "POST":
+        program = get_object_or_404(Program, id=program_id)
+        program.venue = None
+        program.save()
+        return JsonResponse({"status": "success"})
+    return JsonResponse({"status": "error", "message": "Method Not Allowed"}, status=405)
+
+
 
 def venue_list(request):
     venues = Venue.objects.all()
