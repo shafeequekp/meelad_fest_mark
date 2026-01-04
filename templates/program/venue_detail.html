@@ -13,42 +13,18 @@
   <div class="max-w-6xl mx-auto">
 
     <!-- ================= HEADER ================= -->
-    <header class="mb-10 bg-white shadow relative z-50">
-      <div class="flex items-center justify-between px-4 py-3">
+    {% include 'header.html' %}
 
-        <!-- Left Title -->
-        <div>
+    <div class="bg-white shadow-sm py-6 mb-10">
+      <div class="max-w-6xl mx-auto px-4">
+        <div class="text-left">
           <h1 class="text-4xl font-extrabold text-indigo-700 drop-shadow-sm">
             📍 Venue Management
           </h1>
           <p class="text-gray-500 mt-1">Manage programs for this venue</p>
         </div>
-
-        {% if request.user.is_authenticated %}
-        <div class="flex items-center space-x-3">
-          <div class="hidden md:flex items-center space-x-3">
-
-            <a href="{% url 'home' %}"
-              class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100">Home</a>
-            <a href="{% url 'program_list' %}"
-              class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100">Programs</a>
-            <a href="{% url 'results' %}"
-              class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100">Results</a>
-
-            <button id="profile-btn" class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow">
-              <img src="{% static 'images/profile.png' %}" class="w-full h-full object-cover">
-            </button>
-          </div>
-
-          <button id="menu-toggle" class="md:hidden p-2 rounded-lg hover:bg-gray-200">
-            <svg id="menu-open" class="w-6 h-6 block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-        </div>
-        {% endif %}
       </div>
-    </header>
+    </div>
 
 
 
@@ -59,7 +35,8 @@
 
       <div class="mt-6 flex items-center gap-4">
         <span class="px-4 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">Capacity: 150</span>
-        <span class="px-4 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">Location: {{ venue.description}}</span>
+        <span class="px-4 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">Location: {{
+          venue.description}}</span>
       </div>
 
       <hr class="my-6">
@@ -281,121 +258,17 @@
 
 
     <!-- ================= PROFILE MODAL / MENU SCRIPTS (same as your page) ================= -->
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
 
-        // ================== MOBILE MENU =====================
-        const menuBtn = document.getElementById("menu-toggle");
-        const menu = document.getElementById("mobile-menu");
-        const overlay = document.getElementById("overlay");
-        const closeBtn = document.getElementById("menu-close-btn");
-
-        function openMenu() {
-          if (menu && overlay) {
-            menu.classList.remove("hidden");
-            overlay.classList.remove("hidden");
-          }
-        }
-
-        function closeMenu() {
-          if (menu && overlay) {
-            menu.classList.add("hidden");
-            overlay.classList.add("hidden");
-          }
-        }
-
-        if (menuBtn) menuBtn.addEventListener("click", openMenu);
-        if (closeBtn) closeBtn.addEventListener("click", closeMenu);
-        if (overlay) overlay.addEventListener("click", closeMenu);
-
-
-        // ================== PROFILE POPUP =====================
-        const profileBtn = document.getElementById("profile-btn");
-        const profileBtnMobile = document.getElementById("profile-btn-mobile");
-        const profileModal = document.getElementById("profileModal");
-
-        function openProfile() {
-          profileModal.classList.remove("hidden");
-        }
-
-        function closeProfile() {
-          profileModal.classList.add("hidden");
-        }
-
-        if (profileBtn) profileBtn.addEventListener("click", openProfile);
-        if (profileBtnMobile) profileBtnMobile.addEventListener("click", openProfile);
-
-        // Allow closing by clicking background
-        profileModal.addEventListener("click", function (e) {
-          if (e.target === profileModal) closeProfile();
-        });
-
-      });
-    </script>
 
 
   </div>
 
   <!-- ================= MOBILE MENU ================= -->
-  <div id="overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40"></div>
-
-  <div id="mobile-menu" class="hidden fixed top-0 right-0 w-64 h-full bg-white shadow-lg p-5 z-50 transform transition">
-
-    <button id="menu-close-btn" class="mb-5 text-gray-500 hover:text-gray-700">
-      ✖ Close
-    </button>
-
-    <nav class="space-y-3">
-      <a href="{% url 'home' %}" class="block py-2 px-3 rounded hover:bg-gray-100">Home</a>
-      <a href="{% url 'program_list' %}" class="block py-2 px-3 rounded hover:bg-gray-100">Programs</a>
-      <a href="{% url 'results' %}" class="block py-2 px-3 rounded hover:bg-gray-100">Results</a>
-
-      <button id="profile-btn-mobile"
-        class="mt-4 flex items-center space-x-2 py-2 px-3 bg-indigo-100 rounded hover:bg-indigo-200">
-        <img src="{% static 'images/profile.png' %}" class="w-8 h-8 rounded-full">
-        <span>Profile</span>
-      </button>
-    </nav>
-  </div>
 
 
 
-  <!-- Profile Popup -->
-  <div id="profileModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-2xl p-6 w-96">
-      <div class="flex items-center space-x-4 mb-6">
-        <img src="{% static 'images/profile.png' %}" alt="Profile"
-          class="w-16 h-16 rounded-full object-cover border-4 border-indigo-600 shadow">
-        <div>
-          <h2 class="text-xl font-bold text-indigo-700">{{ request.user.get_full_name }}</h2>
-          <p class="text-gray-500">{{ request.user.email }}</p>
-        </div>
-      </div>
 
-      <div class="space-y-2 text-gray-700">
-        <p><strong>📞 Phone:</strong> {{ request.user.phone }}</p>
-        <p><strong>🏫 Madrasa:</strong> {{ request.user.madrasa.name }}</p>
-        <p><strong>🎉 Fest:</strong> {{ meelad_fest_name }}</p>
-        <p><strong>👨‍🎓 Total Students:</strong> {{ total_students }}</p>
-        <p><strong>📚 Total Programs:</strong> {{ total_programs }}</p>
-      </div>
 
-      <div class="mt-6 flex justify-center gap-4">
-        <!-- Logout Button -->
-        <a href="{% url 'logout' %}"
-          class="px-5 py-2 bg-red-500 text-white font-semibold rounded-lg shadow-lg hover:bg-red-600 transition transform hover:-translate-y-0.5">
-          🔓 Logout
-        </a>
-
-        <!-- Close Button -->
-        <button onclick="closeProfile()"
-          class="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:bg-indigo-700 transition transform hover:-translate-y-0.5">
-          ✖ Close
-        </button>
-      </div>
-
-    </div>
-  </div>
 
 </body>
 

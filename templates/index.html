@@ -3,623 +3,569 @@
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital: Meelad Program</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital: Meelad Program</title>
 
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <style>
+    [x-cloak] {
+      display: none !important;
+    }
+  </style>
 
 
-    <style>
+  <style>
     .fade {
       animation: fadeEffect 1s ease-in-out;
     }
+
     @keyframes fadeEffect {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
 
-@keyframes finalSlideAnimation {
-  0% {
-    transform: scale(0.5);
-    opacity: 0;
-  }
-  60% {
-    transform: scale(1.1);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-.animate-finalSlide {
-  animation: finalSlideAnimation 2s ease-out forwards;
-}
+    @keyframes finalSlideAnimation {
+      0% {
+        transform: scale(0.5);
+        opacity: 0;
+      }
+
+      60% {
+        transform: scale(1.1);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .animate-finalSlide {
+      animation: finalSlideAnimation 2s ease-out forwards;
+    }
 
 
 
-/* Fade-up animation */
-@keyframes fadeUp {
-  0% {
-    opacity: 0;
-    transform: translateY(30px) scale(0.95);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
+    /* Fade-up animation */
+    @keyframes fadeUp {
+      0% {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+      }
 
-.card-animate {
-  animation: fadeUp 0.8s ease-out forwards;
-  opacity: 0;
-}
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
 
-/* Staggered delays */
-.card-animate:nth-child(1) { animation-delay: 0.1s; }
-.card-animate:nth-child(2) { animation-delay: 0.3s; }
-.card-animate:nth-child(3) { animation-delay: 0.5s; }
-.card-animate:nth-child(4) { animation-delay: 0.7s; }
-.card-animate:nth-child(5) { animation-delay: 0.9s; }
-.card-animate:nth-child(6) { animation-delay: 1.1s; }
+    .card-animate {
+      animation: fadeUp 0.8s ease-out forwards;
+      opacity: 0;
+    }
+
+    /* Staggered delays */
+    .card-animate:nth-child(1) {
+      animation-delay: 0.1s;
+    }
+
+    .card-animate:nth-child(2) {
+      animation-delay: 0.3s;
+    }
+
+    .card-animate:nth-child(3) {
+      animation-delay: 0.5s;
+    }
+
+    .card-animate:nth-child(4) {
+      animation-delay: 0.7s;
+    }
+
+    .card-animate:nth-child(5) {
+      animation-delay: 0.9s;
+    }
+
+    .card-animate:nth-child(6) {
+      animation-delay: 1.1s;
+    }
 
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
 
-.animate-fade-in {
-  animation: fadeIn 1s ease-out forwards;
-}
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
 
-    </style>
+    .animate-fade-in {
+      animation: fadeIn 1s ease-out forwards;
+    }
+  </style>
 </head>
+
 <body class="bg-gray-100 font-sans">
 
-<!-- Header -->
-<header class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 shadow-lg relative z-50">
-    <div class="flex items-center justify-between">
+  <!-- Header -->
+  {% include 'header.html' %}
 
-        <!-- Center: Title -->
-        <h1 class="text-2xl sm:text-3xl font-bold text-center flex-1">
-            🏆 {{ meelad_fest_name }} Team Performance Dashboard
-        </h1>
-
-        <!-- Right: Buttons + Mobile Hamburger -->
-        {% if request.user.is_authenticated %}
-        <div class="flex items-center space-x-2">
-            <!-- Desktop Buttons -->
-            <div class="hidden sm:flex space-x-2">
-
-                <a href="{% url 'teams' %}"
-                   class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
-                    Teams
-                </a>
-                <a href="{% url 'program_list' %}"
-                   class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
-                    Programs
-                </a>
-
-                <a href="{% url 'upload-students' %}"
-                   class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
-                    Upload Data
-                </a>
-                <a href="{% url 'results' %}"
-                   class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
-                    Results
-                </a>
-
-                <a href="{% url 'venue_list' %}"
-                   class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
-                    Venues
-                </a>
-
-                 <button id="profile-btn" class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow hover:scale-105 transition">
-                    <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-full h-full object-cover">
-                </button>
-
-            </div>
-
-            <!-- Mobile Hamburger (now on right side) -->
-            <button id="menu-toggle" class="sm:hidden p-2 rounded-lg hover:bg-indigo-700 focus:outline-none">
-                <svg id="menu-open" class="w-6 h-6 block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M4 6h16M4 12h16M4 18h16"/>
-                </svg>
-            </button>
-        </div>
-        {% endif %}
+  <!-- Page Title (Moved from Header) -->
+  <div class="bg-white shadow-sm py-4 mb-6">
+    <div class="max-w-7xl mx-auto px-4 flex items-center justify-center relative">
+      <h1 class="text-2xl sm:text-3xl font-bold text-center text-indigo-700">
+        🏆 {{ meelad_fest_name }} Team Performance Dashboard
+      </h1>
     </div>
-</header>
-
-{% if request.user.is_authenticated %}
-<!-- Right Sidebar Mobile Menu -->
-<div id="mobile-menu"
-     class="fixed top-0 right-0 h-full w-64 bg-white shadow-lg transform translate-x-full transition-transform duration-300 ease-in-out z-50">
-    <div class="p-4 flex justify-between items-center border-b">
-        <h2 class="text-lg font-bold text-indigo-700">Menu</h2>
-        <button id="menu-close-btn" class="text-gray-600 hover:text-indigo-700 focus:outline-none">
-            ✕
-        </button>
-    </div>
-    <nav class="p-4 space-y-3">
-        <a href="javascript:void(0)" id="profile-btn-mobile" class="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-indigo-50">
-            <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-8 h-8 rounded-full object-cover border">
-            <span class="text-indigo-600 font-semibold">Profile</span>
-        </a>
-
-        <a href="{% url 'teams' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Teams</a>
-        <a href="{% url 'program_list' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Programs</a>
-        <a href="{% url 'results' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Results</a>
-        <a href="{% url 'venue_list' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Venues</a>
-        <a href="{% url 'upload-students' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Upload Students</a>
-
-    </nav>
-</div>
-
-<!-- Overlay -->
-<div id="overlay" class="fixed inset-0 bg-black bg-opacity-40 hidden z-40"></div>
-{% endif %}
+  </div>
 
 
 
-<!-- Slider Wrapper -->
-<div class="relative max-w-4xl mx-auto mt-10">
+  <!-- Slider Wrapper -->
+  <div class="relative max-w-4xl mx-auto mt-10">
     <div id="slider" class="relative overflow-hidden">
 
-        {% if teams and categories %}
-        {% for team in teams %}
-        <!-- Each Section Slide -->
+      {% if teams and categories %}
+      {% for team in teams %}
+      <!-- Each Section Slide -->
 
-        <!--  Boys section-->
-        <div class="slide hidden fade">
-            <div class="p-6">
-                <!-- Team Name -->
+      <!--  Boys section-->
+      <div class="slide hidden fade">
+        <div class="p-6">
+          <!-- Team Name -->
 
-                <div class="text-center mb-8">
-                    <h2 class="text-4xl font-extrabold tracking-wide animate-fade-in
+          <div class="text-center mb-8">
+            <h2 class="text-4xl font-extrabold tracking-wide animate-fade-in
                 {% if forloop.counter == 1 %} text-pink-600
                 {% elif forloop.counter == 2 %} text-blue-600
                 {% elif forloop.counter == 3 %} text-yellow-600
                 {% elif forloop.counter == 4 %} text-purple-600
                 {% else %} text-green-900 {% endif %}">
-                        {{ team.name }}
-                    </h2>
-                    <br>
-                    <p class="inline-block bg-yellow-200 text-yellow-800 font-semibold px-4 py-1 rounded-lg shadow-md">
-                        Section: Boys
-                    </p>
-                </div>
+              {{ team.name }}
+            </h2>
+            <br>
+            <p class="inline-block bg-yellow-200 text-yellow-800 font-semibold px-4 py-1 rounded-lg shadow-md">
+              Section: Boys
+            </p>
+          </div>
 
 
-                <!-- Marks Grid -->
-                <div class="grid md:grid-cols-3 gap-8 mt-8">
+          <!-- Marks Grid -->
+          <div class="grid md:grid-cols-3 gap-8 mt-8">
 
-                    {% for category in categories %}
-                    {% if category.name == 'Super Senior' %}
-                    <!-- Super Senior -->
-                    <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-pink-500 to-rose-600
+            {% for category in categories %}
+            {% if category.name == 'Super Senior' %}
+            <!-- Super Senior -->
+            <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-pink-500 to-rose-600
                 transform hover:scale-105 transition card-animate">
-                        <h3 class="text-xl font-bold flex items-center gap-2">👑 Super Senior</h3>
-                        <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                            <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
-                        </p>
-                    </div>
-
-                    {% elif category.name == 'Senior' %}
-                    <!-- Senior -->
-                    <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-indigo-500 to-blue-600
-                transform hover:scale-105 transition card-animate">
-                        <h3 class="text-xl font-bold flex items-center gap-2">🎓 Senior</h3>
-                        <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                            <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
-                        </p>
-                    </div>
-
-                    {% elif category.name == 'Junior' %}
-                    <!-- Junior -->
-                    <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-green-500 to-emerald-600
-                transform hover:scale-105 transition card-animate">
-                        <h3 class="text-xl font-bold flex items-center gap-2">🌿 Junior</h3>
-                        <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                            <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
-                        </p>
-                    </div>
-
-                    {% elif category.name == 'Sub Junior' %}
-                    <!-- Sub Junior -->
-                    <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-yellow-400 to-orange-500
-                transform hover:scale-105 transition card-animate">
-                        <h3 class="text-xl font-bold flex items-center gap-2">🌟 Sub Junior</h3>
-                        <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                            <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
-                        </p>
-                    </div>
-
-                    {% elif category.name == 'Kiddies' %}
-                    <!-- Kiddies -->
-                    <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-teal-400 to-cyan-500
-                transform hover:scale-105 transition card-animate">
-                        <h3 class="text-xl font-bold flex items-center gap-2">🧸 Kiddies</h3>
-                        <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                            <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
-                        </p>
-                    </div>
-
-                    {% elif category.name == 'General' %}
-                    <!-- General -->
-                    <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-red-500 to-pink-600
-                transform hover:scale-105 transition card-animate">
-                        <h3 class="text-xl font-bold flex items-center gap-2">🌍 General</h3>
-                        <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                            <span class="count-up" data-value="{{ mark.general|floatformat:0 }}">0</span>
-                        </p>
-                    </div>
-                    {% endif %}
-                    {% endfor %}
-
-                </div>
-
-                <!-- Section Total -->
-                <div class="mt-10 p-8 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-2xl shadow-xl text-center">
-                    <h3 class="text-2xl font-bold">Total Points</h3>
-                    <p class="text-4xl font-extrabold mt-3">{% get_section_total 'male' team %}</p>
-                </div>
+              <h3 class="text-xl font-bold flex items-center gap-2">👑 Super Senior</h3>
+              <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+                <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
+              </p>
             </div>
+
+            {% elif category.name == 'Senior' %}
+            <!-- Senior -->
+            <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-indigo-500 to-blue-600
+                transform hover:scale-105 transition card-animate">
+              <h3 class="text-xl font-bold flex items-center gap-2">🎓 Senior</h3>
+              <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+                <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
+              </p>
+            </div>
+
+            {% elif category.name == 'Junior' %}
+            <!-- Junior -->
+            <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-green-500 to-emerald-600
+                transform hover:scale-105 transition card-animate">
+              <h3 class="text-xl font-bold flex items-center gap-2">🌿 Junior</h3>
+              <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+                <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
+              </p>
+            </div>
+
+            {% elif category.name == 'Sub Junior' %}
+            <!-- Sub Junior -->
+            <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-yellow-400 to-orange-500
+                transform hover:scale-105 transition card-animate">
+              <h3 class="text-xl font-bold flex items-center gap-2">🌟 Sub Junior</h3>
+              <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+                <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
+              </p>
+            </div>
+
+            {% elif category.name == 'Kiddies' %}
+            <!-- Kiddies -->
+            <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-teal-400 to-cyan-500
+                transform hover:scale-105 transition card-animate">
+              <h3 class="text-xl font-bold flex items-center gap-2">🧸 Kiddies</h3>
+              <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+                <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
+              </p>
+            </div>
+
+            {% elif category.name == 'General' %}
+            <!-- General -->
+            <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-red-500 to-pink-600
+                transform hover:scale-105 transition card-animate">
+              <h3 class="text-xl font-bold flex items-center gap-2">🌍 General</h3>
+              <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+                <span class="count-up" data-value="{{ mark.general|floatformat:0 }}">0</span>
+              </p>
+            </div>
+            {% endif %}
+            {% endfor %}
+
+          </div>
+
+          <!-- Section Total -->
+          <div
+            class="mt-10 p-8 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-2xl shadow-xl text-center">
+            <h3 class="text-2xl font-bold">Total Points</h3>
+            <p class="text-4xl font-extrabold mt-3">{% get_section_total 'male' team %}</p>
+          </div>
         </div>
+      </div>
 
 
 
-        <!--        Girls section-->
-        <div class="slide hidden fade">
-            <div class="p-6">
-                <!-- Team Name -->
+      <!--        Girls section-->
+      <div class="slide hidden fade">
+        <div class="p-6">
+          <!-- Team Name -->
 
-                <div class="text-center mb-8">
-                    <h2 class="text-4xl font-extrabold tracking-wide animate-fade-in
+          <div class="text-center mb-8">
+            <h2 class="text-4xl font-extrabold tracking-wide animate-fade-in
                 {% if forloop.counter == 1 %} text-pink-600
                 {% elif forloop.counter == 2 %} text-blue-600
                 {% elif forloop.counter == 3 %} text-yellow-600
                 {% elif forloop.counter == 4 %} text-purple-600
                 {% else %} text-green-900 {% endif %}">
-                        {{ team.name }}
-                    </h2>
-                    <br>
-                    <p class="inline-block bg-yellow-200 text-yellow-800 font-semibold px-4 py-1 rounded-lg shadow-md">
-                        Section: Girls
-                    </p>
-                </div>
+              {{ team.name }}
+            </h2>
+            <br>
+            <p class="inline-block bg-yellow-200 text-yellow-800 font-semibold px-4 py-1 rounded-lg shadow-md">
+              Section: Girls
+            </p>
+          </div>
 
 
-                <!-- Marks Grid -->
-                <div class="grid md:grid-cols-3 gap-8 mt-8">
+          <!-- Marks Grid -->
+          <div class="grid md:grid-cols-3 gap-8 mt-8">
 
-                    {% for category in categories %}
-                    {% if category.name == 'Super Senior' %}
-                    <!-- Super Senior -->
-                    <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-pink-500 to-rose-600
+            {% for category in categories %}
+            {% if category.name == 'Super Senior' %}
+            <!-- Super Senior -->
+            <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-pink-500 to-rose-600
                 transform hover:scale-105 transition card-animate">
-                        <h3 class="text-xl font-bold flex items-center gap-2">👑 Super Senior</h3>
-                        <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                            <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
-                        </p>
-                    </div>
-
-                    {% elif category.name == 'Senior' %}
-                    <!-- Senior -->
-                    <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-indigo-500 to-blue-600
-                transform hover:scale-105 transition card-animate">
-                        <h3 class="text-xl font-bold flex items-center gap-2">🎓 Senior</h3>
-                        <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                            <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
-                        </p>
-                    </div>
-
-                    {% elif category.name == 'Junior' %}
-                    <!-- Junior -->
-                    <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-green-500 to-emerald-600
-                transform hover:scale-105 transition card-animate">
-                        <h3 class="text-xl font-bold flex items-center gap-2">🌿 Junior</h3>
-                        <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                            <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
-                        </p>
-                    </div>
-
-                    {% elif category.name == 'Sub Junior' %}
-                    <!-- Sub Junior -->
-                    <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-yellow-400 to-orange-500
-                transform hover:scale-105 transition card-animate">
-                        <h3 class="text-xl font-bold flex items-center gap-2">🌟 Sub Junior</h3>
-                        <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                            <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
-                        </p>
-                    </div>
-
-                    {% elif category.name == 'Kiddies' %}
-                    <!-- Kiddies -->
-                    <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-teal-400 to-cyan-500
-                transform hover:scale-105 transition card-animate">
-                        <h3 class="text-xl font-bold flex items-center gap-2">🧸 Kiddies</h3>
-                        <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                            <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
-                        </p>
-                    </div>
-
-                    {% elif category.name == 'General' %}
-                    <!-- General -->
-                    <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-red-500 to-pink-600
-                transform hover:scale-105 transition card-animate">
-                        <h3 class="text-xl font-bold flex items-center gap-2">🌍 General</h3>
-                        <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
-                            <span class="count-up" data-value="{{ mark.general|floatformat:0 }}">0</span>
-                        </p>
-                    </div>
-                    {% endif %}
-                    {% endfor %}
-
-                </div>
-
-                <!-- Section Total -->
-                <div class="mt-10 p-8 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-2xl shadow-xl text-center">
-                    <h3 class="text-2xl font-bold">Total Points</h3>
-                    <p class="text-4xl font-extrabold mt-3">{% get_section_total 'female' team %}</p>
-                </div>
+              <h3 class="text-xl font-bold flex items-center gap-2">👑 Super Senior</h3>
+              <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+                <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
+              </p>
             </div>
+
+            {% elif category.name == 'Senior' %}
+            <!-- Senior -->
+            <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-indigo-500 to-blue-600
+                transform hover:scale-105 transition card-animate">
+              <h3 class="text-xl font-bold flex items-center gap-2">🎓 Senior</h3>
+              <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+                <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
+              </p>
+            </div>
+
+            {% elif category.name == 'Junior' %}
+            <!-- Junior -->
+            <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-green-500 to-emerald-600
+                transform hover:scale-105 transition card-animate">
+              <h3 class="text-xl font-bold flex items-center gap-2">🌿 Junior</h3>
+              <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+                <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
+              </p>
+            </div>
+
+            {% elif category.name == 'Sub Junior' %}
+            <!-- Sub Junior -->
+            <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-yellow-400 to-orange-500
+                transform hover:scale-105 transition card-animate">
+              <h3 class="text-xl font-bold flex items-center gap-2">🌟 Sub Junior</h3>
+              <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+                <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
+              </p>
+            </div>
+
+            {% elif category.name == 'Kiddies' %}
+            <!-- Kiddies -->
+            <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-teal-400 to-cyan-500
+                transform hover:scale-105 transition card-animate">
+              <h3 class="text-xl font-bold flex items-center gap-2">🧸 Kiddies</h3>
+              <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+                <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
+              </p>
+            </div>
+
+            {% elif category.name == 'General' %}
+            <!-- General -->
+            <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-red-500 to-pink-600
+                transform hover:scale-105 transition card-animate">
+              <h3 class="text-xl font-bold flex items-center gap-2">🌍 General</h3>
+              <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+                <span class="count-up" data-value="{{ mark.general|floatformat:0 }}">0</span>
+              </p>
+            </div>
+            {% endif %}
+            {% endfor %}
+
+          </div>
+
+          <!-- Section Total -->
+          <div
+            class="mt-10 p-8 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-2xl shadow-xl text-center">
+            <h3 class="text-2xl font-bold">Total Points</h3>
+            <p class="text-4xl font-extrabold mt-3">{% get_section_total 'female' team %}</p>
+          </div>
         </div>
+      </div>
 
-        {% endfor %}
+      {% endfor %}
 
 
 
-        <!-- ✅ Single Grand Total Slide (All Teams Together) -->
-        <div class="slide hidden animate-finalSlide flex items-start justify-center min-h-screen pt-12">
-            <div class="p-10 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-2xl shadow-2xl text-center w-full max-w-5xl">
-                <h3 class="text-4xl font-extrabold mb-12">🏅 Grand Totals</h3>
-                <div class="grid md:grid-cols-2 gap-12">
-                    {% for team_data in teams_with_grand_totals %}
+      <!-- ✅ Single Grand Total Slide (All Teams Together) -->
+      <div class="slide hidden animate-finalSlide flex items-start justify-center min-h-screen pt-12">
+        <div
+          class="p-10 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-2xl shadow-2xl text-center w-full max-w-5xl">
+          <h3 class="text-4xl font-extrabold mb-12">🏅 Grand Totals</h3>
+          <div class="grid md:grid-cols-2 gap-12">
+            {% for team_data in teams_with_grand_totals %}
 
-                    <div class="p-12 bg-white text-gray-800 rounded-2xl shadow-2xl transform hover:scale-105 transition-transform duration-300">
-                        <h4 class="text-2xl font-bold
+            <div
+              class="p-12 bg-white text-gray-800 rounded-2xl shadow-2xl transform hover:scale-105 transition-transform duration-300">
+              <h4 class="text-2xl font-bold
                {% if team_data.team.name == 'LEHAR' %} text-rose-600 {% else %} text-green-800 {% endif %}">
-                            {{ team_data.student__team__name }}
-                        </h4>
+                {{ team_data.student__team__name }}
+              </h4>
 
-                        <p class="mt-6 text-5xl font-extrabold text-pink-600 drop-shadow-md count"
-                           data-target="{{ team_data.grand_total|floatformat:0 }}">
-                            0
-                        </p>
+              <p class="mt-6 text-5xl font-extrabold text-pink-600 drop-shadow-md count"
+                data-target="{{ team_data.grand_total|floatformat:0 }}">
+                0
+              </p>
 
 
-                    </div>
-
-                    {% endfor %}
-                </div>
             </div>
+
+            {% endfor %}
+          </div>
         </div>
+      </div>
 
 
-        {% else %}
+      {% else %}
 
-        <!-- <div class="p-6">
+      <!-- <div class="p-6">
             <h1 style="color:red" class="text-2xl sm:text-3xl font-bold text-center flex-1">No teams added!<br> please add teams and categories</h1>
            <img src="{% static 'images/no-data.gif' %}" style="display: block; margin: 0 auto;"> -->
 
-           <div class="p-6 text-center">
-    <h1 class="text-2xl sm:text-3xl font-bold text-red-600 mb-4">
-        No teams added!
-        <br>
-        <span class="text-lg font-medium text-gray-700">
+      <div class="p-6 text-center">
+        <h1 class="text-2xl sm:text-3xl font-bold text-red-600 mb-4">
+          No teams added!
+          <br>
+          <span class="text-lg font-medium text-gray-700">
             Please add teams and categories
-        </span>
-    </h1>
+          </span>
+        </h1>
 
-    <img src="{% static 'images/no-data.gif' %}"
-         class="mx-auto mb-6"
-         alt="No data">
+        <img src="{% static 'images/no-data.gif' %}" class="mx-auto mb-6" alt="No data">
 
-    <a href="{% url 'teams' %}"
-       class="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:bg-indigo-700 transition">
-        ➕ Create Team
-    </a>
-</div>
+        <a href="{% url 'teams' %}"
+          class="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:bg-indigo-700 transition">
+          ➕ Create Team
+        </a>
+      </div>
 
 
-        {% endif %}
+      {% endif %}
     </div>
-</div>
+  </div>
 
-<!-- Slider Script -->
+  <!-- Slider Script -->
 
-<script>
-
-const menuBtn = document.getElementById("menu-toggle");
-  const menu = document.getElementById("mobile-menu");
-  const overlay = document.getElementById("overlay");
-  const closeBtn = document.getElementById("menu-close-btn");
-
-  function openMenu() {
-    menu.classList.remove("translate-x-full");
-    overlay.classList.remove("hidden");
-  }
-
-  function closeMenu() {
-    menu.classList.add("translate-x-full");
-    overlay.classList.add("hidden");
-  }
-
-  if (menuBtn) menuBtn.addEventListener("click", openMenu);
-  if (closeBtn) closeBtn.addEventListener("click", closeMenu);
-  if (overlay) overlay.addEventListener("click", closeMenu);
+  <script>
 
 
 
 
-/* ---------- Utility to parse numbers safely ---------- */
-function parseNumberString(s) {
-  if (!s && s !== 0) return NaN;
-  try {
-    return parseFloat(String(s).replace(/,/g, '').trim());
-  } catch (e) {
-    return NaN;
-  }
-}
+    /* ---------- Utility to parse numbers safely ---------- */
+    function parseNumberString(s) {
+      if (!s && s !== 0) return NaN;
+      try {
+        return parseFloat(String(s).replace(/,/g, '').trim());
+      } catch (e) {
+        return NaN;
+      }
+    }
 
-/* ---------- Single animate function that handles both data-value and data-target ---------- */
-function animateNumberElement(el) {
-  const rawTarget = el.getAttribute('data-value') ?? el.getAttribute('data-target') ?? el.getAttribute('data-to');
-  if (rawTarget == null) return;
-  const target = parseNumberString(rawTarget);
-  if (isNaN(target)) return;
+    /* ---------- Single animate function that handles both data-value and data-target ---------- */
+    function animateNumberElement(el) {
+      const rawTarget = el.getAttribute('data-value') ?? el.getAttribute('data-target') ?? el.getAttribute('data-to');
+      if (rawTarget == null) return;
+      const target = parseNumberString(rawTarget);
+      if (isNaN(target)) return;
 
-  const duration = parseInt(el.getAttribute('data-duration') || '1200', 10);
+      const duration = parseInt(el.getAttribute('data-duration') || '1200', 10);
 
-  // always start fresh from 0 (for grand totals animation restart)
-  const startValue = 0;
+      // always start fresh from 0 (for grand totals animation restart)
+      const startValue = 0;
 
-  if (el._raf) cancelAnimationFrame(el._raf);
+      if (el._raf) cancelAnimationFrame(el._raf);
 
-  const startTime = performance.now();
-  const formatter = new Intl.NumberFormat('en-IN');
+      const startTime = performance.now();
+      const formatter = new Intl.NumberFormat('en-IN');
 
-  function tick(now) {
-    const elapsed = now - startTime;
-    const t = Math.min(elapsed / duration, 1);
-    const eased = 1 - Math.pow(1 - t, 3);
-    const current = Math.round(startValue + (target - startValue) * eased);
-    el.textContent = formatter.format(current);
-    if (t < 1) {
+      function tick(now) {
+        const elapsed = now - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - t, 3);
+        const current = Math.round(startValue + (target - startValue) * eased);
+        el.textContent = formatter.format(current);
+        if (t < 1) {
+          el._raf = requestAnimationFrame(tick);
+        } else {
+          el._raf = null;
+          el.textContent = formatter.format(target);
+        }
+      }
+
+      el.textContent = formatter.format(startValue); // reset before animation
       el._raf = requestAnimationFrame(tick);
-    } else {
-      el._raf = null;
-      el.textContent = formatter.format(target);
     }
-  }
 
-  el.textContent = formatter.format(startValue); // reset before animation
-  el._raf = requestAnimationFrame(tick);
-}
-
-/* ---------- Restart card CSS animations (forces reflow) ---------- */
-function restartCardAnimations(container) {
-  container.querySelectorAll('.card-animate').forEach(el => {
-    el.classList.remove('card-animate');
-    void el.offsetWidth;
-    el.classList.add('card-animate');
-  });
-}
-
-/* ---------- Start all counters inside a slide/container ---------- */
-function startCountersIn(container) {
-  container.querySelectorAll('.count-up, .count').forEach(el => {
-    // reset text so animation always starts from 0
-    el.textContent = "0";
-    animateNumberElement(el);
-  });
-}
-
-/* ---------- Slider logic ---------- */
-(function () {
-  const slides = Array.from(document.querySelectorAll('.slide'));
-  if (!slides.length) return;
-
-  let index = 0;
-  let slideTimer = null;
-  const slideIntervalMs = 5000;
-  const autoRefreshMs = 300000; // 5 minutes
-
-  function showSlide(i) {
-    if (i < 0) i = 0;
-    if (i >= slides.length) i = 0;
-
-    slides.forEach(slide => slide.classList.add('hidden'));
-    const active = slides[i];
-    active.classList.remove('hidden');
-
-    restartCardAnimations(active);
-    startCountersIn(active);
-
-    index = i;
-  }
-
-  function nextSlide() {
-    showSlide((index + 1) % slides.length);
-  }
-
-  showSlide(index);
-
-  function startAutoSlide() {
-    if (slideTimer) clearInterval(slideTimer);
-    slideTimer = setInterval(nextSlide, slideIntervalMs);
-  }
-
-  function stopAutoSlide() {
-    if (slideTimer) {
-      clearInterval(slideTimer);
-      slideTimer = null;
+    /* ---------- Restart card CSS animations (forces reflow) ---------- */
+    function restartCardAnimations(container) {
+      container.querySelectorAll('.card-animate').forEach(el => {
+        el.classList.remove('card-animate');
+        void el.offsetWidth;
+        el.classList.add('card-animate');
+      });
     }
-  }
 
-  startAutoSlide();
+    /* ---------- Start all counters inside a slide/container ---------- */
+    function startCountersIn(container) {
+      container.querySelectorAll('.count-up, .count').forEach(el => {
+        // reset text so animation always starts from 0
+        el.textContent = "0";
+        animateNumberElement(el);
+      });
+    }
 
-  const sliderWrapper = document.querySelector('#slider') || document.body;
-  sliderWrapper.addEventListener('mouseenter', stopAutoSlide);
-  sliderWrapper.addEventListener('mouseleave', startAutoSlide);
+    /* ---------- Slider logic ---------- */
+    (function () {
+      const slides = Array.from(document.querySelectorAll('.slide'));
+      if (!slides.length) return;
 
-  slides.forEach(slide => {
-    slide.addEventListener('mouseenter', stopAutoSlide);
-    slide.addEventListener('mouseleave', startAutoSlide);
-  });
+      let index = 0;
+      let slideTimer = null;
+      const slideIntervalMs = 5000;
+      const autoRefreshMs = 300000; // 5 minutes
 
-  setTimeout(() => {
-    window.location.reload();
-  }, autoRefreshMs);
+      function showSlide(i) {
+        if (i < 0) i = 0;
+        if (i >= slides.length) i = 0;
 
-  window.mySliderShowSlide = showSlide;
-})();
-</script>
+        slides.forEach(slide => slide.classList.add('hidden'));
+        const active = slides[i];
+        active.classList.remove('hidden');
+
+        restartCardAnimations(active);
+        startCountersIn(active);
+
+        index = i;
+      }
+
+      function nextSlide() {
+        showSlide((index + 1) % slides.length);
+      }
+
+      showSlide(index);
+
+      function startAutoSlide() {
+        if (slideTimer) clearInterval(slideTimer);
+        slideTimer = setInterval(nextSlide, slideIntervalMs);
+      }
+
+      function stopAutoSlide() {
+        if (slideTimer) {
+          clearInterval(slideTimer);
+          slideTimer = null;
+        }
+      }
+
+      startAutoSlide();
+
+      const sliderWrapper = document.querySelector('#slider') || document.body;
+      sliderWrapper.addEventListener('mouseenter', stopAutoSlide);
+      sliderWrapper.addEventListener('mouseleave', startAutoSlide);
+
+      slides.forEach(slide => {
+        slide.addEventListener('mouseenter', stopAutoSlide);
+        slide.addEventListener('mouseleave', startAutoSlide);
+      });
+
+      setTimeout(() => {
+        window.location.reload();
+      }, autoRefreshMs);
+
+      window.mySliderShowSlide = showSlide;
+    })();
+  </script>
 
 
-<!-- Profile Popup -->
-<div id="profileModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+  <!-- Profile Popup -->
+  <div id="pageSpecificProfileModal"
+    class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-[100]">
     <div class="bg-white rounded-xl shadow-2xl p-6 w-96">
-        <div class="flex items-center space-x-4 mb-6">
-            <img src="{% static 'images/profile.png' %}" alt="Profile"
-                 class="w-16 h-16 rounded-full object-cover border-4 border-indigo-600 shadow">
-            <div>
-                <h2 class="text-xl font-bold text-indigo-700">{{ request.user.get_full_name }}</h2>
-                <p class="text-gray-500">{{ request.user.email }}</p>
-            </div>
+      <div class="flex items-center space-x-4 mb-6">
+        <img src="{% static 'images/profile.png' %}" alt="Profile"
+          class="w-16 h-16 rounded-full object-cover border-4 border-indigo-600 shadow">
+        <div class="flex-1">
+          <h2 class="text-xl font-bold text-indigo-700">{{ request.user.get_full_name }}</h2>
+          <p class="text-gray-500">{{ request.user.email }}</p>
+        </div>
 
-
-
-        <div x-data="{ showConfig: false }">
-            <button 
-            @click="showConfig = true"
-            {% comment %} class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition" {% endcomment %}
-            >
+        <div x-data="{ showConfig: false }" class="ml-auto">
+          <button @click="showConfig = true"
+            class="p-2 text-gray-500 hover:text-indigo-600 transition rounded-full hover:bg-indigo-50"
+            title="View Configuration">
             ⚙️
           </button>
 
-            <!-- View Config Modal -->
+          <!-- View Config Modal -->
 
-          <div 
-            x-show="showConfig" 
-            class="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50"
-            x-transition
-          >
-            <div @click.away="showConfig = false"
-                class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
+          <div x-show="showConfig" x-cloak
+            class="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-[150]" x-transition>
+            <div @click.away="showConfig = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
 
               <!-- Close Button -->
               <button @click="showConfig = false"
-                      class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+                class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl">&times;</button>
 
               <h2 class="text-2xl font-bold text-indigo-700 mb-4 text-center">Current Configuration</h2>
 
@@ -641,23 +587,23 @@ function startCountersIn(container) {
                   <p><strong>Group 1st:</strong> {{ group_first }}</p>
                   <p><strong>Group 2nd:</strong> {{ group_second }}</p>
                   <p><strong>Group 3rd:</strong> {{ group_third }}</p>
-                </div> 
+                </div>
 
                 <div class="grid grid-cols-3 gap-3">
                   <p><strong>General 1st:</strong> {{ gen_first }}</p>
                   <p><strong>General 2nd:</strong> {{ gen_second }}</p>
                   <p><strong>General 3rd:</strong> {{ gen_third }}</p>
-                </div> 
+                </div>
 
                 <p><strong>🎭 Max Programs per Participant:</strong> {{ rule.max_program_per_head }}</p>
-                {% comment %} <p><strong>👩‍🎓 Fest Type:</strong> 
+                {% comment %} <p><strong>👩‍🎓 Fest Type:</strong>
                   {{ config.fest_type|title }}
                 </p> {% endcomment %}
               </div>
 
               <div class="mt-6 text-right">
                 <button @click="showConfig = false"
-                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                  class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
                   Close
                 </button>
               </div>
@@ -667,192 +613,191 @@ function startCountersIn(container) {
 
 
 
-        </div>
-
-        <div class="space-y-2 text-gray-700">
-            <p><strong>📞 Phone:</strong> {{ request.user.phone }}</p>
-            <p><strong>🏫 Madrasa:</strong> {{ request.user.madrasa.name }}</p>
-            <p><strong>🎉 Fest:</strong> {{ meelad_fest_name }}</p>
-            <p><strong>👨‍🎓 Total Students:</strong> {{ total_students }}</p>
-            <p><strong>📚 Total Programs:</strong> {{ total_programs }}</p>
-        </div>
-
-        <div class="mt-6 flex justify-center gap-4">
-            <!-- Logout Button -->
-            <a href="{% url 'logout' %}"
-               class="px-5 py-2 bg-red-500 text-white font-semibold rounded-lg shadow-lg hover:bg-red-600 transition transform hover:-translate-y-0.5">
-                🔓 Logout
-            </a>
-
-            <!-- Close Button -->
-            <button onclick="closeProfile()"
-                    class="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:bg-indigo-700 transition transform hover:-translate-y-0.5">
-                ✖ Close
-            </button>
-        </div>
-
-    </div>
-</div>
-
-
-<script>
-        const profileBtn = document.getElementById("profile-btn");
-const profileBtnMobile = document.getElementById("profile-btn-mobile");
-const profileModal = document.getElementById("profileModal");
-
-function openProfile() {
-  profileModal.classList.remove("hidden");
-}
-function closeProfile() {
-  profileModal.classList.add("hidden");
-}
-
-if (profileBtn) profileBtn.addEventListener("click", openProfile);
-if (profileBtnMobile) profileBtnMobile.addEventListener("click", openProfile);
-
-</script>
-
-
-
-
-<!-- modal for config -->
-
-{% if not config_done %}
-<!-- Config Setup Modal -->
-<div id="configModal" class="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
-    <h2 class="text-2xl font-bold text-indigo-700 mb-4 text-center">Initial Configuration</h2>
-   
-    <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-  <strong>⚠️ Caution:</strong> This configuration can be set <u>only once</u> and cannot be edited later.
-</div>
-
-    <form id="configForm" method="POST" action="{% url 'save_config' %}">
-      {% csrf_token %}
-      
-      <!-- Prize Positions -->
-      <div class="grid grid-cols-3 gap-3 mb-6">
-        <div>
-          <label class="block text-gray-700 font-semibold mb-1">🥇 1st Prize</label>
-          <input type="number" name="first_prize" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
-        </div>
-        <div>
-          <label class="block text-gray-700 font-semibold mb-1">🥈 2nd Prize</label>
-          <input type="number" name="second_prize" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
-        </div>
-        <div>
-          <label class="block text-gray-700 font-semibold mb-1">🥉 3rd Prize</label>
-          <input type="number" name="third_prize" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
-        </div>
       </div>
 
-      <!-- Grades -->
-      <div class="grid grid-cols-3 gap-3 mb-6">
-        <div>
-          <label class="block text-gray-700 font-semibold mb-1">Grade A</label>
-          <input type="number" name="grade_a" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" placeholder='Optional'>
-        </div>
-        <div>
-          <label class="block text-gray-700 font-semibold mb-1">Grade B</label>
-          <input type="number" name="grade_b" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" placeholder='Optional'>
-        </div>
-        <div>
-          <label class="block text-gray-700 font-semibold mb-1">Grade C</label>
-          <input type="number" name="grade_c" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" placeholder='Optional'>
-        </div>
+      <div class="space-y-2 text-gray-700">
+        <p><strong>📞 Phone:</strong> {{ request.user.phone }}</p>
+        <p><strong>🏫 Madrasa:</strong> {{ request.user.madrasa.name }}</p>
+        <p><strong>🎉 Fest:</strong> {{ meelad_fest_name }}</p>
+        <p><strong>👨‍🎓 Total Students:</strong> {{ total_students }}</p>
+        <p><strong>📚 Total Programs:</strong> {{ total_programs }}</p>
       </div>
 
-      <div class="grid grid-cols-3 gap-3 mb-6">
-        <div>
-          <label class="block text-gray-700 font-semibold mb-1">Group First</label>
-          <input type="number" name="group_first" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
-        </div>
-        <div>
-          <label class="block text-gray-700 font-semibold mb-1">Group Sec</label>
-          <input type="number" name="group_second" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
-        </div>
-        <div>
-          <label class="block text-gray-700 font-semibold mb-1">Group Third</label>
-          <input type="number" name="group_third" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
-        </div>
-      </div>
+      <div class="mt-6 flex justify-center gap-4">
+        <!-- Logout Button -->
+        <a href="{% url 'logout' %}"
+          class="px-5 py-2 bg-red-500 text-white font-semibold rounded-lg shadow-lg hover:bg-red-600 transition transform hover:-translate-y-0.5">
+          🔓 Logout
+        </a>
 
-      <div class="grid grid-cols-3 gap-3 mb-6">
-        <div>
-          <label class="block text-gray-700 font-semibold mb-1">General First</label>
-          <input type="number" name="general_first" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
-        </div>
-        <div>
-          <label class="block text-gray-700 font-semibold mb-1">General Sec</label>
-          <input type="number" name="general_second" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
-        </div>
-        <div>
-          <label class="block text-gray-700 font-semibold mb-1">General Third</label>
-          <input type="number" name="general_third" min="0" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
-        </div>
-      </div>
-
-
-      <!-- Max Programs -->
-      <div class="mb-6">
-        <label class="block text-gray-700 font-semibold mb-1">🎭 Max Programs per Participant</label>
-        <input type="number" name="max_programs" min="1" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
-      </div>
-
-      <!-- Fest Type -->
-      {% comment %} <div class="mb-6">
-        <label class="block text-gray-700 font-semibold mb-2">👩‍🎓 Fest Type</label>
-        <select name="fest_type" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
-          <option value="">Select</option>
-          <option value="boys">Boys Only</option>
-          <option value="girls">Girls Only</option>
-          <option value="both">Both</option>
-        </select>
-      </div> {% endcomment %}
-
-      <!-- Buttons -->
-      <div class="flex justify-end gap-3">
-        <button type="submit" class="bg-indigo-600 text-white font-semibold px-5 py-2 rounded-lg shadow hover:bg-indigo-700 transition">
-          Save
+        <!-- Close Button -->
+        <button onclick="closeProfile()"
+          class="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:bg-indigo-700 transition transform hover:-translate-y-0.5">
+          ✖ Close
         </button>
       </div>
-    </form>
+
+    </div>
   </div>
-</div>
-{% endif %}
 
 
 
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const configModal = document.getElementById("configModal");
-    if (configModal) {
-      configModal.classList.remove("hidden");
-    }
-  
-    // Optional: close modal after submitting
-    const configForm = document.getElementById("configForm");
-    if (configForm) {
-      configForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-  
-        const formData = new FormData(configForm);
-        fetch(configForm.action, {
-          method: "POST",
-          body: formData,
-        })
-        .then(res => res.ok ? res.json() : Promise.reject(res))
-        .then(data => {
-          alert("Configuration saved successfully!");
-          configModal.remove(); // hide modal
-          window.location.reload(); // reload page to mark config_done=True
-        })
-        .catch(() => alert("Failed to save config. Please try again."));
-      });
-    }
-  });
+
+
+
+
+  <!-- modal for config -->
+
+  {% if not config_done %}
+  <!-- Config Setup Modal -->
+  <div id="configModal" class="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-[150]">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
+      <h2 class="text-2xl font-bold text-indigo-700 mb-4 text-center">Initial Configuration</h2>
+
+      <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <strong>⚠️ Caution:</strong> This configuration can be set <u>only once</u> and cannot be edited later.
+      </div>
+
+      <form id="configForm" method="POST" action="{% url 'save_config' %}">
+        {% csrf_token %}
+
+        <!-- Prize Positions -->
+        <div class="grid grid-cols-3 gap-3 mb-6">
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">🥇 1st Prize</label>
+            <input type="number" name="first_prize" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">🥈 2nd Prize</label>
+            <input type="number" name="second_prize" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">🥉 3rd Prize</label>
+            <input type="number" name="third_prize" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          </div>
+        </div>
+
+        <!-- Grades -->
+        <div class="grid grid-cols-3 gap-3 mb-6">
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Grade A</label>
+            <input type="number" name="grade_a" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" placeholder='Optional'>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Grade B</label>
+            <input type="number" name="grade_b" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" placeholder='Optional'>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Grade C</label>
+            <input type="number" name="grade_c" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" placeholder='Optional'>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 mb-6">
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Group First</label>
+            <input type="number" name="group_first" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Group Sec</label>
+            <input type="number" name="group_second" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Group Third</label>
+            <input type="number" name="group_third" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 mb-6">
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">General First</label>
+            <input type="number" name="general_first" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">General Sec</label>
+            <input type="number" name="general_second" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">General Third</label>
+            <input type="number" name="general_third" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          </div>
+        </div>
+
+
+        <!-- Max Programs -->
+        <div class="mb-6">
+          <label class="block text-gray-700 font-semibold mb-1">🎭 Max Programs per Participant</label>
+          <input type="number" name="max_programs" min="1"
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+        </div>
+
+        <!-- Fest Type -->
+        {% comment %} <div class="mb-6">
+          <label class="block text-gray-700 font-semibold mb-2">👩‍🎓 Fest Type</label>
+          <select name="fest_type" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+            <option value="">Select</option>
+            <option value="boys">Boys Only</option>
+            <option value="girls">Girls Only</option>
+            <option value="both">Both</option>
+          </select>
+        </div> {% endcomment %}
+
+        <!-- Buttons -->
+        <div class="flex justify-end gap-3">
+          <button type="submit"
+            class="bg-indigo-600 text-white font-semibold px-5 py-2 rounded-lg shadow hover:bg-indigo-700 transition">
+            Save
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const configModal = document.getElementById("configModal");
+      if (configModal) {
+        configModal.classList.remove("hidden");
+      }
+
+      // Optional: close modal after submitting
+      const configForm = document.getElementById("configForm");
+      if (configForm) {
+        configForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+
+          const formData = new FormData(configForm);
+          fetch(configForm.action, {
+            method: "POST",
+            body: formData,
+          })
+            .then(res => res.ok ? res.json() : Promise.reject(res))
+            .then(data => {
+              alert("Configuration saved successfully!");
+              configModal.remove(); // hide modal
+              window.location.reload(); // reload page to mark config_done=True
+            })
+            .catch(() => alert("Failed to save config. Please try again."));
+        });
+      }
+    });
   </script>
-  
+
 
 
 
@@ -862,4 +807,5 @@ if (profileBtnMobile) profileBtnMobile.addEventListener("click", openProfile);
 
 
 </body>
+
 </html>

@@ -2,213 +2,108 @@
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Teams</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gradient-to-r from-indigo-50 to-purple-50 min-h-screen p-8">
-<div class="max-w-6xl mx-auto">
-<!-- Header -->
-<header class="mb-10 bg-white shadow relative z-50">
-  <div class="flex items-center justify-between px-4 py-3">
 
-    <!-- Left: Title + Subtitle -->
-    <div class="text-left">
-      <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-indigo-700 drop-shadow-sm">
-        🏆 Team Dashboard
-      </h1>
-      <p class="text-gray-500 mt-1 text-sm sm:text-base">Manage your teams</p>
+<body class="bg-gradient-to-r from-indigo-50 to-purple-50 min-h-screen p-8">
+  <div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    {% include 'header.html' %}
+
+    <div class="bg-white shadow-sm py-6 mb-8">
+      <div class="max-w-6xl mx-auto px-4">
+        <div class="text-left">
+          <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-indigo-700 drop-shadow-sm">
+            🏆 Team Dashboard
+          </h1>
+          <p class="text-gray-500 mt-1 text-sm sm:text-base">Manage your teams</p>
+        </div>
+      </div>
     </div>
 
-    {% if request.user.is_authenticated %}
-    <!-- Right: Desktop Buttons + Mobile Hamburger -->
-    <div class="flex items-center space-x-3">
-      <div class="hidden md:flex items-center space-x-3">
 
-        <a href="{% url 'home' %}" class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">Home</a>
-        <a href="{% url 'program_list' %}" class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">Programs</a>
-        <a href="{% url 'results' %}" class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">Results</a>
-         {% comment %} <button onclick="copyFormLink()"
-                class="px-3 md:px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">
-          🔗 Copy Form Link
-        </button> {% endcomment %}
-<!--        <a href="{% url 'logout' %}" class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">Logout</a>-->
-          <button id="profile-btn" class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow hover:scale-105 transition">
-  <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-full h-full object-cover">
-</button>
+    <!-- Teams Grid -->
+    <div class="grid gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      {% for team in teams %}
+      <!-- Team Card -->
+      <a href="{% url 'categories' %}?team={{ team.id }}"
+        class="group relative bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-1 transition">
+        <div class="h-32 bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+          <span class="text-5xl font-extrabold text-white">{{ team.name|slice:":1"|upper }}</span>
+        </div>
+        <div class="p-5">
+          <h2 class="text-xl font-semibold text-gray-800 group-hover:text-indigo-600 transition">{{team.name}}</h2>
+          <p class="text-gray-500 text-sm mt-1">{{team.leader}}</p>
+        </div>
+      </a>
+      {% endfor %}
 
-      </div>
-      <button id="menu-toggle" class="md:hidden p-2 rounded-lg hover:bg-gray-200 focus:outline-none">
-        <svg id="menu-open" class="w-6 h-6 block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 6h16M4 12h16M4 18h16"/>
+      <!-- Add New Team Block -->
+      <button onclick="openTeamModal()"
+        class="flex flex-col items-center justify-center bg-white border-2 border-dashed border-gray-300 rounded-2xl shadow-sm hover:border-indigo-500 hover:bg-indigo-50 hover:shadow-md transition">
+        <svg xmlns="http://www.w3.org/2000/svg"
+          class="h-14 w-14 text-gray-400 group-hover:text-indigo-500 mb-3 transition" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
+        <span class="text-lg font-semibold text-gray-500 group-hover:text-indigo-600">Add New Team</span>
       </button>
     </div>
-    {% endif %}
-  </div>
-</header>
 
-{% if request.user.is_authenticated %}
-<!-- Mobile Menu & Overlay -->
-<div id="mobile-menu" class="fixed top-0 right-0 h-full w-72 bg-white shadow-lg transform translate-x-full transition-transform duration-300 ease-in-out z-50">
-  <div class="p-4 flex justify-between items-center border-b">
-    <h2 class="text-lg font-bold text-indigo-700">Menu</h2>
-    <button id="menu-close-btn" class="text-gray-600 hover:text-indigo-700 focus:outline-none">✕</button>
-  </div>
-  <nav class="p-4 space-y-3">
-     <a href="javascript:void(0)" id="profile-btn-mobile" class="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-indigo-50">
-  <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-8 h-8 rounded-full object-cover border">
-  <span class="text-indigo-600 font-semibold">Profile</span>
-</a>
+    <!-- Add Team Modal -->
+    <div id="teamModal" class="fixed inset-0 hidden bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-2xl shadow-lg w-full max-w-md p-6 relative">
+        <button onclick="closeTeamModal()"
+          class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">&times;</button>
 
-    {% comment %} <button onclick="copyFormLink()" class="w-full text-left px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">🔗 Copy Form Link</button>
-    <p class="text-gray-500 text-sm mt-1">Note: Please copy this link and share with team leaders to add their members' programs.</p> {% endcomment %}
-    <a href="{% url 'home' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Home</a>
-    <a href="{% url 'program_list' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Programs</a>
-     <a href="{% url 'results' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Results</a>
-<!--    <a href="{% url 'logout' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Logout</a>-->
-  </nav>
-</div>
-<div id="overlay" class="fixed inset-0 bg-black bg-opacity-40 hidden z-40"></div>
-{% endif %}
+        <h2 class="text-2xl font-bold text-indigo-700 mb-6">Add Team</h2>
 
+        <form method="post" action="{% url 'add_team' %}" class="space-y-4">
+          {% csrf_token %}
 
-<!-- Teams Grid -->
-<div class="grid gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-  {% for team in teams %}
-  <!-- Team Card -->
-  <a href="{% url 'categories' %}?team={{ team.id }}" class="group relative bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-1 transition">
-    <div class="h-32 bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
-      <span class="text-5xl font-extrabold text-white">{{ team.name|slice:":1"|upper }}</span>
-    </div>
-    <div class="p-5">
-      <h2 class="text-xl font-semibold text-gray-800 group-hover:text-indigo-600 transition">{{team.name}}</h2>
-      <p class="text-gray-500 text-sm mt-1">{{team.leader}}</p>
-    </div>
-  </a>
-  {% endfor %}
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Team Name</label>
+            <input type="text" name="name"
+              class="mt-1 w-full border rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500" required>
+          </div>
 
-  <!-- Add New Team Block -->
-  <button onclick="openTeamModal()"
-          class="flex flex-col items-center justify-center bg-white border-2 border-dashed border-gray-300 rounded-2xl shadow-sm hover:border-indigo-500 hover:bg-indigo-50 hover:shadow-md transition">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-14 w-14 text-gray-400 group-hover:text-indigo-500 mb-3 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-    </svg>
-    <span class="text-lg font-semibold text-gray-500 group-hover:text-indigo-600">Add New Team</span>
-  </button>
-</div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Team Leader</label>
+            <input type="text" name="leader"
+              class="mt-1 w-full border rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500" required>
+          </div>
 
-<!-- Add Team Modal -->
-<div id="teamModal" class="fixed inset-0 hidden bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-2xl shadow-lg w-full max-w-md p-6 relative">
-    <button onclick="closeTeamModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">&times;</button>
-
-    <h2 class="text-2xl font-bold text-indigo-700 mb-6">Add Team</h2>
-
-    <form method="post" action="{% url 'add_team' %}" class="space-y-4">
-      {% csrf_token %}
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Team Name</label>
-        <input type="text" name="name" class="mt-1 w-full border rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500" required>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Team Leader</label>
-        <input type="text" name="leader" class="mt-1 w-full border rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500" required>
-      </div>
-
-      <div class="flex justify-end space-x-2">
-        <button type="button" onclick="closeTeamModal()" class="px-4 py-2 bg-gray-200 rounded-xl">Cancel</button>
-        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700">Save</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<script>
-// Mobile menu toggle
-const menuBtn = document.getElementById("menu-toggle");
-const menu = document.getElementById("mobile-menu");
-const overlay = document.getElementById("overlay");
-const closeBtn = document.getElementById("menu-close-btn");
-
-function openMenu() { menu.classList.remove("translate-x-full"); overlay.classList.remove("hidden"); }
-function closeMenu() { menu.classList.add("translate-x-full"); overlay.classList.add("hidden"); }
-if(menuBtn) menuBtn.addEventListener("click", openMenu);
-if(closeBtn) closeBtn.addEventListener("click", closeMenu);
-if(overlay) overlay.addEventListener("click", closeMenu);
-
-function copyFormLink() {
-  const formUrl = "{{ form_url }}";
-  navigator.clipboard.writeText(formUrl).then(() => { alert("Form URL copied to clipboard!"); })
-  .catch(() => { alert("Failed to copy URL."); });
-}
-
-// Team Modal
-function openTeamModal() { document.getElementById("teamModal").classList.remove("hidden"); }
-function closeTeamModal() { document.getElementById("teamModal").classList.add("hidden"); }
-</script>
-
-</div>
-
-
-<!-- Profile Popup -->
-<div id="profileModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-xl shadow-2xl p-6 w-96">
-    <div class="flex items-center space-x-4 mb-6">
-      <img src="{% static 'images/profile.png' %}" alt="Profile"
-           class="w-16 h-16 rounded-full object-cover border-4 border-indigo-600 shadow">
-      <div>
-        <h2 class="text-xl font-bold text-indigo-700">{{ request.user.get_full_name }}</h2>
-        <p class="text-gray-500">{{ request.user.email }}</p>
+          <div class="flex justify-end space-x-2">
+            <button type="button" onclick="closeTeamModal()" class="px-4 py-2 bg-gray-200 rounded-xl">Cancel</button>
+            <button type="submit"
+              class="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700">Save</button>
+          </div>
+        </form>
       </div>
     </div>
 
-    <div class="space-y-2 text-gray-700">
-      <p><strong>📞 Phone:</strong> {{ request.user.phone }}</p>
-      <p><strong>🏫 Madrasa:</strong> {{ request.user.madrasa.name }}</p>
-      <p><strong>🎉 Fest:</strong> {{ meelad_fest_name }}</p>
-      <p><strong>👨‍🎓 Total Students:</strong> {{ total_students }}</p>
-      <p><strong>📚 Total Programs:</strong> {{ total_programs }}</p>
-    </div>
+    <script>
 
- <div class="mt-6 flex justify-center gap-4">
-  <!-- Logout Button -->
-  <a href="{% url 'logout' %}"
-     class="px-5 py-2 bg-red-500 text-white font-semibold rounded-lg shadow-lg hover:bg-red-600 transition transform hover:-translate-y-0.5">
-    🔓 Logout
-  </a>
 
-  <!-- Close Button -->
-  <button onclick="closeProfile()"
-          class="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:bg-indigo-700 transition transform hover:-translate-y-0.5">
-    ✖ Close
-  </button>
-</div>
+      function copyFormLink() {
+        const formUrl = "{{ form_url }}";
+        navigator.clipboard.writeText(formUrl).then(() => { alert("Form URL copied to clipboard!"); })
+          .catch(() => { alert("Failed to copy URL."); });
+      }
+
+      // Team Modal
+      function openTeamModal() { document.getElementById("teamModal").classList.remove("hidden"); }
+      function closeTeamModal() { document.getElementById("teamModal").classList.add("hidden"); }
+    </script>
 
   </div>
-</div>
 
 
-<script>
-        const profileBtn = document.getElementById("profile-btn");
-const profileBtnMobile = document.getElementById("profile-btn-mobile");
-const profileModal = document.getElementById("profileModal");
 
-function openProfile() {
-  profileModal.classList.remove("hidden");
-}
-function closeProfile() {
-  profileModal.classList.add("hidden");
-}
-
-if (profileBtn) profileBtn.addEventListener("click", openProfile);
-if (profileBtnMobile) profileBtnMobile.addEventListener("click", openProfile);
-
-</script>
 
 </body>

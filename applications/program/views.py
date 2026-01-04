@@ -1196,7 +1196,7 @@ def venue_detail(request, venue_id):
 
 def download_venue_programs(request, venue_id):
     venue = Venue.objects.get(id=venue_id)
-    programs = venue.program_set.all().order_by('scheduled_time')
+    programs = venue.program_set.all().order_by('scheduled_time').prefetch_related('participants', 'category_set', 'girls_categories')
 
     # HTTP response for PDF
     response = HttpResponse(content_type='application/pdf')
@@ -1220,8 +1220,12 @@ def download_venue_programs(request, venue_id):
 
     # Table heading
     data = [
-        ["SL No", "Program Title", "Scheduled Time"]
+        ["SL No", "Program Title", "Category", "Scheduled Time"]
     ]
+
+    # Initialize stats
+    category_counts = {}
+    total_participants = 0
 
     # Table data
     for idx, program in enumerate(programs, start=1):
@@ -1229,32 +1233,106 @@ def download_venue_programs(request, venue_id):
         if program.scheduled_time:
             scheduled = program.scheduled_time.strftime("%I:%M %p")  # 12-hour format
         else:
-            scheduled = "-"
+            scheduled = "Waiting..."
 
+        cat_name = program.program_category() or "-"
+        
         data.append([
             idx,
             program.title,
+            cat_name,
             scheduled
         ])
 
-    # Create table
-    table = Table(data, colWidths=[1*inch, 3*inch, 2*inch])
+        # Calc Stats
+        stats_cat_name = cat_name if cat_name != "-" else "Uncategorized"
+        category_counts[stats_cat_name] = category_counts.get(stats_cat_name, 0) + 1
+        total_participants += program.participants.count()
+
+    # Create main table
+    # Adjusted widths: SL(0.6), Title(3.0), Category(1.5), Time(1.5)
+    # Total width of A4 is ~8.27 inch. Margins are likely standard (e.g. 1 inch each side?), 
+    # Document was created without margins param? No, in new code doc = SimpleDocTemplate(...).
+    # SimpleDocTemplate default margin is 1 inch (72 points). 
+    # Available width approx 6 inch?
+    # Let's use proportional widths that fit comfortably.
+    # Page width = A4[0] = 595.27 points / 72 = 8.27 inches
+    # Margins default: 1 inch left, 1 right. Avail: 6.27 inches.
+    table = Table(data, colWidths=[0.6*inch, 3.2*inch, 1.8*inch, 1.5*inch])
 
     # Style
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F46E5')), # Indigo header
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
 
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'), # Default center alignment
+        ('ALIGN', (1, 0), (1, -1), 'LEFT'),    # Left align titles
+        
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('TOPPADDING', (0, 0), (-1, 0), 12),
 
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.lightgrey]),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.lightgrey),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.white]),
+        
+        # Add some padding to cells
+        ('TOPPADDING', (0, 1), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
     ]))
 
     elements.append(table)
+
+    # -----------------------------
+    # Summary Section for Venue
+    # -----------------------------
+    elements.append(Spacer(1, 30))
+    
+    summary_title = Paragraph("<b>Venue Summary</b>", styles['Heading3'])
+    elements.append(summary_title)
+    elements.append(Spacer(1, 8))
+
+    # Build summary data
+    # Header
+    summary_data = [
+        ["Category", "Total Programs"]
+    ]
+    
+    # Rows for each category
+    for cat, count in category_counts.items():
+        summary_data.append([cat, count])
+
+    # Add spacing or separator row for Total Participants if desired, 
+    # but here we'll just add it as a special row
+    summary_data.append(["", ""]) # Empty row for visual spacing
+    summary_data.append(["Total Participants (All Programs)", total_participants])
+
+    # Create Summary Table
+    summary_table = Table(summary_data, colWidths=[3.5*inch, 2.5*inch])
+    
+    # Styling for Summary
+    summary_table.setStyle(TableStyle([
+        # Header Row Style
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F46E5')), # Indigo header
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        
+        # Data Rows
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.lightgrey),
+        ('ALIGN', (1, 1), (1, -2), 'CENTER'), # Center program counts
+        
+        # Specific style for the last row (Total Participants)
+        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#DCFCE7')), # Light green
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+        ('TEXTCOLOR', (0, -1), (-1, -1), colors.black),
+        ('ALIGN', (1, -1), (1, -1), 'CENTER'), # Center participant count
+        
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+    ]))
+
+    elements.append(summary_table)
+
 
     # Build PDF
     doc.build(elements)

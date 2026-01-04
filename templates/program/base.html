@@ -1,7 +1,8 @@
 {% load static %}
 
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,202 +14,130 @@
   <!-- Custom CSS / Animations -->
   <style>
     @keyframes fadeEffect {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
-    .fade { animation: fadeEffect 1s ease-in-out; }
+
+    .fade {
+      animation: fadeEffect 1s ease-in-out;
+    }
 
     @keyframes finalSlideAnimation {
-      0% { transform: scale(0.5); opacity: 0; }
-      60% { transform: scale(1.1); opacity: 1; }
-      100% { transform: scale(1); opacity: 1; }
+      0% {
+        transform: scale(0.5);
+        opacity: 0;
+      }
+
+      60% {
+        transform: scale(1.1);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
     }
-    .animate-finalSlide { animation: finalSlideAnimation 2s ease-out forwards; }
+
+    .animate-finalSlide {
+      animation: finalSlideAnimation 2s ease-out forwards;
+    }
 
     @keyframes fadeUp {
-      0% { opacity: 0; transform: translateY(30px) scale(0.95); }
-      100% { opacity: 1; transform: translateY(0) scale(1); }
+      0% {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
-    .card-animate { animation: fadeUp 0.8s ease-out forwards; opacity: 0; }
-    .card-animate:nth-child(1) { animation-delay: 0.1s; }
-    .card-animate:nth-child(2) { animation-delay: 0.3s; }
-    .card-animate:nth-child(3) { animation-delay: 0.5s; }
-    .card-animate:nth-child(4) { animation-delay: 0.7s; }
-    .card-animate:nth-child(5) { animation-delay: 0.9s; }
-    .card-animate:nth-child(6) { animation-delay: 1.1s; }
+
+    .card-animate {
+      animation: fadeUp 0.8s ease-out forwards;
+      opacity: 0;
+    }
+
+    .card-animate:nth-child(1) {
+      animation-delay: 0.1s;
+    }
+
+    .card-animate:nth-child(2) {
+      animation-delay: 0.3s;
+    }
+
+    .card-animate:nth-child(3) {
+      animation-delay: 0.5s;
+    }
+
+    .card-animate:nth-child(4) {
+      animation-delay: 0.7s;
+    }
+
+    .card-animate:nth-child(5) {
+      animation-delay: 0.9s;
+    }
+
+    .card-animate:nth-child(6) {
+      animation-delay: 1.1s;
+    }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
-    .animate-fade-in { animation: fadeIn 1s ease-out forwards; }
+
+    .animate-fade-in {
+      animation: fadeIn 1s ease-out forwards;
+    }
   </style>
 
   {% block extra_head %}{% endblock %}
 </head>
+
 <body class="bg-gray-100 font-sans">
 
-<!-- Header -->
-<header class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 shadow-lg relative z-50">
-  <div class="flex items-center justify-between">
+  <!-- Header -->
+  {% include 'header.html' %}
 
-    <!-- Title -->
-    <h1 class="text-2xl sm:text-3xl font-bold text-center flex-1">
-      🏆 {% block header_title %}{{ meelad_fest_name }} Dashboard{% endblock %}
-    </h1>
-
-    <!-- Right: Profile + Nav -->
-    {% if request.user.is_authenticated %}
-    <div class="flex items-center space-x-2">
-
-      <!-- Desktop Menu -->
-      <div class="hidden sm:flex space-x-2">
-
-        {% if not home_page %}
-         <a href="{% url 'home' %}" class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">Home</a>
-        {% endif %}
-        <a href="{% url 'teams' %}" class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">Teams</a>
-        <a href="{% url 'program_list' %}" class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">Programs</a>
-        <a href="{% url 'upload-students' %}" class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">Upload Data</a>
- {% if not result_page %}
-        <a href="{% url 'results' %}" class="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">Results</a>{% endif %}
-          <button id="profile-btn" class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow hover:scale-105 transition">
-          <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-full h-full object-cover">
-        </button>
-      </div>
-
-      <!-- Mobile Hamburger -->
-      <button id="menu-toggle" class="sm:hidden p-2 rounded-lg hover:bg-indigo-700 focus:outline-none">
-        <svg id="menu-open" class="w-6 h-6 block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 6h16M4 12h16M4 18h16"/>
-        </svg>
-      </button>
+  <!-- Page Title Bar -->
+  <div class="bg-white shadow-sm py-4 mb-6">
+    <div class="max-w-7xl mx-auto px-4">
+      <h1 class="text-2xl sm:text-3xl font-bold text-center text-indigo-700">
+        🏆 {% block header_title %}{{ meelad_fest_name }} Dashboard{% endblock %}
+      </h1>
     </div>
-    {% endif %}
   </div>
-</header>
 
-{% if request.user.is_authenticated %}
-<!-- Right Sidebar Mobile Menu -->
-<div id="mobile-menu" class="fixed top-0 right-0 h-full w-64 bg-white shadow-lg transform translate-x-full transition-transform duration-300 ease-in-out z-50">
-  <div class="p-4 flex justify-between items-center border-b">
-    <h2 class="text-lg font-bold text-indigo-700">Menu</h2>
-    <button id="menu-close-btn" class="text-gray-600 hover:text-indigo-700 focus:outline-none">✕</button>
-  </div>
-  <nav class="p-4 space-y-3">
-    <a href="javascript:void(0)" id="profile-btn-mobile" class="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-indigo-50">
-      <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-8 h-8 rounded-full object-cover border">
-      <span class="text-indigo-600 font-semibold">Profile</span>
-    </a>
-
-    {% if not home_page %}
-     <a href="{% url 'home' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Home</a>
-    {% endif %}
-    <a href="{% url 'teams' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Teams</a>
-    <a href="{% url 'program_list' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Programs</a>
-    <a href="{% url 'upload-students' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Upload Data</a>
-     {% if not result_page %}
-    <a href="{% url 'results' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Results</a>{% endif %}
-<!--    <a href="{% url 'logout' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Logout</a>-->
-  </nav>
-</div>
-
-<!-- Overlay -->
-<div id="overlay" class="fixed inset-0 bg-black bg-opacity-40 hidden z-40"></div>
-{% endif %}
-
-<!-- Main Content -->
-<main class="p-4 sm:p-6">
-  {% block content %}{% endblock %}
-</main>
+  <!-- Main Content -->
+  <main class="p-4 sm:p-6">
+    {% block content %}{% endblock %}
+  </main>
 
 
-<!-- Profile Popup -->
-<div id="profileModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-xl shadow-2xl p-6 w-96">
-    <div class="flex items-center space-x-4 mb-6">
-      <img src="{% static 'images/profile.png' %}" alt="Profile"
-           class="w-16 h-16 rounded-full object-cover border-4 border-indigo-600 shadow">
-      <div>
-        <h2 class="text-xl font-bold text-indigo-700">{{ request.user.get_full_name }}</h2>
-        <p class="text-gray-500">{{ request.user.email }}</p>
-      </div>
-    </div>
-
-    <div class="space-y-2 text-gray-700">
-      <p><strong>📞 Phone:</strong> {{ request.user.phone }}</p>
-      <p><strong>🏫 Madrasa:</strong> {{ request.user.madrasa.name }}</p>
-      <p><strong>🎉 Fest:</strong> {{ meelad_fest_name }}</p>
-      <p><strong>👨‍🎓 Total Students:</strong> {{ total_students }}</p>
-      <p><strong>📚 Total Programs:</strong> {{ total_programs }}</p>
-    </div>
-
- <div class="mt-6 flex justify-center gap-4">
-  <!-- Logout Button -->
-  <a href="{% url 'logout' %}"
-     class="px-5 py-2 bg-red-500 text-white font-semibold rounded-lg shadow-lg hover:bg-red-600 transition transform hover:-translate-y-0.5">
-    🔓 Logout
-  </a>
-
-  <!-- Close Button -->
-  <button onclick="closeProfile()"
-          class="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:bg-indigo-700 transition transform hover:-translate-y-0.5">
-    ✖ Close
-  </button>
-</div>
-
-  </div>
-</div>
+  <!-- JS -->
 
 
-<!-- JS -->
-<script>
-  const menuToggle = document.getElementById("menu-toggle");
-  const menuClose = document.getElementById("menu-close-btn");
-  const mobileMenu = document.getElementById("mobile-menu");
-  const overlay = document.getElementById("overlay");
-
-  if (menuToggle) {
-    menuToggle.addEventListener("click", () => {
-      mobileMenu.classList.remove("translate-x-full");
-      overlay.classList.remove("hidden");
-    });
-  }
-  if (menuClose) {
-    menuClose.addEventListener("click", () => {
-      mobileMenu.classList.add("translate-x-full");
-      overlay.classList.add("hidden");
-    });
-  }
-  if (overlay) {
-    overlay.addEventListener("click", () => {
-      mobileMenu.classList.add("translate-x-full");
-      overlay.classList.add("hidden");
-    });
-  }
-
-
-
-      const profileBtn = document.getElementById("profile-btn");
-const profileBtnMobile = document.getElementById("profile-btn-mobile");
-const profileModal = document.getElementById("profileModal");
-
-function openProfile() {
-  profileModal.classList.remove("hidden");
-}
-function closeProfile() {
-  profileModal.classList.add("hidden");
-}
-
-if (profileBtn) profileBtn.addEventListener("click", openProfile);
-if (profileBtnMobile) profileBtnMobile.addEventListener("click", openProfile);
-
-</script>
-
-{% block extra_js %}{% endblock %}
+  {% block extra_js %}{% endblock %}
 
 
 
 </body>
+
 </html>

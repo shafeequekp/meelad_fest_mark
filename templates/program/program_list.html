@@ -3,6 +3,7 @@
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,10 +12,13 @@
 
   <style>
     .tab-btn {
-      color: #374151; /* gray-700 */
+      color: #374151;
+      /* gray-700 */
       position: relative;
-      z-index: 10; /* so text stays above indicator */
+      z-index: 10;
+      /* so text stays above indicator */
     }
+
     .tab-btn.active {
       color: #fff;
     }
@@ -22,597 +26,515 @@
     #programModal.flex {
       animation: fadeIn 0.2s ease-in-out;
     }
+
     @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
     }
   </style>
 </head>
-<body class="bg-gray-100 p-4 sm:p-6">
 
-<div class="max-w-6xl mx-auto">
+<body class="bg-gray-100">
 
-  <!-- Header -->
-  <header class="mb-10 bg-white shadow relative z-50">
-    <div class="flex items-center justify-between px-4 py-3 flex-wrap">
+  <!-- Header (Full Width) -->
+  <!-- Header (Full Width) -->
+  {% include 'header.html' with sticky_header='true' %}
 
-      <!-- Title -->
-      <div class="flex-1 min-w-[200px]">
-        <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-indigo-700 drop-shadow-sm">
-          🏆 Programs Dashboard
-        </h1>
-        <p class="text-gray-500 mt-1 text-sm sm:text-base">Manage your programs</p>
+  <div class="max-w-6xl mx-auto p-4 sm:p-6 pt-24 sm:pt-28">
+
+    <div class="bg-white shadow-sm py-6 mb-8 rounded-lg">
+      <div class="max-w-6xl mx-auto px-4">
+        <div class="text-left">
+          <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-indigo-700 drop-shadow-sm">
+            🏆 Programs Dashboard
+          </h1>
+          <p class="text-gray-500 mt-1 text-sm sm:text-base">Manage your programs</p>
+        </div>
       </div>
+    </div>
 
-      {% if request.user.is_authenticated %}
-      <div class="flex items-center space-x-3 flex-wrap mt-3 md:mt-0">
 
-        <!-- Desktop Buttons -->
-        <div class="hidden md:flex items-center space-x-3">
 
-          <a href="{% url 'home' %}" class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">
-            Home
-          </a>
-          <a href="{% url 'teams' %}" class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">
-            Teams
-          </a>
-          <a href="{% url 'results' %}" class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">
-            Results
-          </a>
-<!--          <a href="{% url 'logout' %}" class="px-5 py-2 bg-white text-indigo-600 font-semibold rounded-xl shadow hover:bg-gray-100 transition">-->
-<!--            Logout-->
-<!--          </a>-->
+    <!-- Tabs -->
+    <div class="relative w-full max-w-md mx-auto mb-6 sm:mb-8 bg-gray-200 rounded-lg overflow-hidden">
+      <div class="flex">
+        <button id="boysTab" onclick="showSection('boys')"
+          class="tab-btn flex-1 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-colors duration-300">Boys</button>
+        <button id="girlsTab" onclick="showSection('girls')"
+          class="tab-btn flex-1 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-colors duration-300">Girls</button>
+      </div>
+      <div id="sliderIndicator"
+        class="absolute top-0 left-0 h-full w-1/2 bg-blue-600 rounded-lg transition-transform duration-300"></div>
+    </div>
 
-           {% comment %} <div class="relative group">
-            <button onclick="copyFormLink()" class="px-3 md:px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">
-              🔗 Copy Form Link
-            </button>
-            <div class="absolute right-0 mt-2 w-64 p-2 bg-gray-100 text-gray-700 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 hidden md:block">
-              Note: Please copy this link and share with team leaders to add their members' programs.
+
+
+
+
+
+    <!-- Boys Section -->
+    <div id="boysSection" class="section">
+
+      {% for category in categories %}
+      {% if category.programs.all %}
+      <h2 class="text-lg sm:text-xl font-semibold mb-3 text-purple-700 bg-green-400 px-3 py-2 rounded">{{ category.name}}</h2> {% endif %}
+      {% if category.programs.all|stage %}
+      <h2 class="text-lg sm:text-l font-semibold mb-3 text-rose-500">Stage></h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        {% for program in category.programs.all|stage %}
+
+        <div
+          class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
+          onclick="openModal('{{ program.id }}', '{{ category.id }}')">
+
+          <!-- ✅ Tick mark at top-left -->
+          {% if program.is_result_published %}
+          <div class="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold rounded-full px-2 py-1 shadow"
+            title="Result published">
+            ✅
+          </div>
+          {% endif %}
+
+          <!-- 🔹 Result Added Badge -->
+          {% if program|is_result_added %}
+          <div
+            class="absolute top-2 left-2.5 bg-blue-500 text-white text-xs font-semibold rounded-full px-2 py-1 shadow ml-6"
+            title="Added Result">
+            R
+          </div>
+          {% endif %}
+
+          <!-- Three-dot menu -->
+          <div class="absolute top-2 right-2">
+            <button onclick="toggleProgramMenu(event, '{{ program.id }}')"
+              class="p-1 rounded-full hover:bg-gray-200">⋮</button>
+            <div id="menu-{{ program.id }}"
+              class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+              <a href="javascript:void(0)" onclick="event.stopPropagation(); openPrizeModal('{{ program.id }}')"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🏅 Add Prizes</a>
+              <button onclick="event.stopPropagation(); publishResult({{ program.id }})"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full">📢 Publish
+                Result</button>
             </div>
-          </div> {% endcomment %}
-           <button id="profile-btn" class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow hover:scale-105 transition">
-  <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-full h-full object-cover">
-</button>
+          </div>
 
+          <!-- Image -->
+          {% if program.image %}
+          <img src="{{ program.image.url }}" alt="{{ program.title }}"
+            class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+          {% else %}
+          <img src="{% static 'program_images/art_stage.png' %}" alt="{{ program.title }}"
+            class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+          {% endif %}
+
+          <div class="flex-1 min-w-0">
+            <h2 class="text-base sm:text-lg font-semibold truncate">{{ program.title }}</h2>
+            <p class="text-xs sm:text-sm text-gray-600 line-clamp-2 truncate">{{ program.description|truncatechars:60 }}
+            </p>
+          </div>
         </div>
 
-        <!-- Mobile Hamburger -->
-        <button id="menu-toggle" class="md:hidden p-2 rounded-lg hover:bg-gray-200 focus:outline-none">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
-        </button>
-
+        {% endfor %}
       </div>
       {% endif %}
-    </div>
-  </header>
 
-  {% if request.user.is_authenticated %}
-  <!-- Mobile Menu -->
-  <div id="mobile-menu" class="fixed top-0 right-0 h-full w-72 bg-white shadow-lg transform translate-x-full transition-transform duration-300 ease-in-out z-50">
+      {% if category.programs.all|non_stage %}
+      <h2 class="text-lg sm:text-l font-semibold mb-3 text-rose-500">Non Stage></h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        {% for program in category.programs.all|non_stage %}
+        <div
+          class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
+          onclick="openModal('{{ program.id }}', '{{ category.id }}')">
 
-    <div class="p-4 flex justify-between items-center border-b">
-      <h2 class="text-lg font-bold text-indigo-700">Menu</h2>
-      <button id="menu-close-btn" class="text-gray-600 hover:text-indigo-700 focus:outline-none">✕</button>
-    </div>
+          <!-- ✅ Tick mark at top-left -->
+          {% if program.is_result_published %}
+          <div class="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold rounded-full px-2 py-1 shadow"
+            title="Result published">
+            ✅
+          </div>
+          {% endif %}
 
-    <nav class="p-4 space-y-3">
-
-       <a href="javascript:void(0)" id="profile-btn-mobile" class="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-indigo-50">
-  <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-8 h-8 rounded-full object-cover border">
-  <span class="text-indigo-600 font-semibold">Profile</span>
-</a>
-
-      {% comment %} <button onclick="copyFormLink()" class="w-full text-left px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">
-        🔗 Copy Form Link
-      </button>
-      <p class="text-gray-500 text-sm mt-1">
-        Note: Please copy this link and share with team leaders to add their members' programs.
-      </p> {% endcomment %}
-
-      <a href="{% url 'home' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Home</a>
-      <a href="{% url 'teams' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Teams</a>
-       <a href="{% url 'results' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Results</a>
-<!--      <a href="{% url 'logout' %}" class="block px-4 py-2 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50">Logout</a>-->
-    </nav>
-  </div>
-
-  <div id="overlay" class="fixed inset-0 bg-black bg-opacity-40 hidden z-40"></div>
-  {% endif %}
-
-  <!-- Tabs -->
-  <div class="relative w-full max-w-md mx-auto mb-6 sm:mb-8 bg-gray-200 rounded-lg overflow-hidden">
-    <div class="flex">
-      <button id="boysTab" onclick="showSection('boys')" class="tab-btn flex-1 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-colors duration-300">Boys</button>
-      <button id="girlsTab" onclick="showSection('girls')" class="tab-btn flex-1 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-colors duration-300">Girls</button>
-    </div>
-    <div id="sliderIndicator" class="absolute top-0 left-0 h-full w-1/2 bg-blue-600 rounded-lg transition-transform duration-300"></div>
-  </div>
+          <!-- 🔹 Result Added Badge -->
+          {% if program|is_result_added %}
+          <div
+            class="absolute top-2 left-2.5 bg-blue-500 text-white text-xs font-semibold rounded-full px-2 py-1 shadow ml-6"
+            title="Added Result">
+            R
+          </div>
+          {% endif %}
 
 
+          <!-- Three-dot menu -->
+          <div class="absolute top-2 right-2">
+            <button onclick="toggleProgramMenu(event, '{{ program.id }}')"
+              class="p-1 rounded-full hover:bg-gray-200">⋮</button>
+            <div id="menu-{{ program.id }}"
+              class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+              <a href="javascript:void(0)" onclick="event.stopPropagation(); openPrizeModal('{{ program.id }}')"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🏅 Add Prizes</a>
+              <button onclick="event.stopPropagation(); publishResult({{ program.id }})"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full">📢 Publish
+                Result</button>
+              <!--                <a href="/program/{{ program.id }}/download-result/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📥 Result</a>-->
+            </div>
+          </div>
 
+          <!-- Image -->
+          {% if program.image %}
+          <img src="{{ program.image.url }}" alt="{{ program.title }}"
+            class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+          {% else %}
+          <img src="{% static 'program_images/articon.png' %}" alt="{{ program.title }}"
+            class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+          {% endif %}
 
-
-
-  <!-- Boys Section -->
-  <div id="boysSection" class="section">
-
-    {% for category in categories %}
-    {% if category.programs.all %}
-    <h2 class="text-lg sm:text-xl font-semibold mb-3 text-purple-700 bg-green-400 px-3 py-2 rounded">{{ category.name }}</h2> {% endif %}
-    {% if category.programs.all|stage %}
-    <h2 class="text-lg sm:text-l font-semibold mb-3 text-rose-500">Stage></h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
-      {% for program in category.programs.all|stage %}
-
-      <div class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
-           onclick="openModal('{{ program.id }}', '{{ category.id }}')">
-
-        <!-- ✅ Tick mark at top-left -->
-        {% if program.is_result_published %}
-        <div class="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold rounded-full px-2 py-1 shadow"
-        title="Result published">
-          ✅
-        </div>
-        {% endif %}
-
-        <!-- 🔹 Result Added Badge -->
-        {% if program|is_result_added %}
-        <div class="absolute top-2 left-2.5 bg-blue-500 text-white text-xs font-semibold rounded-full px-2 py-1 shadow ml-6"
-             title="Added Result">
-          R
-        </div>
-        {% endif %}
-
-        <!-- Three-dot menu -->
-        <div class="absolute top-2 right-2">
-          <button onclick="toggleMenu(event, '{{ program.id }}')" class="p-1 rounded-full hover:bg-gray-200">⋮</button>
-          <div id="menu-{{ program.id }}" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-50">
-            <a href="javascript:void(0)" onclick="event.stopPropagation(); openPrizeModal('{{ program.id }}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🏅 Add Prizes</a>
-            <button onclick="event.stopPropagation(); publishResult({{ program.id }})" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full">📢 Publish Result</button>
+          <div class="flex-1 min-w-0">
+            <h2 class="text-base sm:text-lg font-semibold truncate">{{ program.title }}</h2>
+            <p class="text-xs sm:text-sm text-gray-600 line-clamp-2 truncate">{{ program.description|truncatechars:60 }}
+            </p>
           </div>
         </div>
-
-        <!-- Image -->
-        {% if program.image %}
-        <img src="{{ program.image.url }}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
-        {% else %}
-        <img src="{% static 'program_images/art_stage.png' %}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
-        {% endif %}
-
-        <div class="flex-1 min-w-0">
-          <h2 class="text-base sm:text-lg font-semibold truncate">{{ program.title }}</h2>
-          <p class="text-xs sm:text-sm text-gray-600 line-clamp-2 truncate">{{ program.description|truncatechars:60 }}</p>
-        </div>
+        {% endfor %}
       </div>
+      {% endif %}
+
 
       {% endfor %}
     </div>
-    {% endif %}
 
-    {% if category.programs.all|non_stage %}
-    <h2 class="text-lg sm:text-l font-semibold mb-3 text-rose-500">Non Stage></h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
-      {% for program in category.programs.all|non_stage %}
-      <div class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
-           onclick="openModal('{{ program.id }}', '{{ category.id }}')">
 
-        <!-- ✅ Tick mark at top-left -->
-        {% if program.is_result_published %}
-        <div class="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold rounded-full px-2 py-1 shadow"
-        title="Result published">
-          ✅
+
+
+
+
+    <!-- Girls Section -->
+    <div id="girlsSection" class="section hidden">
+      {% for category in categories %}
+      {% if category.programs_for_girls.all %}
+      <h2 class="text-lg sm:text-xl font-semibold mb-3 text-purple-700 bg-green-400 px-3 py-2 rounded">{{ category.name
+        }}</h2>{% endif %}
+      {% if category.programs_for_girls.all|stage %}
+      <h2 class="text-lg sm:text-l font-semibold mb-3 text-rose-500">Stage></h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        {% for program in category.programs_for_girls.all|stage %}
+        <div
+          class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
+          onclick="openModal('{{ program.id }}', '{{ category.id }}')">
+
+          <!-- ✅ Tick mark at top-left -->
+          {% if program.is_result_published %}
+          <div class="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold rounded-full px-2 py-1 shadow"
+            title="Result published">
+            ✅
+          </div>
+          {% endif %}
+
+          <!-- 🔹 Result Added Badge -->
+          {% if program|is_result_added %}
+          <div
+            class="absolute top-2 left-2.5 bg-blue-500 text-white text-xs font-semibold rounded-full px-2 py-1 shadow ml-6"
+            title="Added Result">
+            R
+          </div>
+          {% endif %}
+
+
+          <!-- Three-dot menu -->
+          <div class="absolute top-2 right-2">
+            <button onclick="toggleMenu(event, '{{ program.id }}')"
+              class="p-1 rounded-full hover:bg-gray-200">⋮</button>
+            <div id="menu-{{ program.id }}"
+              class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+              <a href="javascript:void(0)" onclick="event.stopPropagation(); openPrizeModal('{{ program.id }}')"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🏅 Add Prizes</a>
+              <button onclick="event.stopPropagation(); publishResult({{ program.id }})"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full">📢 Publish
+                Result</button>
+              <!--                <a href="/program/{{ program.id }}/download-result/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📥 Result</a>-->
+            </div>
+          </div>
+
+          {% if program.image %}
+          <img src="{{ program.image.url }}" alt="{{ program.title }}"
+            class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+          {% else %}
+          <img src="{% static 'program_images/art_stage.png' %}" alt="{{ program.title }}"
+            class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+          {% endif %}
+
+          <div class="flex-1 min-w-0">
+            <h2 class="text-base sm:text-lg font-semibold truncate">{{ program.title }}</h2>
+            <p class="text-xs sm:text-sm text-gray-600 line-clamp-2 truncate">{{ program.description|truncatechars:60 }}
+            </p>
+          </div>
         </div>
-        {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
 
-        <!-- 🔹 Result Added Badge -->
-        {% if program|is_result_added %}
-        <div class="absolute top-2 left-2.5 bg-blue-500 text-white text-xs font-semibold rounded-full px-2 py-1 shadow ml-6"
-             title="Added Result">
-          R
+      {% if category.programs_for_girls.all|non_stage %}
+      <h2 class="text-lg sm:text-l font-semibold mb-3 text-rose-500">Non Stage></h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        {% for program in category.programs_for_girls.all|non_stage %}
+        <div
+          class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
+          onclick="openModal('{{ program.id }}', '{{ category.id }}')">
+          <!-- ✅ Tick mark at top-left -->
+          {% if program.is_result_published %}
+          <div class="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold rounded-full px-2 py-1 shadow"
+            title="Result published">
+            ✅
+          </div>
+          {% endif %}
+
+          <!-- 🔹 Result Added Badge -->
+          {% if program|is_result_added %}
+          <div
+            class="absolute top-2 left-2.5 bg-blue-500 text-white text-xs font-semibold rounded-full px-2 py-1 shadow ml-6"
+            title="Added Result">
+            R
+          </div>
+          {% endif %}
+
+
+          <!-- Three-dot menu -->
+          <div class="absolute top-2 right-2">
+            <button onclick="toggleMenu(event, '{{ program.id }}')"
+              class="p-1 rounded-full hover:bg-gray-200">⋮</button>
+            <div id="menu-{{ program.id }}"
+              class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+              <a href="javascript:void(0)" onclick="event.stopPropagation(); openPrizeModal('{{ program.id }}')"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🏅 Add Prizes</a>
+              <button onclick="event.stopPropagation(); publishResult({{ program.id }})"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full">📢 Publish
+                Result</button>
+              <!--                <a href="/program/{{ program.id }}/download-result/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📥 Result</a>-->
+            </div>
+          </div>
+
+          {% if program.image %}
+          <img src="{{ program.image.url }}" alt="{{ program.title }}"
+            class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+          {% else %}
+          <img src="{% static 'program_images/articon.png' %}" alt="{{ program.title }}"
+            class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
+          {% endif %}
+
+          <div class="flex-1 min-w-0">
+            <h2 class="text-base sm:text-lg font-semibold truncate">{{ program.title }}</h2>
+            <p class="text-xs sm:text-sm text-gray-600 line-clamp-2 truncate">{{ program.description|truncatechars:60 }}
+            </p>
+          </div>
         </div>
-        {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% endfor %}
+    </div>
+
+    <!-- Program Modal -->
+    <div id="programModal"
+      class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50 px-4 overflow-y-auto max-h-[90vh]">
+      <div class="bg-white rounded-xl shadow-lg w-full max-w-4xl p-4 sm:p-6 relative overflow-auto">
+        <button onclick="closeModal()"
+          class="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-xl">✖</button>
+        <h2 id="modalTitle" class="text-xl sm:text-2xl font-bold mb-4"></h2>
+        <div id="participantsContainer" class="overflow-x-auto text-sm sm:text-base"></div>
+        <div class="mt-6 border-t pt-4 flex flex-wrap justify-end gap-4 text-sm sm:text-base text-blue-600">
+          <a id="downloadPdfBtn" href="#" target="_blank" class="hover:underline">📄 Judges Slip</a>
+          <a id="downloadAllParticipantPdfBtn" href="#" target="_blank" class="hover:underline">📄 Participants</a>
+        </div>
+      </div>
+    </div>
 
 
-        <!-- Three-dot menu -->
-        <div class="absolute top-2 right-2">
-          <button onclick="toggleMenu(event, '{{ program.id }}')" class="p-1 rounded-full hover:bg-gray-200">⋮</button>
-          <div id="menu-{{ program.id }}" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-50">
-            <a href="javascript:void(0)" onclick="event.stopPropagation(); openPrizeModal('{{ program.id }}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🏅 Add Prizes</a>
-            <button onclick="event.stopPropagation(); publishResult({{ program.id }})" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full">📢 Publish Result</button>
-            <!--                <a href="/program/{{ program.id }}/download-result/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📥 Result</a>-->
+    <!-- Add Prize Modal -->
+    <div id="prizeModal" class="fixed inset-0 hidden flex items-center justify-center bg-black bg-opacity-50 z-50">
+      <div
+        class="bg-white rounded-xl shadow-lg w-full max-w-3xl p-6 relative transform transition-all scale-95 opacity-0 max-h-[90vh] overflow-y-auto">
+
+        <!-- Close button -->
+        <button onclick="closePrizeModal()"
+          class="absolute top-3 right-3 text-gray-500 hover:text-red-600 text-xl">✖</button>
+
+        <!-- Title -->
+        <h2 id="prizeModalTitle" class="text-xl sm:text-2xl font-bold mb-4 text-indigo-700">🏅 Add Prizes</h2>
+
+        <!-- Winners Section -->
+        <div id="prizeWinners" class="mb-6 hidden">
+          <h3 class="text-lg font-bold text-green-700 mb-2">🏆 Winners</h3>
+          <div id="winnersList" class="space-y-2"></div>
+        </div>
+
+
+        <!-- Prize Selection -->
+        <div class="space-y-4">
+          <div>
+            <label class="block font-semibold mb-1">First Prize</label>
+            <select id="firstPrizeSelect" class="w-full border rounded-lg p-2">
+              <option value="">-- Select Participant --</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold mb-1">Second Prize</label>
+            <select id="secondPrizeSelect" class="w-full border rounded-lg p-2">
+              <option value="">-- Select Participant --</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold mb-1">Third Prize</label>
+            <select id="thirdPrizeSelect" class="w-full border rounded-lg p-2">
+              <option value="">-- Select Participant --</option>
+            </select>
           </div>
         </div>
 
-        <!-- Image -->
-        {% if program.image %}
-        <img src="{{ program.image.url }}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
-        {% else %}
-        <img src="{% static 'program_images/articon.png' %}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
-        {% endif %}
+        <!-- Grades (Hidden Section) -->
+        <div class="mt-6">
+          <button onclick="toggleGrades()" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 text-sm">➕ Add
+            Grades</button>
+          <div id="gradesSection" class="hidden mt-3 space-y-3">
+            <div>
+              <label class="block font-semibold mb-1">Grade A</label>
+              <select id="gradeASelect" class="w-full border rounded-lg p-2">
+                <option value="">-- Select Participant --</option>
+              </select>
+            </div>
 
-        <div class="flex-1 min-w-0">
-          <h2 class="text-base sm:text-lg font-semibold truncate">{{ program.title }}</h2>
-          <p class="text-xs sm:text-sm text-gray-600 line-clamp-2 truncate">{{ program.description|truncatechars:60 }}</p>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
+            <div>
+              <label class="block font-semibold mb-1">Grade B</label>
+              <select id="gradeBSelect" class="w-full border rounded-lg p-2">
+                <option value="">-- Select Participant --</option>
+              </select>
+            </div>
 
-
-    {% endfor %}
-  </div>
-
-
-
-
-
-
-  <!-- Girls Section -->
-  <div id="girlsSection" class="section hidden">
-    {% for category in categories %}
-    {% if category.programs_for_girls.all %}
-    <h2 class="text-lg sm:text-xl font-semibold mb-3 text-purple-700 bg-green-400 px-3 py-2 rounded">{{ category.name }}</h2>{% endif %}
-    {% if category.programs_for_girls.all|stage %}
-    <h2 class="text-lg sm:text-l font-semibold mb-3 text-rose-500">Stage></h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
-      {% for program in category.programs_for_girls.all|stage %}
-      <div class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
-           onclick="openModal('{{ program.id }}', '{{ category.id }}')">
-
-        <!-- ✅ Tick mark at top-left -->
-        {% if program.is_result_published %}
-        <div class="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold rounded-full px-2 py-1 shadow"
-        title="Result published">
-          ✅
-        </div>
-        {% endif %}
-
-        <!-- 🔹 Result Added Badge -->
-        {% if program|is_result_added %}
-        <div class="absolute top-2 left-2.5 bg-blue-500 text-white text-xs font-semibold rounded-full px-2 py-1 shadow ml-6"
-             title="Added Result">
-          R
-        </div>
-        {% endif %}
-
-
-        <!-- Three-dot menu -->
-        <div class="absolute top-2 right-2">
-          <button onclick="toggleMenu(event, '{{ program.id }}')" class="p-1 rounded-full hover:bg-gray-200">⋮</button>
-          <div id="menu-{{ program.id }}" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-50">
-            <a href="javascript:void(0)" onclick="event.stopPropagation(); openPrizeModal('{{ program.id }}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🏅 Add Prizes</a>
-            <button onclick="event.stopPropagation(); publishResult({{ program.id }})" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full">📢 Publish Result</button>
-            <!--                <a href="/program/{{ program.id }}/download-result/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📥 Result</a>-->
+            <div>
+              <label class="block font-semibold mb-1">Grade C</label>
+              <select id="gradeCSelect" class="w-full border rounded-lg p-2">
+                <option value="">-- Select Participant --</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        {% if program.image %}
-        <img src="{{ program.image.url }}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
-        {% else %}
-        <img src="{% static 'program_images/art_stage.png' %}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
-        {% endif %}
-
-        <div class="flex-1 min-w-0">
-          <h2 class="text-base sm:text-lg font-semibold truncate">{{ program.title }}</h2>
-          <p class="text-xs sm:text-sm text-gray-600 line-clamp-2 truncate">{{ program.description|truncatechars:60 }}</p>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-
-    {% if category.programs_for_girls.all|non_stage %}
-    <h2 class="text-lg sm:text-l font-semibold mb-3 text-rose-500">Non Stage></h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
-      {% for program in category.programs_for_girls.all|non_stage %}
-      <div class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
-           onclick="openModal('{{ program.id }}', '{{ category.id }}')">
-        <!-- ✅ Tick mark at top-left -->
-        {% if program.is_result_published %}
-        <div class="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold rounded-full px-2 py-1 shadow"
-        title="Result published">
-          ✅
-        </div>
-        {% endif %}
-
-        <!-- 🔹 Result Added Badge -->
-        {% if program|is_result_added %}
-        <div class="absolute top-2 left-2.5 bg-blue-500 text-white text-xs font-semibold rounded-full px-2 py-1 shadow ml-6"
-             title="Added Result">
-          R
-        </div>
-        {% endif %}
-
-
-        <!-- Three-dot menu -->
-        <div class="absolute top-2 right-2">
-          <button onclick="toggleMenu(event, '{{ program.id }}')" class="p-1 rounded-full hover:bg-gray-200">⋮</button>
-          <div id="menu-{{ program.id }}" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-50">
-            <a href="javascript:void(0)" onclick="event.stopPropagation(); openPrizeModal('{{ program.id }}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🏅 Add Prizes</a>
-            <button onclick="event.stopPropagation(); publishResult({{ program.id }})" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full">📢 Publish Result</button>
-            <!--                <a href="/program/{{ program.id }}/download-result/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📥 Result</a>-->
-          </div>
+        <!-- Remarks -->
+        <div class="mt-6">
+          <label class="block font-semibold mb-1">Remarks</label>
+          <textarea id="remarksInput" class="w-full border rounded-lg p-2" rows="3"
+            placeholder="Enter remarks..."></textarea>
         </div>
 
-        {% if program.image %}
-        <img src="{{ program.image.url }}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
-        {% else %}
-        <img src="{% static 'program_images/articon.png' %}" alt="{{ program.title }}" class="rounded-md h-20 w-24 sm:h-24 sm:w-28 object-cover">
-        {% endif %}
-
-        <div class="flex-1 min-w-0">
-          <h2 class="text-base sm:text-lg font-semibold truncate">{{ program.title }}</h2>
-          <p class="text-xs sm:text-sm text-gray-600 line-clamp-2 truncate">{{ program.description|truncatechars:60 }}</p>
+        <!-- Save Button -->
+        <div class="mt-6 text-right">
+          <button onclick="savePrizes()"
+            class="px-5 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">💾 Save</button>
         </div>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
 
-    {% endfor %}
-  </div>
-
-  <!-- Program Modal -->
-  <div id="programModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50 px-4 overflow-y-auto max-h-[90vh]">
-    <div class="bg-white rounded-xl shadow-lg w-full max-w-4xl p-4 sm:p-6 relative overflow-auto">
-      <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-xl">✖</button>
-      <h2 id="modalTitle" class="text-xl sm:text-2xl font-bold mb-4"></h2>
-      <div id="participantsContainer" class="overflow-x-auto text-sm sm:text-base"></div>
-      <div class="mt-6 border-t pt-4 flex flex-wrap justify-end gap-4 text-sm sm:text-base text-blue-600">
-        <a id="downloadPdfBtn" href="#" target="_blank" class="hover:underline">📄 Judges Slip</a>
-        <a id="downloadAllParticipantPdfBtn" href="#" target="_blank" class="hover:underline">📄 Participants</a>
       </div>
     </div>
+
+
+    <!-- Toast -->
+    <div id="toast"
+      class="hidden fixed top-5 right-5 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg transition transform scale-95 opacity-0 z-[9999]">
+    </div>
+
   </div>
 
 
-  <!-- Add Prize Modal -->
-<div id="prizeModal" class="fixed inset-0 hidden flex items-center justify-center bg-black bg-opacity-50 z-50">
-  <div class="bg-white rounded-xl shadow-lg w-full max-w-3xl p-6 relative transform transition-all scale-95 opacity-0 max-h-[90vh] overflow-y-auto">
-
-    <!-- Close button -->
-    <button onclick="closePrizeModal()" class="absolute top-3 right-3 text-gray-500 hover:text-red-600 text-xl">✖</button>
-
-    <!-- Title -->
-    <h2 id="prizeModalTitle" class="text-xl sm:text-2xl font-bold mb-4 text-indigo-700">🏅 Add Prizes</h2>
-
-    <!-- Winners Section -->
-    <div id="prizeWinners" class="mb-6 hidden">
-      <h3 class="text-lg font-bold text-green-700 mb-2">🏆 Winners</h3>
-      <div id="winnersList" class="space-y-2"></div>
-    </div>
-
-
-    <!-- Prize Selection -->
-    <div class="space-y-4">
-      <div>
-        <label class="block font-semibold mb-1">First Prize</label>
-        <select id="firstPrizeSelect" class="w-full border rounded-lg p-2">
-          <option value="">-- Select Participant --</option>
-        </select>
-      </div>
-
-      <div>
-        <label class="block font-semibold mb-1">Second Prize</label>
-        <select id="secondPrizeSelect" class="w-full border rounded-lg p-2">
-          <option value="">-- Select Participant --</option>
-        </select>
-      </div>
-
-      <div>
-        <label class="block font-semibold mb-1">Third Prize</label>
-        <select id="thirdPrizeSelect" class="w-full border rounded-lg p-2">
-          <option value="">-- Select Participant --</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Grades (Hidden Section) -->
-    <div class="mt-6">
-      <button onclick="toggleGrades()" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 text-sm">➕ Add Grades</button>
-      <div id="gradesSection" class="hidden mt-3 space-y-3">
-        <div>
-          <label class="block font-semibold mb-1">Grade A</label>
-          <select id="gradeASelect" class="w-full border rounded-lg p-2">
-            <option value="">-- Select Participant --</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block font-semibold mb-1">Grade B</label>
-          <select id="gradeBSelect" class="w-full border rounded-lg p-2">
-            <option value="">-- Select Participant --</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block font-semibold mb-1">Grade C</label>
-          <select id="gradeCSelect" class="w-full border rounded-lg p-2">
-            <option value="">-- Select Participant --</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <!-- Remarks -->
-    <div class="mt-6">
-      <label class="block font-semibold mb-1">Remarks</label>
-      <textarea id="remarksInput" class="w-full border rounded-lg p-2" rows="3" placeholder="Enter remarks..."></textarea>
-    </div>
-
-    <!-- Save Button -->
-    <div class="mt-6 text-right">
-      <button onclick="savePrizes()" class="px-5 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">💾 Save</button>
-    </div>
 
   </div>
-</div>
-
-
-  <!-- Toast -->
-  <div id="toast" class="hidden fixed top-5 right-5 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg transition transform scale-95 opacity-0 z-[9999]"></div>
-
-</div>
 
 
 
-</div>
-
-
-<!-- Profile Popup -->
-<div id="profileModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-xl shadow-2xl p-6 w-96">
-    <div class="flex items-center space-x-4 mb-6">
-      <img src="{% static 'images/profile.png' %}" alt="Profile"
-           class="w-16 h-16 rounded-full object-cover border-4 border-indigo-600 shadow">
-      <div>
-        <h2 class="text-xl font-bold text-indigo-700">{{ request.user.get_full_name }}</h2>
-        <p class="text-gray-500">{{ request.user.email }}</p>
-      </div>
-    </div>
-
-    <div class="space-y-2 text-gray-700">
-      <p><strong>📞 Phone:</strong> {{ request.user.phone }}</p>
-      <p><strong>🏫 Madrasa:</strong> {{ request.user.madrasa.name }}</p>
-      <p><strong>🎉 Fest:</strong> {{ meelad_fest_name }}</p>
-      <p><strong>👨‍🎓 Total Students:</strong> {{ total_students }}</p>
-      <p><strong>📚 Total Programs:</strong> {{ total_programs }}</p>
-    </div>
-
- <div class="mt-6 flex justify-center gap-4">
-  <!-- Logout Button -->
-  <a href="{% url 'logout' %}"
-     class="px-5 py-2 bg-red-500 text-white font-semibold rounded-lg shadow-lg hover:bg-red-600 transition transform hover:-translate-y-0.5">
-    🔓 Logout
-  </a>
-
-  <!-- Close Button -->
-  <button onclick="closeProfile()"
-          class="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:bg-indigo-700 transition transform hover:-translate-y-0.5">
-    ✖ Close
-  </button>
-</div>
-
-  </div>
-</div>
-
-
-<script>
-        const profileBtn = document.getElementById("profile-btn");
-const profileBtnMobile = document.getElementById("profile-btn-mobile");
-const profileModal = document.getElementById("profileModal");
-
-function openProfile() {
-  profileModal.classList.remove("hidden");
-}
-function closeProfile() {
-  profileModal.classList.add("hidden");
-}
-
-if (profileBtn) profileBtn.addEventListener("click", openProfile);
-if (profileBtnMobile) profileBtnMobile.addEventListener("click", openProfile);
-
-</script>
 
 
 </body>
 
 
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+
+    /* -------------------
+       Mobile Menu Toggle
+    ------------------- */
+
+    /* -------------------
+       Copy Form Link
+    ------------------- */
+    window.copyFormLink = function () {
+      const formUrl = "{{ form_url }}"; // Django variable
+      navigator.clipboard.writeText(formUrl)
+        .then(() => alert("Form URL copied to clipboard!"))
+        .catch((err) => {
+          alert("Failed to copy URL. Try manually!");
+          console.error(err);
+        });
+    };
 
 
- <script>
-document.addEventListener("DOMContentLoaded", () => {
+    /* -------------------
+       Boys/Girls Tabs
+    ------------------- */
+    function showSection(section) {
+      const boys = document.getElementById("boysSection");
+      const girls = document.getElementById("girlsSection");
+      const boysTab = document.getElementById("boysTab");
+      const girlsTab = document.getElementById("girlsTab");
+      const indicator = document.getElementById("sliderIndicator");
 
-  /* -------------------
-     Mobile Menu Toggle
-  ------------------- */
-  const menuBtn = document.getElementById("menu-toggle");
-  const menu = document.getElementById("mobile-menu");
-  const overlay = document.getElementById("overlay");
-  const closeBtn = document.getElementById("menu-close-btn");
+      if (boys) boys.classList.add("hidden");
+      if (girls) girls.classList.add("hidden");
+      const sectionDiv = document.getElementById(section + "Section");
+      if (sectionDiv) sectionDiv.classList.remove("hidden");
 
-  function openMenu() {
-    if(menu) menu.classList.remove("translate-x-full");
-    if(overlay) overlay.classList.remove("hidden");
-  }
+      if (boysTab) boysTab.classList.remove("active");
+      if (girlsTab) girlsTab.classList.remove("active");
 
-  function closeMenu() {
-    if(menu) menu.classList.add("translate-x-full");
-    if(overlay) overlay.classList.add("hidden");
-  }
-
-  if (menuBtn) menuBtn.addEventListener("click", openMenu);
-  if (closeBtn) closeBtn.addEventListener("click", closeMenu);
-  if (overlay) overlay.addEventListener("click", closeMenu);
-
-
-  /* -------------------
-     Copy Form Link
-  ------------------- */
-  window.copyFormLink = function () {
-    const formUrl = "{{ form_url }}"; // Django variable
-    navigator.clipboard.writeText(formUrl)
-      .then(() => alert("Form URL copied to clipboard!"))
-      .catch((err) => {
-        alert("Failed to copy URL. Try manually!");
-        console.error(err);
-      });
-  };
-
-
-  /* -------------------
-     Boys/Girls Tabs
-  ------------------- */
-  function showSection(section) {
-    const boys = document.getElementById("boysSection");
-    const girls = document.getElementById("girlsSection");
-    const boysTab = document.getElementById("boysTab");
-    const girlsTab = document.getElementById("girlsTab");
-    const indicator = document.getElementById("sliderIndicator");
-
-    if(boys) boys.classList.add("hidden");
-    if(girls) girls.classList.add("hidden");
-    const sectionDiv = document.getElementById(section + "Section");
-    if(sectionDiv) sectionDiv.classList.remove("hidden");
-
-    if(boysTab) boysTab.classList.remove("active");
-    if(girlsTab) girlsTab.classList.remove("active");
-
-    if (section === "boys") {
-      if(boysTab) boysTab.classList.add("active");
-      if(indicator) indicator.style.transform = "translateX(0%)";
-    } else {
-      if(girlsTab) girlsTab.classList.add("active");
-      if(indicator) indicator.style.transform = "translateX(100%)";
+      if (section === "boys") {
+        if (boysTab) boysTab.classList.add("active");
+        if (indicator) indicator.style.transform = "translateX(0%)";
+      } else {
+        if (girlsTab) girlsTab.classList.add("active");
+        if (indicator) indicator.style.transform = "translateX(100%)";
+      }
     }
-  }
 
-  // default section
-  showSection("boys");
-  window.showSection = showSection;
+    // default section
+    showSection("boys");
+    window.showSection = showSection;
 
 
-  /* -------------------
-     Modal Handling
-  ------------------- */
-  window.openModal = function(programId, categoryId) {
-    fetch(`/program/${programId}/participants/`)
-      .then(res => res.json())
-      .then(data => {
-        const modalTitle = document.getElementById("modalTitle");
-        if(modalTitle) modalTitle.textContent = data.program;
+    /* -------------------
+       Modal Handling
+    ------------------- */
+    /* -------------------
+       Open Modal
+    ------------------- */
+    window.openModal = function (programId, categoryId) {
+      // Show spinner or loading state
+      const container = document.getElementById("participantsContainer");
+      if (container) container.innerHTML = '<p class="text-center text-gray-500">Loading...</p>';
 
-        const participantsContainer = document.getElementById("participantsContainer");
-        if(participantsContainer) {
-          if (!data.participants || data.participants.length === 0) {
-            participantsContainer.innerHTML = "<p class='text-gray-600'>No participants yet.</p>";
-          } else {
-            let table = `
+      fetch(`/program/${programId}/participant-data/`)
+        .then(res => res.json())
+        .then(data => {
+          const modalTitle = document.getElementById("modalTitle");
+          if (modalTitle) modalTitle.textContent = data.title || "Program Details";
+
+          if (container) {
+            if (!data.participants || data.participants.length === 0) {
+              container.innerHTML = "<p class='text-gray-600'>No participants yet.</p>";
+            } else {
+              let table = `
               <table class="min-w-full border-collapse border border-gray-300 text-xs sm:text-sm">
                 <thead class="bg-gray-200">
                   <tr>
@@ -620,247 +542,267 @@ document.addEventListener("DOMContentLoaded", () => {
                     <th class="border px-2 sm:px-3 py-2">Code Number</th>
                     <th class="border px-2 sm:px-3 py-2">Name</th>
                     <th class="border px-2 sm:px-3 py-2">Team</th>
-
                   </tr>
                 </thead>
                 <tbody>
             `;
-            data.participants.forEach((p, i) => {
-              table += `
+              data.participants.forEach((p, i) => {
+                table += `
                 <tr class="hover:bg-gray-50">
                   <td class="border px-2 sm:px-3 py-2 text-center">${i + 1}</td>
                   <td class="border px-2 sm:px-3 py-2">${p.code_number || ""}</td>
                   <td class="border px-2 sm:px-3 py-2">${p.full_name || ""}</td>
                   <td class="border px-2 sm:px-3 py-2">${p.team || "-"}</td>
-
                 </tr>`;
-            });
-            table += "</tbody></table>";
-            participantsContainer.innerHTML = table;
+              });
+              table += "</tbody></table>";
+              container.innerHTML = table;
+            }
           }
-        }
 
-        // Detect current section (boys/girls)
-        const currentSection = document.getElementById("boysSection")?.classList.contains("hidden") ? "girls" : "boys";
+          // Update Links
+          const currentSection = document.getElementById("boysSection")?.classList.contains("hidden") ? "girls" : "boys";
+          const downloadPdfBtn = document.getElementById("downloadPdfBtn");
+          if (downloadPdfBtn) downloadPdfBtn.href = `/program/${programId}/judge-slip/pdf/${categoryId}/`;
 
-        const downloadPdfBtn = document.getElementById("downloadPdfBtn");
-        if(downloadPdfBtn) downloadPdfBtn.href = `/program/${programId}/judge-slip/pdf/${categoryId}/`;
+          const downloadAllParticipantPdfBtn = document.getElementById("downloadAllParticipantPdfBtn");
+          if (downloadAllParticipantPdfBtn) downloadAllParticipantPdfBtn.href = `/program/download-participants/${programId}/${currentSection}/${categoryId}/`;
 
-        const downloadAllParticipantPdfBtn = document.getElementById("downloadAllParticipantPdfBtn");
-        if(downloadAllParticipantPdfBtn) downloadAllParticipantPdfBtn.href = `/program/download-participants/${programId}/${currentSection}/${categoryId}/`;
+          // Show Modal
+          const modal = document.getElementById("programModal");
+          if (modal) {
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+          }
 
-        const modal = document.getElementById("programModal");
-        if(modal) {
-          modal.classList.remove("hidden");
-          modal.classList.add("flex");
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        alert("Failed to load participants.");
-      });
-  };
-
-  window.closeModal = function() {
-    const modal = document.getElementById("programModal");
-    if(modal) {
-      modal.classList.add("hidden");
-      modal.classList.remove("flex");
-    }
-  };
-
-
-  /* -------------------
-     Dropdown menu toggle
-  ------------------- */
-  window.toggleMenu = function(event, id) {
-    event.stopPropagation();
-    const menu = document.getElementById(`menu-${id}`);
-    if(!menu) return;
-
-    document.querySelectorAll("[id^='menu-']").forEach(m => {
-      if(m !== menu) m.classList.add("hidden");
-    });
-
-    menu.classList.toggle("hidden");
-  };
-
-  document.addEventListener("click", () => {
-    document.querySelectorAll("[id^='menu-']").forEach(m => m.classList.add("hidden"));
-  });
-
-
- /* -------------------
-   Prize Modal
-------------------- */
-let currentProgramId = null;
-
-  window.openPrizeModal = function(programId) {
-    currentProgramId = programId;
-
-    fetch(`/program/${programId}/participants/`)
-      .then(res => res.json())
-      .then(data => {
-        const selects = [
-          "firstPrizeSelect",
-          "secondPrizeSelect",
-          "thirdPrizeSelect",
-          "gradeASelect",
-          "gradeBSelect"
-        ];
-
-        selects.forEach(id => {
-          const select = document.getElementById(id);
-          if (!select) return;
-          select.innerHTML = '<option value="">-- Select Participant --</option>';
-          data.participants.forEach(p => {
-            const opt = document.createElement("option");
-            opt.value = p.id;
-            opt.textContent = `${p.code_number || ""} - ${p.full_name || ""}`;
-            select.appendChild(opt);
-          });
+          // Store current program ID globally for prize modal usage
+          window.currentProgramId = programId;
+        })
+        .catch(err => {
+          console.error(err);
+          alert("Failed to load participants.");
         });
-
-        const winnersDiv = document.getElementById("prizeWinners");
-        const winnersList = document.getElementById("winnersList");
-        if(winnersList) winnersList.innerHTML = "";
-
-        if(data.winners && data.winners.length > 0 && winnersDiv && winnersList) {
-          winnersDiv.classList.remove("hidden");
-
-          data.winners.forEach(w => {
-            const item = document.createElement("div");
-            item.className = "p-2 border rounded bg-gray-50";
-            item.innerHTML = `<strong>${w.position}</strong>: ${w.code_number || ""} - ${w.full_name || ""} (${w.team || ""})`;
-            winnersList.appendChild(item);
-
-            const selectIdMap = {
-              "First Prize": "firstPrizeSelect",
-              "Second Prize": "secondPrizeSelect",
-              "Third Prize": "thirdPrizeSelect",
-              "Grade A": "gradeASelect",
-              "Grade B": "gradeBSelect"
-            };
-            const sel = document.getElementById(selectIdMap[w.position]);
-            if(sel) sel.value = w.participant_id;
-          });
-        } else if (winnersDiv) {
-          winnersDiv.classList.add("hidden");
-        }
-      })
-      .catch(err => console.error(err));
-
-    const modal = document.getElementById("prizeModal");
-    if(modal) {
-      modal.classList.remove("hidden");
-      setTimeout(() => {
-        const container = modal.querySelector(".modal-container") || modal.querySelector("div");
-        if(container) {
-          container.classList.remove("scale-95", "opacity-0");
-          container.classList.add("scale-100", "opacity-100");
-        }
-      }, 10);
-    }
-  };
-
-  window.closePrizeModal = function() {
-    const modal = document.getElementById("prizeModal");
-    if(modal) {
-      const container = modal.querySelector(".modal-container") || modal.querySelector("div");
-      if(container) {
-        container.classList.add("scale-95", "opacity-0");
-        container.classList.remove("scale-100", "opacity-100");
-      }
-      setTimeout(() => modal.classList.add("hidden"), 200);
-    }
-  };
-
-  window.toggleGrades = function() {
-    const grades = document.getElementById("gradesSection");
-    if(grades) grades.classList.toggle("hidden");
-  };
-
-  window.savePrizes = function() {
-    const normalize = val => val && val.trim() !== "" ? val : null;
-
-    const payload = {
-      first: normalize(document.getElementById("firstPrizeSelect")?.value),
-      second: normalize(document.getElementById("secondPrizeSelect")?.value),
-      third: normalize(document.getElementById("thirdPrizeSelect")?.value),
-      gradeA: normalize(document.getElementById("gradeASelect")?.value),
-      gradeB: normalize(document.getElementById("gradeBSelect")?.value),
-      remarks: document.getElementById("remarksInput")?.value || "",
     };
 
-    fetch(`/program/${currentProgramId}/save-prize/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": "{{ csrf_token }}"
-      },
-      body: JSON.stringify(payload),
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.message === "success") {
-        alert("Prizes saved successfully!");
-        closePrizeModal();
-        location.reload();
-      } else {
-        alert("Failed to save prizes.");
-        console.error(data);
-      }
-    })
-    .catch(err => {
-      alert("Failed to save prizes.");
-      console.error(err);
+    /* -------------------
+       Toggle Menu (3-dots)
+    ------------------- */
+    window.toggleProgramMenu = function (event, programId) {
+      event.stopPropagation();
+      const menu = document.getElementById(`menu-${programId}`);
+      // Close all other menus
+      document.querySelectorAll('[id^="menu-"]').forEach(el => {
+        if (el.id !== `menu-${programId}`) el.classList.add('hidden');
+      });
+      // Toggle current
+      if (menu) menu.classList.toggle('hidden');
+    };
+
+    // Close menus on click outside
+    document.addEventListener('click', () => {
+      document.querySelectorAll('[id^="menu-"]').forEach(el => el.classList.add('hidden'));
     });
-};
+
+    window.closeModal = function () {
+      const modal = document.getElementById("programModal");
+      if (modal) {
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      }
+    };
+
+
+    /* -------------------
+       Dropdown menu toggle
+    ------------------- */
+    window.toggleMenu = function (event, id) {
+      event.stopPropagation();
+      const menu = document.getElementById(`menu-${id}`);
+      if (!menu) return;
+
+      document.querySelectorAll("[id^='menu-']").forEach(m => {
+        if (m !== menu) m.classList.add("hidden");
+      });
+
+      menu.classList.toggle("hidden");
+    };
+
+    document.addEventListener("click", () => {
+      document.querySelectorAll("[id^='menu-']").forEach(m => m.classList.add("hidden"));
+    });
+
+
+    /* -------------------
+      Prize Modal
+   ------------------- */
+    let currentProgramId = null;
+
+    window.openPrizeModal = function (programId) {
+      currentProgramId = programId;
+
+      fetch(`/program/${programId}/participants/`)
+        .then(res => res.json())
+        .then(data => {
+          const selects = [
+            "firstPrizeSelect",
+            "secondPrizeSelect",
+            "thirdPrizeSelect",
+            "gradeASelect",
+            "gradeBSelect"
+          ];
+
+          selects.forEach(id => {
+            const select = document.getElementById(id);
+            if (!select) return;
+            select.innerHTML = '<option value="">-- Select Participant --</option>';
+            data.participants.forEach(p => {
+              const opt = document.createElement("option");
+              opt.value = p.id;
+              opt.textContent = `${p.code_number || ""} - ${p.full_name || ""}`;
+              select.appendChild(opt);
+            });
+          });
+
+          const winnersDiv = document.getElementById("prizeWinners");
+          const winnersList = document.getElementById("winnersList");
+          if (winnersList) winnersList.innerHTML = "";
+
+          if (data.winners && data.winners.length > 0 && winnersDiv && winnersList) {
+            winnersDiv.classList.remove("hidden");
+
+            data.winners.forEach(w => {
+              const item = document.createElement("div");
+              item.className = "p-2 border rounded bg-gray-50";
+              item.innerHTML = `<strong>${w.position}</strong>: ${w.code_number || ""} - ${w.full_name || ""} (${w.team || ""})`;
+              winnersList.appendChild(item);
+
+              const selectIdMap = {
+                "First Prize": "firstPrizeSelect",
+                "Second Prize": "secondPrizeSelect",
+                "Third Prize": "thirdPrizeSelect",
+                "Grade A": "gradeASelect",
+                "Grade B": "gradeBSelect"
+              };
+              const sel = document.getElementById(selectIdMap[w.position]);
+              if (sel) sel.value = w.participant_id;
+            });
+          } else if (winnersDiv) {
+            winnersDiv.classList.add("hidden");
+          }
+        })
+        .catch(err => console.error(err));
+
+      const modal = document.getElementById("prizeModal");
+      if (modal) {
+        modal.classList.remove("hidden");
+        setTimeout(() => {
+          const container = modal.querySelector(".modal-container") || modal.querySelector("div");
+          if (container) {
+            container.classList.remove("scale-95", "opacity-0");
+            container.classList.add("scale-100", "opacity-100");
+          }
+        }, 10);
+      }
+    };
+
+    window.closePrizeModal = function () {
+      const modal = document.getElementById("prizeModal");
+      if (modal) {
+        const container = modal.querySelector(".modal-container") || modal.querySelector("div");
+        if (container) {
+          container.classList.add("scale-95", "opacity-0");
+          container.classList.remove("scale-100", "opacity-100");
+        }
+        setTimeout(() => modal.classList.add("hidden"), 200);
+      }
+    };
+
+    window.toggleGrades = function () {
+      const grades = document.getElementById("gradesSection");
+      if (grades) grades.classList.toggle("hidden");
+    };
+
+    window.savePrizes = function () {
+      const normalize = val => val && val.trim() !== "" ? val : null;
+
+      const payload = {
+        first: normalize(document.getElementById("firstPrizeSelect")?.value),
+        second: normalize(document.getElementById("secondPrizeSelect")?.value),
+        third: normalize(document.getElementById("thirdPrizeSelect")?.value),
+        gradeA: normalize(document.getElementById("gradeASelect")?.value),
+        gradeB: normalize(document.getElementById("gradeBSelect")?.value),
+        remarks: document.getElementById("remarksInput")?.value || "",
+      };
+
+      fetch(`/program/${currentProgramId}/save-prize/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify(payload),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.message === "success") {
+            alert("Prizes saved successfully!");
+            closePrizeModal();
+            location.reload();
+          } else {
+            alert("Failed to save prizes.");
+            console.error(data);
+          }
+        })
+        .catch(err => {
+          alert("Failed to save prizes.");
+          console.error(err);
+        });
+    };
 
 
 
-  /* -------------------
-     Publish Result
-  ------------------- */
-window.publishResult = function(programId) {
-  fetch(`/program/${programId}/publish_result/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": "{{ csrf_token }}",
-    }
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.message === "success") {
-      showToast("✅ Result published successfully!");
+    /* -------------------
+       Publish Result
+    ------------------- */
+    window.publishResult = function (programId) {
+      fetch(`/program/${programId}/publish_result/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": "{{ csrf_token }}",
+        }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.message === "success") {
+            showToast("✅ Result published successfully!");
+            setTimeout(() => {
+              location.reload();  // reload after short delay so toast is visible
+            }, 1000);
+          } else {
+            showToast("❌ Failed to publish result.", true);
+          }
+        })
+        .catch(() => {
+          showToast("⚠️ Something went wrong.", true);
+        });
+    };
+
+    function showToast(message, isError = false) {
+      const toast = document.getElementById("toast");
+      if (!toast) return;
+      toast.textContent = message;
+      toast.classList.remove("hidden", "scale-95", "opacity-0");
+      toast.classList.add("scale-100", "opacity-100");
+      toast.style.backgroundColor = isError ? "#dc2626" : "#16a34a";
+
       setTimeout(() => {
-        location.reload();  // reload after short delay so toast is visible
-      }, 1000);
-    } else {
-      showToast("❌ Failed to publish result.", true);
+        toast.classList.add("scale-95", "opacity-0");
+        setTimeout(() => toast.classList.add("hidden"), 300);
+      }, 2500);
     }
-  })
-  .catch(() => {
-    showToast("⚠️ Something went wrong.", true);
+
   });
-};
-
-  function showToast(message, isError=false) {
-    const toast = document.getElementById("toast");
-    if(!toast) return;
-    toast.textContent = message;
-    toast.classList.remove("hidden", "scale-95", "opacity-0");
-    toast.classList.add("scale-100", "opacity-100");
-    toast.style.backgroundColor = isError ? "#dc2626" : "#16a34a";
-
-    setTimeout(() => {
-      toast.classList.add("scale-95", "opacity-0");
-      setTimeout(() => toast.classList.add("hidden"), 300);
-    }, 2500);
-  }
-
-});
 </script>
 
 </html>
