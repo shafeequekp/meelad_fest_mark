@@ -23,7 +23,6 @@ class Subscription(models.Model):
         """Returns True if subscription end_date is in the future."""
         if self.end_date is None:
             return False
-        print(self.end_date, 'ssssssss')
         return self.end_date >= timezone.now()
 
     def __str__(self):
