@@ -183,6 +183,17 @@ class TeamsView(generic.ListView):
         madrasa_id = request.user.madrasa.id
         host_url = f"{request.scheme}://{request.get_host()}"
         context["form_url"] = f'{host_url}/program/student-registration/?institution_id={madrasa_id}'
+
+        try:
+            madrasa = request.user.madrasa
+            categories = Category.objects.filter(madrasa=madrasa)
+            context['categories'] = categories
+            from applications.program.models import Student, Program
+            context["total_students"] = Student.objects.filter(team__madrasa=madrasa).count()
+            context["total_programs"] = Program.objects.filter(category__in=categories).distinct().count()
+        except:
+            pass
+
         return context
 
 

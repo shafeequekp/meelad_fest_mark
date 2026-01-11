@@ -394,6 +394,14 @@ class ProgramListView(generic.ListView):
         context['non_stage_programs'] = Program.objects.filter(non_stage=True)
         context['categories'] = Category.objects.filter(madrasa_id=madrasa_id)
 
+        try:
+            categories = Category.objects.filter(madrasa_id=madrasa_id)
+            context["total_students"] = Student.objects.filter(team__madrasa=madrasa).count()
+            context["total_programs"] = Program.objects.filter(category__in=categories).distinct().count()
+        except:
+            pass
+
+
         host_url = f"{request.scheme}://{request.get_host()}"
         context["form_url"] = f'{host_url}/program/student-registration/?institution_id={madrasa_id}'
         return context
@@ -777,6 +785,9 @@ class StudentUploadView(generic.TemplateView):
         context['teams'] = teams
         context['categories'] = categories
         context['needs_setup'] = (not teams.exists() or not categories.exists())
+
+        context['total_students'] = Student.objects.filter(team__madrasa=madrasa).count()
+        context['total_programs'] = Program.objects.filter(category__in=categories).distinct().count()
         return context
 
     def post(self, request, *args, **kwargs):
@@ -972,6 +983,14 @@ def category_program_list(request):
         programs_for_boys = programs_for_girls = Program.objects.filter(Q(category__madrasa=madrasa) | Q(girls_categories__madrasa=madrasa))
         selected_category = None
 
+    try:
+        madrasa_id = request.user.madrasa.id
+        categories = Category.objects.filter(madrasa_id=madrasa_id)
+        total_students = Student.objects.filter(team__madrasa=madrasa_id).count()
+        total_programs = Program.objects.filter(category__in=categories).distinct().count()
+    except:
+        pass
+
     context = {
         'categories': categories,
         'programs_for_boys': programs_for_boys,
@@ -979,6 +998,8 @@ def category_program_list(request):
         'selected_category': selected_category,
         'result_page': True,
         'meelad_fest_name': madrasa.meelad_fest_name,
+        'total_students': total_students,
+        'total_programs': total_programs,
     }
     return render(request, 'program/result_details.html', context)
 
@@ -1174,7 +1195,16 @@ def remove_program_from_venue(request, program_id):
 
 def venue_list(request):
     venues = Venue.objects.all()
-    return render(request, "program/venue_list.html", {"venues": venues})
+    total_students = 0
+    total_programs = 0
+    try:
+        madrasa_id = request.user.madrasa.id
+        categories = Category.objects.filter(madrasa_id=madrasa_id)
+        total_students = Student.objects.filter(team__madrasa=madrasa_id).count()
+        total_programs = Program.objects.filter(category__in=categories).distinct().count()
+    except:
+        pass
+    return render(request, "program/venue_list.html", {"venues": venues, "total_students": total_students, "total_programs": total_programs})
 
 def add_venue(request):
     if request.method == "POST":
