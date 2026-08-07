@@ -180,6 +180,14 @@ class CategoryView(LoginRequiredMixin, generic.ListView):
         team_id = self.request.GET.get('team')
         context['team_name'] = Team.objects.get(id=team_id).name
         context['team_id'] = team_id
+
+        user = self.request.user
+        madrasa = user.madrasa
+        context['meelad_fest_name'] = madrasa.meelad_fest_name if user.madrasa else None
+        context["total_students"] = Student.objects.filter(team__madrasa=madrasa).count()
+        categories = Category.objects.filter(madrasa=madrasa)
+        context["total_programs"] = Program.objects.filter(category__in=categories).distinct().count()
+
         return context
 
 
@@ -274,6 +282,13 @@ class CategoryDetailView(generic.DetailView):
         short_link = f"{scheme}://{host}/x/{encoded}"
         # context["form_url"] = f'{host_url}/program/student-registration/?institution_id={institution_id}'
         context['form_url'] = short_link
+
+        user = self.request.user
+        madrasa = user.madrasa
+        context['meelad_fest_name'] = madrasa.meelad_fest_name if user.madrasa else None
+        context["total_students"] = Student.objects.filter(team__madrasa=madrasa).count()
+        categories = Category.objects.filter(madrasa=madrasa)
+        context["total_programs"] = Program.objects.filter(category__in=categories).distinct().count()
 
         return context
 
@@ -396,8 +411,9 @@ class ProgramListView(generic.ListView):
 
         try:
             categories = Category.objects.filter(madrasa_id=madrasa_id)
-            context["total_students"] = Student.objects.filter(team__madrasa=madrasa).count()
+            context["total_students"] = Student.objects.filter(team__madrasa_id=madrasa_id).count()
             context["total_programs"] = Program.objects.filter(category__in=categories).distinct().count()
+            context['meelad_fest_name'] = Madrasa.objects.get(id=madrasa_id).meelad_fest_name
         except:
             pass
 
@@ -612,6 +628,375 @@ def download_participants_pdf(request, program_id, section, category_id):
 
 
 
+def download_results_poster_pdf(request, program_id, section):
+    program = get_object_or_404(Program, id=program_id)
+    madrasa = request.user.madrasa
+
+    # Determine category
+    if section == 'boys':
+        category = program.category_set.filter(madrasa=madrasa).first()
+    else:
+        category = program.girls_categories.filter(madrasa=madrasa).first()
+
+    category_name = category.name if category else "-"
+
+    # Get results (Prizes filter)
+    prizes = Prize.objects.filter(program=program).select_related(
+        'student__team', 'team', 'position', 'grade',
+        'group_program_position', 'general_program_position'
+    )
+
+    first_winner = None
+    second_winner = None
+    third_winner = None
+    a_grades = []
+    b_grades = []
+    c_grades = []
+
+    for prize in prizes:
+        pos_name = None
+        if program.is_general and prize.general_program_position:
+            pos_name = prize.general_program_position.name
+        elif program.is_group and prize.group_program_position:
+            pos_name = prize.group_program_position.name
+        elif prize.position:
+            pos_name = prize.position.name
+
+        if prize.student:
+            winner_name = prize.student.full_name
+            team_name = prize.student.team.name if prize.student.team else ""
+        elif prize.team:
+            winner_name = ""
+            team_name = prize.team.name
+        else:
+            continue
+
+        if team_name:
+            display_name = f"{winner_name} ({team_name})" if winner_name else team_name
+        else:
+            display_name = winner_name
+
+        if pos_name == 'first':
+            first_winner = display_name
+        elif pos_name == 'second':
+            second_winner = display_name
+        elif pos_name == 'third':
+            third_winner = display_name
+
+        if prize.grade:
+            grade_name = prize.grade.name
+            if grade_name == 'a_grade':
+                a_grades.append(display_name)
+            elif grade_name == 'b_grade':
+                b_grades.append(display_name)
+            elif grade_name == 'c_grade':
+                c_grades.append(display_name)
+
+    # HTTP response for PDF
+    response = HttpResponse(content_type='application/pdf')
+    filename = f"poster_{program.slug}_{section}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    # SimpleDocTemplate with A4 Portrait
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=A4,
+        rightMargin=40,
+        leftMargin=40,
+        topMargin=40,
+        bottomMargin=40
+    )
+
+    styles = getSampleStyleSheet()
+    elements = []
+
+    # 1. Madrasa Name
+    styles.add(ParagraphStyle(
+        name='PosterMadrasa',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=24,
+        leading=28,
+        textColor=colors.HexColor('#1E3A8A'),
+        alignment=1, # Center
+        spaceAfter=4 if getattr(madrasa, 'reg_number', None) else 12
+    ))
+    elements.append(Paragraph(madrasa.name.upper(), styles['PosterMadrasa']))
+
+    if getattr(madrasa, 'reg_number', None):
+        styles.add(ParagraphStyle(
+            name='PosterRegNo',
+            parent=styles['Normal'],
+            fontName='Helvetica',
+            fontSize=11,
+            leading=13,
+            textColor=colors.HexColor('#4B5563'),
+            alignment=1, # Center
+            spaceAfter=12
+        ))
+        elements.append(Paragraph(f"Reg. No: {madrasa.reg_number}", styles['PosterRegNo']))
+
+    # 2. Fest Name Badge
+    fest_name = madrasa.meelad_fest_name or "MEELAD FEST"
+    badge_style = ParagraphStyle(
+        name='PosterFest',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=15,
+        leading=18,
+        textColor=colors.white,
+        alignment=1,
+    )
+    badge_table = Table([[Paragraph(fest_name.upper(), badge_style)]], colWidths=[300])
+    badge_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#D97706')), # Gold/Amber/Bronze style
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('LEFTPADDING', (0,0), (-1,-1), 12),
+        ('RIGHTPADDING', (0,0), (-1,-1), 12),
+    ]))
+    badge_table.hAlign = 'CENTER'
+    elements.append(badge_table)
+    elements.append(Spacer(1, 20))
+
+    # 3. Sub-header / Divider
+    line_data = [[""]]
+    line_table = Table(line_data, colWidths=[450])
+    line_table.setStyle(TableStyle([
+        ('LINEBELOW', (0,0), (-1,-1), 2, colors.HexColor('#E2E8F0')),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+    ]))
+    line_table.hAlign = 'CENTER'
+    elements.append(line_table)
+    elements.append(Spacer(1, 15))
+
+    # 4. Result Title
+    styles.add(ParagraphStyle(
+        name='PosterAnnounce',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=12,
+        leading=14,
+        textColor=colors.HexColor('#D97706'),
+        alignment=1,
+        spaceAfter=15
+    ))
+    elements.append(Paragraph("RESULT ANNOUNCEMENT", styles['PosterAnnounce']))
+
+    # 5. Program Title
+    styles.add(ParagraphStyle(
+        name='PosterProgramTitle',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=26,
+        leading=30,
+        textColor=colors.HexColor('#1E3A8A'),
+        alignment=1,
+        spaceAfter=8
+    ))
+    elements.append(Paragraph(program.title, styles['PosterProgramTitle']))
+
+    # 6. Category & Section
+    styles.add(ParagraphStyle(
+        name='PosterMeta',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=13,
+        leading=15,
+        textColor=colors.HexColor('#4B5563'),
+        alignment=1,
+        spaceAfter=25
+    ))
+    meta_text = f"Category: {category_name}   |   Section: {section.upper()}"
+    elements.append(Paragraph(meta_text, styles['PosterMeta']))
+
+    # 7. Winners table
+    winner_label_style = ParagraphStyle(
+        name='WinnerLabel',
+        fontName='Helvetica-Bold',
+        fontSize=14,
+        textColor=colors.white,
+        alignment=0, # Left
+    )
+    winner_val_style = ParagraphStyle(
+        name='WinnerValue',
+        fontName='Helvetica-Bold',
+        fontSize=14,
+        textColor=colors.HexColor('#1F2937'),
+        alignment=0, # Left
+    )
+
+    t_data = []
+
+    if first_winner:
+        t_data.append([
+            Paragraph("1st PRIZE", winner_label_style),
+            Paragraph(first_winner, winner_val_style)
+        ])
+    if second_winner:
+        t_data.append([
+            Paragraph("2nd PRIZE", winner_label_style),
+            Paragraph(second_winner, winner_val_style)
+        ])
+    if third_winner:
+        t_data.append([
+            Paragraph("3rd PRIZE", winner_label_style),
+            Paragraph(third_winner, winner_val_style)
+        ])
+
+    if t_data:
+        winners_table = Table(t_data, colWidths=[120, 320])
+        # Build TableStyle commands dynamically based on actual rows
+        ts_commands = [
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('TOPPADDING', (0,0), (-1,-1), 10),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+            ('LEFTPADDING', (0,0), (-1,-1), 12),
+            ('RIGHTPADDING', (0,0), (-1,-1), 12),
+            ('LINEBELOW', (0,0), (-1,-1), 1, colors.HexColor('#F3F4F6')),
+        ]
+        
+        bg_styles = {
+            0: (colors.HexColor('#D97706'), colors.HexColor('#FEF3C7')), # 1st (Gold / Light Amber)
+            1: (colors.HexColor('#78716C'), colors.HexColor('#F3F4F6')), # 2nd (Slate / Light Silver)
+            2: (colors.HexColor('#B45309'), colors.HexColor('#FFEDD5')), # 3rd (Bronze / Light Bronze)
+        }
+        
+        for idx in range(len(t_data)):
+            if idx in bg_styles:
+                label_bg, val_bg = bg_styles[idx]
+                ts_commands.append(('BACKGROUND', (0, idx), (0, idx), label_bg))
+                ts_commands.append(('BACKGROUND', (1, idx), (1, idx), val_bg))
+                
+        winners_table.setStyle(TableStyle(ts_commands))
+        winners_table.hAlign = 'CENTER'
+        elements.append(winners_table)
+    else:
+        no_winners_style = ParagraphStyle(
+            name='NoWinners',
+            fontName='Helvetica-Oblique',
+            fontSize=14,
+            textColor=colors.red,
+            alignment=1,
+        )
+        elements.append(Paragraph("Results processed but no winners assigned.", no_winners_style))
+
+    elements.append(Spacer(1, 30))
+
+    # 8. Grades list if any exist
+    grades_awarded = False
+    grade_elements = []
+
+    grades_title_style = ParagraphStyle(
+        name='GradesTitle',
+        fontName='Helvetica-Bold',
+        fontSize=14,
+        textColor=colors.HexColor('#1E3A8A'),
+        alignment=1,
+        spaceAfter=10
+    )
+    grade_text_style = ParagraphStyle(
+        name='GradeText',
+        fontName='Helvetica',
+        fontSize=12,
+        leading=15,
+        textColor=colors.HexColor('#374151'),
+        alignment=1,
+        spaceAfter=6
+    )
+
+    if a_grades or b_grades or c_grades:
+        grades_awarded = True
+        grade_elements.append(Paragraph("<b>GRADE ACHIEVERS</b>", grades_title_style))
+        if a_grades:
+            grade_elements.append(Paragraph(f"<b>A Grade:</b> {', '.join(a_grades)}", grade_text_style))
+        if b_grades:
+            grade_elements.append(Paragraph(f"<b>B Grade:</b> {', '.join(b_grades)}", grade_text_style))
+        if c_grades:
+            grade_elements.append(Paragraph(f"<b>C Grade:</b> {', '.join(c_grades)}", grade_text_style))
+
+    if grades_awarded:
+        grade_box = Table([[grade_elements]], colWidths=[440])
+        grade_box.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F8FAFC')),
+            ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#E2E8F0')),
+            ('TOPPADDING', (0,0), (-1,-1), 12),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 12),
+            ('LEFTPADDING', (0,0), (-1,-1), 15),
+            ('RIGHTPADDING', (0,0), (-1,-1), 15),
+        ]))
+        grade_box.hAlign = 'CENTER'
+        elements.append(grade_box)
+        elements.append(Spacer(1, 20))
+
+    # 9. Signatures Block
+    elements.append(Spacer(1, 40))
+
+    sadr_name = madrasa.sadr or ""
+    sig_lines = [
+        ["", ""],
+        ["_________________________", "_________________________"],
+        [Paragraph("<b>Madrasa Sadr</b>", ParagraphStyle(name='SigL', fontName='Helvetica', fontSize=11, textColor=colors.HexColor('#4B5563'))),
+         Paragraph("<b>Convenor / Authority</b>", ParagraphStyle(name='SigR', fontName='Helvetica', fontSize=11, textColor=colors.HexColor('#4B5563')))]
+    ]
+    if sadr_name:
+        sig_lines.insert(2, [
+            Paragraph(sadr_name, ParagraphStyle(name='SadrName', fontName='Helvetica-Bold', fontSize=11, textColor=colors.HexColor('#1E3A8A'))),
+            ""
+        ])
+    
+    sig_table = Table(sig_lines, colWidths=[220, 220])
+    sig_table.setStyle(TableStyle([
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+    ]))
+    sig_table.hAlign = 'CENTER'
+    elements.append(sig_table)
+
+    def draw_poster_frame(canvas, doc):
+        canvas.saveState()
+        w, h = doc.pagesize
+
+        # Primary Outer Gold elegant border
+        canvas.setStrokeColor(colors.HexColor("#D97706")) # Gold
+        canvas.setLineWidth(4)
+        canvas.rect(15, 15, w - 30, h - 30)
+
+        # Thin inner Navy border
+        canvas.setStrokeColor(colors.HexColor("#1E3A8A")) # Navy
+        canvas.setLineWidth(1)
+        canvas.rect(20, 20, w - 40, h - 40)
+
+        # Corner decorations
+        canvas.setFillColor(colors.HexColor("#D97706")) # Gold
+        # Top-Left
+        canvas.rect(15, h - 35, 20, 20, fill=True, stroke=False)
+        # Top-Right
+        canvas.rect(w - 35, h - 35, 20, 20, fill=True, stroke=False)
+        # Bottom-Left
+        canvas.rect(15, 15, 20, 20, fill=True, stroke=False)
+        # Bottom-Right
+        canvas.rect(w - 35, 15, 20, 20, fill=True, stroke=False)
+
+        # Developer credit — small footer text bottom center
+        canvas.setFont("Helvetica", 7)
+        canvas.setFillColor(colors.HexColor("#9CA3AF"))  # Tailwind gray-400
+        footer_text = "Powered by Team Mahara  |  9544443981"
+        canvas.drawCentredString(w / 2, 26, footer_text)
+
+        canvas.restoreState()
+
+    doc.build(elements, onFirstPage=draw_poster_frame)
+    return response
+
+
+
+
 @require_POST
 @transaction.atomic
 def save_prize(request, program_id):
@@ -788,6 +1173,8 @@ class StudentUploadView(generic.TemplateView):
 
         context['total_students'] = Student.objects.filter(team__madrasa=madrasa).count()
         context['total_programs'] = Program.objects.filter(category__in=categories).distinct().count()
+        context['meelad_fest_name'] = madrasa.meelad_fest_name
+        
         return context
 
     def post(self, request, *args, **kwargs):
@@ -1204,7 +1591,10 @@ def venue_list(request):
         total_programs = Program.objects.filter(category__in=categories).distinct().count()
     except:
         pass
-    return render(request, "program/venue_list.html", {"venues": venues, "total_students": total_students, "total_programs": total_programs})
+    return render(request, "program/venue_list.html", {"venues": venues, 
+                                                        "total_students": total_students, 
+                                                        "total_programs": total_programs, 
+                                                        "meelad_fest_name": request.user.madrasa.meelad_fest_name})
 
 def add_venue(request):
     if request.method == "POST":
@@ -1219,8 +1609,14 @@ def venue_detail(request, venue_id):
     madrasa = request.user.madrasa
     programs = Program.objects.filter(Q(category__madrasa=madrasa) | Q(girls_categories__madrasa=madrasa))
     venue_programs = Program.objects.filter(venue=venue)
+    total_students = Student.objects.filter(team__madrasa=madrasa).count()
+    categories = Category.objects.filter(madrasa=madrasa)
+    total_programs = Program.objects.filter(category__in=categories).distinct().count()
     return render(request, "program/venue_detail.html", {"venue": venue, 'all_programs': programs,
-                                                         'venue_programs': venue_programs})
+                                                         'venue_programs': venue_programs,
+                                                         'total_students': total_students,
+                                                         'total_programs': total_programs,
+                                                         'meelad_fest_name': request.user.madrasa.meelad_fest_name})
 
 
 

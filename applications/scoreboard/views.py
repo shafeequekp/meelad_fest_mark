@@ -191,6 +191,7 @@ class TeamsView(generic.ListView):
             from applications.program.models import Student, Program
             context["total_students"] = Student.objects.filter(team__madrasa=madrasa).count()
             context["total_programs"] = Program.objects.filter(category__in=categories).distinct().count()
+            context['meelad_fest_name'] = madrasa.meelad_fest_name
         except:
             pass
 

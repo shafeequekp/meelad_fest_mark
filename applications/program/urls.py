@@ -12,6 +12,7 @@ urlpatterns = [
     path("<int:pk>/participants/", views.program_participants_json, name="program_participants_json"),
     path("<int:pk>/judge-slip/pdf/<int:category_id>/", views.program_judge_slip_pdf, name="program_participants_pdf"),
     path("download-participants/<int:program_id>/<str:section>/<int:category_id>/", views.download_participants_pdf, name="download_participants_pdf"),
+    path("download-poster/<int:program_id>/<str:section>/", views.download_results_poster_pdf, name="download_results_poster_pdf"),
 
     path('<int:program_id>/save-prize/', views.save_prize, name='save-prize'),
     path('<int:program_id>/publish_result/', views.publish_result, name='publish_result'),

@@ -91,3 +91,16 @@ def get_section_total(gender, team):
     )["total"] or 0
 
     return int(pos_marks + grade_marks)
+
+
+@register.filter
+def is_equal_to(value, arg):
+    """
+    Returns True if value equals arg (or their IDs if Django model instances).
+    """
+    if value is None or arg is None:
+        return False
+    if hasattr(value, 'id') and hasattr(arg, 'id'):
+        return value.id == arg.id
+    return value == arg
+
