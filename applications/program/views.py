@@ -1,7 +1,8 @@
 import json
+import csv
 
 from reportlab.lib.pagesizes import A4, landscape
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, Image
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
@@ -23,7 +24,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.template.loader import get_template
 from django.views.decorators.http import require_POST
 from django.db import transaction
-from django.db.models import Case, When, Value, BooleanField, Q
+from django.db.models import Case, When, Value, BooleanField, Q, Sum
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET
 from django.shortcuts import redirect, get_object_or_404
@@ -936,16 +937,45 @@ def download_results_poster_pdf(request, program_id, section):
     elements.append(Spacer(1, 40))
 
     sadr_name = madrasa.sadr or ""
+    convenor_name_1 = getattr(madrasa, 'convenor_name_1', None) or ""
+    convenor_name_2 = getattr(madrasa, 'convenor_name_2', None) or ""
+
+    signature_image = None
+    if getattr(madrasa, 'sadr_signature', None) and getattr(madrasa.sadr_signature, 'name', None):
+        # reportlab Image expects filesystem access via open storage path
+        try:
+            signature_path = madrasa.sadr_signature.path
+            if signature_path:
+                signature_image = Image(signature_path, width=105, height=38)
+        except Exception:
+            signature_image = None
+
     sig_lines = [
         ["", ""],
-        ["_________________________", "_________________________"],
-        [Paragraph("<b>Madrasa Sadr</b>", ParagraphStyle(name='SigL', fontName='Helvetica', fontSize=11, textColor=colors.HexColor('#4B5563'))),
-         Paragraph("<b>Convenor / Authority</b>", ParagraphStyle(name='SigR', fontName='Helvetica', fontSize=11, textColor=colors.HexColor('#4B5563')))]
+        ["", ""],
     ]
+
+    if signature_image:
+        sig_lines[0] = [signature_image, ""]
+    else:
+        sig_lines[0] = ["_________________________", "_________________________"]
+
+    sig_lines[1] = [
+        Paragraph("<b>Madrasa Sadr</b>", ParagraphStyle(name='SigL', fontName='Helvetica', fontSize=11, textColor=colors.HexColor('#4B5563'))),
+        Paragraph("<b>Convenor / Authority</b>", ParagraphStyle(name='SigR', fontName='Helvetica', fontSize=11, textColor=colors.HexColor('#4B5563')))
+    ]
+
     if sadr_name:
         sig_lines.insert(2, [
             Paragraph(sadr_name, ParagraphStyle(name='SadrName', fontName='Helvetica-Bold', fontSize=11, textColor=colors.HexColor('#1E3A8A'))),
             ""
+        ])
+
+    if convenor_name_1 or convenor_name_2:
+        convenor_text = " / ".join([n for n in [convenor_name_1, convenor_name_2] if n])
+        sig_lines.append([
+            "",
+            Paragraph(convenor_text, ParagraphStyle(name='ConvenorName', fontName='Helvetica-Bold', fontSize=10, textColor=colors.HexColor('#1E3A8A')))
         ])
     
     sig_table = Table(sig_lines, colWidths=[220, 220])
@@ -1337,6 +1367,107 @@ class ResultDetailsView(generic.TemplateView):
         context['result_page'] = True
         return context
 
+
+
+@login_required
+def statistics_dashboard(request):
+    madrasa = request.user.madrasa
+    if not madrasa:
+        return redirect('login')
+
+    categories = Category.objects.filter(madrasa=madrasa)
+    teams = Team.objects.filter(madrasa=madrasa)
+    students = Student.objects.filter(team__madrasa=madrasa).select_related('category', 'team')
+
+    top_students = students.order_by('-total_point')[:10]
+
+    all_points = students.aggregate(total=Sum('total_point'))['total'] or 0
+    girls_points = students.filter(gender='female').aggregate(total=Sum('total_point'))['total'] or 0
+    boys_points = students.filter(gender='male').aggregate(total=Sum('total_point'))['total'] or 0
+
+    summary_rows = []
+    for team in teams:
+        for category in categories:
+            boy_students = students.filter(team=team, category=category, gender='male')
+            girl_students = students.filter(team=team, category=category, gender='female')
+            boys_points_for_row = boy_students.aggregate(total=Sum('total_point'))['total'] or 0
+            girls_points_for_row = girl_students.aggregate(total=Sum('total_point'))['total'] or 0
+            summary_rows.append({
+                'team': team,
+                'category': category,
+                'boys_points': boys_points_for_row,
+                'girls_points': girls_points_for_row,
+                'students_count': boy_students.count() + girl_students.count(),
+                'total_points': (boys_points_for_row or 0) + (girls_points_for_row or 0),
+            })
+
+    context = {
+        'meelad_fest_name': madrasa.meelad_fest_name if hasattr(madrasa, 'meelad_fest_name') else 'Meelad Fest',
+        'categories': categories,
+        'teams': teams,
+        'students': students,
+        'top_students': top_students,
+        'statistics_page': True,
+        'total_students': students.count(),
+        'total_programs': Program.objects.filter(category__in=categories).distinct().count(),
+        'total_points': all_points,
+        'boys_points': boys_points,
+        'girls_points': girls_points,
+        'summary_rows': summary_rows,
+    }
+    return render(request, 'program/statistics.html', context)
+
+
+@login_required
+def statistics_download_report(request):
+    report_type = request.GET.get('report', 'students')
+    madrasa = request.user.madrasa
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{report_type}_report.csv"'
+
+    writer = csv.writer(response)
+
+    if report_type == 'category-performance':
+        writer.writerow(['Team', 'Team ID', 'Category', 'Boys Points', 'Girls Points', 'Total Students', 'Category Total Points'])
+        teams = Team.objects.filter(madrasa=madrasa)
+        for team in teams:
+            for category in Category.objects.filter(madrasa=madrasa):
+                boys_points = Student.objects.filter(team=team, category=category, gender='male').aggregate(total=Sum('total_point'))['total'] or 0
+                girls_points = Student.objects.filter(team=team, category=category, gender='female').aggregate(total=Sum('total_point'))['total'] or 0
+                students_count = Student.objects.filter(team=team, category=category).count()
+                cat_total = float(boys_points) + float(girls_points)
+                writer.writerow([team.name, team.id, category.name, boys_points, girls_points, students_count, cat_total])
+
+    elif report_type == 'top-ten':
+        writer.writerow(['Rank', 'Full Name', 'Code Number', 'Gender', 'Category', 'Team', 'Total Points'])
+        students = Student.objects.filter(team__madrasa=madrasa).select_related('category', 'team').order_by('-total_point')[:10]
+        for i, student in enumerate(students, start=1):
+            writer.writerow([i, student.full_name, student.code_number or '', student.gender or '', student.category.name if student.category else '', student.team.name if student.team else '', student.total_point])
+
+    elif report_type == 'top-category-section':
+        writer.writerow(['Category', 'Section', 'Rank', 'Student', 'Code Number', 'Team', 'Total Points'])
+        for category in Category.objects.filter(madrasa=madrasa):
+            for section in ['male', 'female']:
+                section_students = Student.objects.filter(team__madrasa=madrasa, category=category, gender=section).order_by('-total_point')[:10]
+                for rank, student in enumerate(section_students, start=1):
+                    writer.writerow([category.name, section, rank, student.full_name, student.code_number or '', student.team.name if student.team else '', student.total_point])
+
+    else:
+        writer.writerow(['Student Name', 'Code Number', 'Section', 'Category', 'Team', 'Team Madrasa', 'Total Points'])
+        students = Student.objects.filter(team__madrasa=madrasa).select_related('category', 'team')
+        for student in students:
+            writer.writerow([
+                student.full_name,
+                student.code_number or '',
+                'Boys' if student.gender == 'male' else ('Girls' if student.gender == 'female' else student.gender or ''),
+                student.category.name if student.category else '',
+                student.team.name if student.team else '',
+                student.team.madrasa.name if student.team and student.team.madrasa else '',
+                student.total_point,
+            ])
+
+    return response
 
 
 def category_program_list(request):

@@ -28,6 +28,8 @@
                     class="px-4 py-2 rounded-lg hover:bg-white/10 transition font-medium {% if request.resolver_match.url_name == 'venue_list' %}bg-white/20{% endif %}">Venues</a>
                 <a href="{% url 'results' %}"
                     class="px-4 py-2 rounded-lg hover:bg-white/10 transition font-medium {% if request.resolver_match.url_name == 'results' %}bg-white/20{% endif %}">Results</a>
+                <a href="{% url 'statistics' %}"
+                    class="px-4 py-2 rounded-lg hover:bg-white/10 transition font-medium {% if request.resolver_match.url_name == 'statistics' %}bg-white/20{% endif %}">Statistics</a>
                 <a href="{% url 'upload-students' %}"
                     class="px-4 py-2 rounded-lg hover:bg-white/10 transition font-medium {% if request.resolver_match.url_name == 'upload-students' %}bg-white/20{% endif %}">Upload</a>
             </nav>
@@ -101,6 +103,10 @@
             <a href="{% url 'results' %}"
                 class="block px-4 py-3 text-gray-700 font-medium rounded-xl hover:bg-gray-100 hover:text-indigo-600 transition flex items-center space-x-3">
                 <span>📊</span><span>Results</span>
+            </a>
+            <a href="{% url 'statistics' %}"
+                class="block px-4 py-3 text-gray-700 font-medium rounded-xl hover:bg-gray-100 hover:text-indigo-600 transition flex items-center space-x-3">
+                <span>📈</span><span>Statistics</span>
             </a>
             <a href="{% url 'upload-students' %}"
                 class="block px-4 py-3 text-gray-700 font-medium rounded-xl hover:bg-gray-100 hover:text-indigo-600 transition flex items-center space-x-3">

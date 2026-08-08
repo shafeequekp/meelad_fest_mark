@@ -66,11 +66,25 @@ class SignupForm(forms.ModelForm):
             "class": "w-full p-2 border rounded-md"
         })
     )
-    meelad_fest_name = forms.CharField(
+    convenor_name_1 = forms.CharField(
         required=False,
         widget=forms.TextInput(attrs={
-            "placeholder": "Meelad Fest Name",
+            "placeholder": "Convenor Name 1",
             "class": "w-full p-2 border rounded-md"
+        })
+    )
+    convenor_name_2 = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            "placeholder": "Convenor Name 2",
+            "class": "w-full p-2 border rounded-md"
+        })
+    )
+    sadr_signature = forms.ImageField(
+        required=False,
+        widget=forms.FileInput(attrs={
+            "class": "w-full p-2 border rounded-md",
+            "accept": "image/png,image/jpeg,image/jpg"
         })
     )
 
@@ -110,6 +124,9 @@ class SignupForm(forms.ModelForm):
                 reg_number=self.cleaned_data.get("madrasa_reg_number"),
                 sadr=self.cleaned_data.get("madrasa_sadr"),
                 meelad_fest_name=self.cleaned_data.get("meelad_fest_name"),
+                convenor_name_1=self.cleaned_data.get("convenor_name_1"),
+                convenor_name_2=self.cleaned_data.get("convenor_name_2"),
+                sadr_signature=self.cleaned_data.get("sadr_signature"),
             )
             user.madrasa = madrasa
             user.save()

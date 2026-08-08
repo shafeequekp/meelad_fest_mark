@@ -12,6 +12,7 @@ urlpatterns = [
     path("<int:pk>/participants/", views.program_participants_json, name="program_participants_json"),
     path("<int:pk>/judge-slip/pdf/<int:category_id>/", views.program_judge_slip_pdf, name="program_participants_pdf"),
     path("download-participants/<int:program_id>/<str:section>/<int:category_id>/", views.download_participants_pdf, name="download_participants_pdf"),
+
     path("download-poster/<int:program_id>/<str:section>/", views.download_results_poster_pdf, name="download_results_poster_pdf"),
 
     path('<int:program_id>/save-prize/', views.save_prize, name='save-prize'),
@@ -32,6 +33,8 @@ urlpatterns = [
 
     path('results/category-programs/', views.category_program_list, name='results'),
 
+    path('statistics/', views.statistics_dashboard, name='statistics'),
+    path('statistics/download/', views.statistics_download_report, name='statistics_download_report'),
 
     path("<int:pk>/participant-data/", views.get_program_participants, name="get_program_participant_data"),
     path("<int:pk>/participants/save/", views.save_program_participants, name="save_program_participants"),

@@ -23,6 +23,29 @@
       color: #fff;
     }
 
+    .program-type-heading {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .program-type-heading h3 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #4338ca;
+      white-space: nowrap;
+    }
+
+    .program-type-heading::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background-color: #e5e7eb;
+    }
+
     #programModal.flex {
       animation: fadeIn 0.2s ease-in-out;
     }
@@ -81,12 +104,20 @@
     <div id="boysSection" class="section">
 
       {% for category in categories %}
-      {% if category.programs.all %}
-      <h2 class="text-lg sm:text-xl font-semibold mb-3 text-purple-700 bg-green-400 px-3 py-2 rounded">{{ category.name}}</h2> {% endif %}
-      {% if category.programs.all|stage %}
-      <h2 class="text-lg sm:text-l font-semibold mb-3 text-rose-500">Stage></h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
-        {% for program in category.programs.all|stage %}
+      {% if category.programs.all|stage or category.programs.all|non_stage %}
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-8">
+        <h2 class="text-xl sm:text-2xl font-bold text-indigo-700 mb-6 pb-3 border-b border-gray-100">
+          {{ category.name }}
+        </h2>
+
+        {% if category.programs.all|stage %}
+        <div class="mb-8">
+          <div class="program-type-heading">
+            <h3>Stage Programs</h3>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+
+            {% for program in category.programs.all|stage %}
 
         <div
           class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
@@ -139,14 +170,20 @@
           </div>
         </div>
 
-        {% endfor %}
-      </div>
-      {% endif %}
+            {% endfor %}
+           
+          </div>
+        </div>
 
-      {% if category.programs.all|non_stage %}
-      <h2 class="text-lg sm:text-l font-semibold mb-3 text-rose-500">Non Stage></h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
-        {% for program in category.programs.all|non_stage %}
+        {% endif %}
+
+        {% if category.programs.all|non_stage %}
+        <div>
+          <div class="program-type-heading">
+            <h3>Non-Stage Programs</h3>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+            {% for program in category.programs.all|non_stage %}
         <div
           class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
           onclick="openModal('{{ program.id }}', '{{ category.id }}')">
@@ -199,10 +236,13 @@
             </p>
           </div>
         </div>
-        {% endfor %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
       </div>
       {% endif %}
-
 
       {% endfor %}
     </div>
@@ -215,13 +255,19 @@
     <!-- Girls Section -->
     <div id="girlsSection" class="section hidden">
       {% for category in categories %}
-      {% if category.programs_for_girls.all %}
-      <h2 class="text-lg sm:text-xl font-semibold mb-3 text-purple-700 bg-green-400 px-3 py-2 rounded">{{ category.name
-        }}</h2>{% endif %}
-      {% if category.programs_for_girls.all|stage %}
-      <h2 class="text-lg sm:text-l font-semibold mb-3 text-rose-500">Stage></h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
-        {% for program in category.programs_for_girls.all|stage %}
+      {% if category.programs_for_girls.all|stage or category.programs_for_girls.all|non_stage %}
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-8">
+        <h2 class="text-xl sm:text-2xl font-bold text-indigo-700 mb-6 pb-3 border-b border-gray-100">
+          {{ category.name }}
+        </h2>
+
+        {% if category.programs_for_girls.all|stage %}
+        <div class="mb-8">
+          <div class="program-type-heading">
+            <h3>Stage Programs</h3>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+            {% for program in category.programs_for_girls.all|stage %}
         <div
           class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
           onclick="openModal('{{ program.id }}', '{{ category.id }}')">
@@ -273,14 +319,18 @@
             </p>
           </div>
         </div>
-        {% endfor %}
-      </div>
-      {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
 
-      {% if category.programs_for_girls.all|non_stage %}
-      <h2 class="text-lg sm:text-l font-semibold mb-3 text-rose-500">Non Stage></h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
-        {% for program in category.programs_for_girls.all|non_stage %}
+        {% if category.programs_for_girls.all|non_stage %}
+        <div>
+          <div class="program-type-heading">
+            <h3>Non-Stage Programs</h3>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+            {% for program in category.programs_for_girls.all|non_stage %}
         <div
           class="relative cursor-pointer rounded-lg shadow-md bg-white hover:shadow-lg p-4 transition transform hover:scale-105 flex items-center gap-3 sm:gap-4"
           onclick="openModal('{{ program.id }}', '{{ category.id }}')">
@@ -331,7 +381,11 @@
             </p>
           </div>
         </div>
-        {% endfor %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
       </div>
       {% endif %}
 

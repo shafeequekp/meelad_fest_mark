@@ -81,7 +81,7 @@ def signup_view(request):
         return redirect("home")
 
     if request.method == "POST":
-        form = SignupForm(request.POST)
+        form = SignupForm(request.POST, request.FILES)
         if form.is_valid():
             user = form.save()
             login(request, user)  # auto login after signup

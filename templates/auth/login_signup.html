@@ -88,7 +88,7 @@
 
           <!-- Signup Panel -->
           <div id="panel-signup" class="tab-panel">
-            <form id="signup-form" method="post" action="{% url 'signup' %}" class="space-y-4" novalidate>
+            <form id="signup-form" method="post" action="{% url 'signup' %}" class="space-y-4" enctype="multipart/form-data" novalidate>
               {% csrf_token %}
 
               <!-- Email / Phone -->
@@ -144,16 +144,33 @@
                            placeholder="Meelad Fest Name" />
                   </div>
                   <div>
-                    <label for="reg_number" class="mb-1 block text-sm font-medium text-gray-700">Registration Number</label>
-                    <input id="reg_number" name="reg_number" type="text"
+                    <label for="madrasa_reg_number" class="mb-1 block text-sm font-medium text-gray-700">Registration Number</label>
+                    <input id="madrasa_reg_number" name="madrasa_reg_number" type="text"
                            class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
                            placeholder="(Optional)" />
                   </div>
                   <div>
-                    <label for="sadr" class="mb-1 block text-sm font-medium text-gray-700">Sadr Muallim</label>
-                    <input id="sadr" name="sadr" type="text"
+                    <label for="madrasa_sadr" class="mb-1 block text-sm font-medium text-gray-700">Sadr Muallim</label>
+                    <input id="madrasa_sadr" name="madrasa_sadr" type="text"
                            class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
                            placeholder="(Optional)" />
+                  </div>
+                  <div>
+                    <label for="convenor_name_1" class="mb-1 block text-sm font-medium text-gray-700">Convenor Name 1</label>
+                    <input id="convenor_name_1" name="convenor_name_1" type="text"
+                           class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
+                           placeholder="(Optional)" />
+                  </div>
+                  <div>
+                    <label for="convenor_name_2" class="mb-1 block text-sm font-medium text-gray-700">Convenor Name 2</label>
+                    <input id="convenor_name_2" name="convenor_name_2" type="text"
+                           class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
+                           placeholder="(Optional)" />
+                  </div>
+                  <div class="sm:col-span-2">
+                    <label for="sadr_signature" class="mb-1 block text-sm font-medium text-gray-700">Sadr Signature PNG / JPG</label>
+                    <input id="sadr_signature" name="sadr_signature" type="file" accept="image/png,image/jpeg,image/jpg"
+                           class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring" />
                   </div>
                 </div>
               </div>
