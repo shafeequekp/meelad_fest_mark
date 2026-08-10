@@ -6,12 +6,15 @@ class TeamForm(forms.ModelForm):
 
     class Meta:
         model = Team
-        fields = ['name', 'madrasa', 'leader', 'assistant']
+        fields = ['name', 'madrasa', 'leader', 'assistant', 'mentor', 'assistant_mentor', 'colour']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'w-full border rounded-md p-2'}),
             'madrasa': forms.Select(attrs={'class': 'w-full border rounded-md p-2'}),
             'leader': forms.TextInput(attrs={'class': 'w-full border rounded-md p-2'}),
             'assistant': forms.TextInput(attrs={'class': 'w-full border rounded-md p-2'}),
+            'mentor': forms.TextInput(attrs={'class': 'w-full border rounded-md p-2'}),
+            'assistant_mentor': forms.TextInput(attrs={'class': 'w-full border rounded-md p-2'}),
+            'colour': forms.Select(attrs={'class': 'w-full border rounded-md p-2'}),
         }
 
     def __init__(self, *args, **kwargs):

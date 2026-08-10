@@ -63,6 +63,48 @@ class ResultPosterPDFTests(TestCase):
             position=self.position
         )
 
+    def test_delete_student_endpoint(self):
+        self.client.force_login(self.user)
+
+        student = Student.objects.create(
+            full_name="Delete Me",
+            gender="male",
+            code_number=999,
+            category=self.category,
+            team=self.team
+        )
+
+        url = reverse('delete_student', kwargs={'student_id': student.id})
+        response = self.client.post(url, {'next': reverse('category_detail', kwargs={'pk': self.category.id})})
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Student.objects.filter(id=student.id).exists())
+
+    def test_edit_team_endpoint(self):
+        self.client.force_login(self.user)
+
+        url = reverse('edit_team', kwargs={'team_id': self.team.id})
+        response = self.client.post(url, {
+            'name': 'Updated Team',
+            'leader': 'Updated Leader',
+            'assistant': 'Updated Assistant',
+        })
+
+        self.assertEqual(response.status_code, 302)
+        self.team.refresh_from_db()
+        self.assertEqual(self.team.name, 'Updated Team')
+        self.assertEqual(self.team.leader, 'Updated Leader')
+        self.assertEqual(self.team.assistant, 'Updated Assistant')
+
+    def test_delete_program_endpoint(self):
+        self.client.force_login(self.user)
+
+        url = reverse('delete_program', kwargs={'program_id': self.program.id})
+        response = self.client.post(url, {'next': reverse('program_list')})
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Program.objects.filter(id=self.program.id).exists())
+
     def test_download_results_poster_pdf_status_and_content_type(self):
         # Force login
         self.client.force_login(self.user)

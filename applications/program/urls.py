@@ -22,9 +22,11 @@ urlpatterns = [
     path('categories/add/', views.AddCategoryView.as_view(), name='add_category'),
     path('categories/<int:pk>/edit/', views.EditCategoryView.as_view(), name='edit_category'),
     path("category/<int:pk>/", views.CategoryDetailView.as_view(), name="category_detail"),
+    path('student/<int:student_id>/delete/', views.delete_student, name='delete_student'),
     path('student/<int:student_id>/add-program/', views.AddProgramToStudentView.as_view(), name='add_student_program'),
     path("student-registration/", views.StudentRegistrationView.as_view(), name="student_registration"),
     path('programs/', views.ProgramListView.as_view(), name='program_list'),
+    path('program/<int:program_id>/delete/', views.delete_program, name='delete_program'),
 
     path("<int:program_id>/participants/search/", views.participant_search, name="participant_search"),
 

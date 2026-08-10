@@ -54,6 +54,26 @@ def add_team_and_marks(request):
     })
 
 
+def edit_team(request, team_id):
+    team = get_object_or_404(Team, id=team_id)
+
+    if request.method == 'POST':
+        team_form = TeamForm(request.POST, instance=team, user=request.user)
+        if team_form.is_valid():
+            updated_team = team_form.save(commit=False)
+            updated_team.madrasa = request.user.madrasa
+            updated_team.save()
+            return redirect('teams')
+    else:
+        team_form = TeamForm(instance=team, user=request.user)
+
+    return render(request, 'teams/edit_team.html', {
+        'team_form': team_form,
+        'team': team,
+        'meelad_fest_name': request.user.madrasa.meelad_fest_name if request.user and getattr(request.user, 'madrasa', None) else None,
+    })
+
+
 # def edit_marks_view(request, team_id):
 #     team = get_object_or_404(Team, id=team_id)
 #

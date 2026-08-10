@@ -32,16 +32,27 @@
     <div class="grid gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
       {% for team in teams %}
       <!-- Team Card -->
-      <a href="{% url 'categories' %}?team={{ team.id }}"
-        class="group relative bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-1 transition">
-        <div class="h-32 bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
-          <span class="text-5xl font-extrabold text-white">{{ team.name|slice:":1"|upper }}</span>
+      <div class="group relative bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-1 transition">
+        <a href="{% url 'categories' %}?team={{ team.id }}" class="block">
+          <div class="h-32 flex items-center justify-center" {% if team.colour %}style="background: linear-gradient(135deg, {{ team.get_colour_hex }}, #312e81);"{% else %}style="background: linear-gradient(135deg, #4f46e5, #7e22ce);"{% endif %}>
+            <span class="text-5xl font-extrabold text-white">{{ team.name|slice:":1"|upper }}</span>
+          </div>
+          <div class="p-5">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="text-xl font-semibold text-gray-800 group-hover:text-indigo-600 transition">{{team.name}}</h2>
+              {% if team.colour %}
+              <span class="text-[10px] font-bold uppercase text-indigo-600">{{ team.get_colour_display|default:team.colour }}</span>
+              {% endif %}
+            </div>
+            <p class="text-gray-500 text-sm mt-1">{{team.leader}}</p>
+          </div>
+        </a>
+        <div class="absolute top-3 right-3 z-10">
+          <a href="{% url 'edit_team' team.id %}" class="inline-flex items-center justify-center rounded-full bg-white/90 px-3 py-2 text-xs font-bold text-indigo-700 shadow hover:bg-indigo-100 hover:text-indigo-900 transition" title="Edit team">
+            ✎ Edit
+          </a>
         </div>
-        <div class="p-5">
-          <h2 class="text-xl font-semibold text-gray-800 group-hover:text-indigo-600 transition">{{team.name}}</h2>
-          <p class="text-gray-500 text-sm mt-1">{{team.leader}}</p>
-        </div>
-      </a>
+      </div>
       {% endfor %}
 
       <!-- Add New Team Block -->
@@ -76,7 +87,45 @@
           <div>
             <label class="block text-sm font-medium text-gray-700">Team Leader</label>
             <input type="text" name="leader"
-              class="mt-1 w-full border rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500" required>
+              class="mt-1 w-full border rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Assistant</label>
+            <input type="text" name="assistant"
+              class="mt-1 w-full border rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Mentor</label>
+            <input type="text" name="mentor"
+              class="mt-1 w-full border rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Assistant Mentor</label>
+            <input type="text" name="assistant_mentor"
+              class="mt-1 w-full border rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Colour</label>
+            <select name="colour"
+              class="mt-1 w-full border rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500">
+              <option value="">-- Select colour --</option>
+              <option value="indigo">Indigo</option>
+              <option value="emerald">Emerald</option>
+              <option value="rose">Rose</option>
+              <option value="amber">Amber</option>
+              <option value="sky">Sky</option>
+              <option value="violet">Violet</option>
+              <option value="slate">Slate</option>
+              <option value="gray">Gray</option>
+              <option value="blue">Blue</option>
+              <option value="green">Green</option>
+              <option value="red">Red</option>
+              <option value="white">White</option>
+            </select>
           </div>
 
           <div class="flex justify-end space-x-2">

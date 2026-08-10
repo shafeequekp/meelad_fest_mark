@@ -363,16 +363,24 @@
               </span>
               {% endif %}
 
-              <button onclick="toggleModal('modal-{{ student.id }}')"
-                class="w-full p-3 text-left bg-gray-50 border border-gray-100 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 flex justify-between items-center gap-3 transition">
+              <div class="flex items-center gap-2">
+                <button onclick="toggleModal('modal-{{ student.id }}')"
+                  class="flex-1 p-3 text-left bg-gray-50 border border-gray-100 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 flex justify-between items-center gap-3 transition">
 
-                <span>
-                  {{ student.full_name }} ({{ student.code_number }})
-                </span>
-                <span class="text-sm font-semibold text-indigo-700">
-                  {{ student.total_point|floatformat:0 }} pts
-                </span>
-              </button>
+                  <span>
+                    {{ student.full_name }} ({{ student.code_number }})
+                  </span>
+                  <span class="text-sm font-semibold text-indigo-700">
+                    {{ student.total_point|floatformat:0 }} pts
+                  </span>
+                </button>
+
+                <form method="post" action="{% url 'delete_student' student.id %}" onsubmit="return confirm('Delete this student?')">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button type="submit" class="text-red-500 hover:text-red-700 bg-white border border-red-100 rounded-full px-2 py-1 text-xs font-bold shadow-sm" title="Delete student">−</button>
+                </form>
+              </div>
 
               <!-- Student Programs Modal -->
               <div id="modal-{{ student.id }}"
@@ -436,7 +444,7 @@
             <h3 class="text-base font-semibold text-gray-700 uppercase tracking-wide mb-3">Stage</h3>
             <ul class="space-y-2 mb-6">
               {% for program in boys_stage_programs %}
-              <li class="p-3 bg-gray-50 border border-gray-100 rounded-lg">
+              <li class="p-3 bg-gray-50 border border-gray-100 rounded-lg relative">
                 {% if category.name|lower == 'general' %}
                 <button onclick="openProgramModal({{ program.id }})"
                   class="w-full text-left font-semibold text-indigo-700 hover:text-indigo-900 transition">
@@ -447,6 +455,11 @@
                 <strong class="text-gray-800">{{ program.title }}</strong>
                 <p class="text-sm text-gray-500 mt-1">{{ program.description }}</p>
                 {% endif %}
+                <form method="post" action="{% url 'delete_program' program.id %}" class="absolute right-2 top-2" onsubmit="return confirm('Delete this program?')">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button type="submit" class="text-red-500 hover:text-red-700 bg-white border border-red-100 rounded-full px-2 py-1 text-xs font-bold shadow-sm" title="Delete program">−</button>
+                </form>
               </li>
               {% empty %}
               <li class="text-gray-400 italic py-2">No stage programs yet.</li>
@@ -456,9 +469,14 @@
             <h3 class="text-base font-semibold text-gray-700 uppercase tracking-wide mb-3">Non Stage</h3>
             <ul class="space-y-2">
               {% for program in boys_non_stage_programs %}
-              <li class="p-3 bg-gray-50 border border-gray-100 rounded-lg">
+              <li class="p-3 bg-gray-50 border border-gray-100 rounded-lg relative">
                 <strong class="text-gray-800">{{ program.title }}</strong>
                 <p class="text-sm text-gray-500 mt-1">{{ program.description }}</p>
+                <form method="post" action="{% url 'delete_program' program.id %}" class="absolute right-2 top-2" onsubmit="return confirm('Delete this program?')">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button type="submit" class="text-red-500 hover:text-red-700 bg-white border border-red-100 rounded-full px-2 py-1 text-xs font-bold shadow-sm" title="Delete program">−</button>
+                </form>
               </li>
               {% empty %}
               <li class="text-gray-400 italic py-2">No non-stage programs yet.</li>
@@ -527,16 +545,24 @@
               </span>
               {% endif %}
 
-              <button onclick="toggleModal('modal-{{ student.id }}')"
-                class="w-full p-3 text-left bg-gray-50 border border-gray-100 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 flex justify-between items-center gap-3 transition">
+              <div class="flex items-center gap-2">
+                <button onclick="toggleModal('modal-{{ student.id }}')"
+                  class="flex-1 p-3 text-left bg-gray-50 border border-gray-100 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 flex justify-between items-center gap-3 transition">
 
-                <span>
-                  {{ student.full_name }} ({{ student.code_number }})
-                </span>
-                <span class="text-sm font-semibold text-indigo-700">
-                  {{ student.total_point|floatformat:0 }} pts
-                </span>
-              </button>
+                  <span>
+                    {{ student.full_name }} ({{ student.code_number }})
+                  </span>
+                  <span class="text-sm font-semibold text-indigo-700">
+                    {{ student.total_point|floatformat:0 }} pts
+                  </span>
+                </button>
+
+                <form method="post" action="{% url 'delete_student' student.id %}" onsubmit="return confirm('Delete this student?')">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button type="submit" class="text-red-500 hover:text-red-700 bg-white border border-red-100 rounded-full px-2 py-1 text-xs font-bold shadow-sm" title="Delete student">−</button>
+                </form>
+              </div>
               <!-- Student Programs Modal (same as above) -->
               <div id="modal-{{ student.id }}"
                 class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -606,9 +632,14 @@
             <h3 class="text-base font-semibold text-gray-700 uppercase tracking-wide mb-3">Non Stage</h3>
             <ul class="space-y-2">
               {% for program in girls_non_stage_programs %}
-              <li class="p-3 bg-gray-50 border border-gray-100 rounded-lg">
+              <li class="p-3 bg-gray-50 border border-gray-100 rounded-lg relative">
                 <strong class="text-gray-800">{{ program.title }}</strong>
                 <p class="text-sm text-gray-500 mt-1">{{ program.description }}</p>
+                <form method="post" action="{% url 'delete_program' program.id %}" class="absolute right-2 top-2" onsubmit="return confirm('Delete this program?')">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button type="submit" class="text-red-500 hover:text-red-700 bg-white border border-red-100 rounded-full px-2 py-1 text-xs font-bold shadow-sm" title="Delete program">−</button>
+                </form>
               </li>
               {% empty %}
               <li class="text-gray-400 italic py-2">No non-stage programs yet.</li>

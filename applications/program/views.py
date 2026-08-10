@@ -179,7 +179,14 @@ class CategoryView(LoginRequiredMixin, generic.ListView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         team_id = self.request.GET.get('team')
-        context['team_name'] = Team.objects.get(id=team_id).name
+        team = None
+        try:
+            team = Team.objects.get(id=team_id) if team_id else None
+        except Team.DoesNotExist:
+            team = None
+
+        context['team'] = team
+        context['team_name'] = team.name if team else 'Unknown Team'
         context['team_id'] = team_id
 
         user = self.request.user
@@ -341,6 +348,40 @@ class CategoryDetailView(generic.DetailView):
 
         # fallback
         return self.get(request, *args, **kwargs)
+
+
+@require_POST
+@login_required
+def delete_student(request, student_id):
+    student = get_object_or_404(Student, id=student_id)
+    category_id = student.category_id
+    team_id = student.team_id
+
+    next_url = request.POST.get('next') or request.GET.get('next')
+    if next_url:
+        redirect_target = next_url
+    else:
+        redirect_target = reverse('category_detail', kwargs={'pk': category_id}) if category_id else reverse('program_list')
+        if team_id:
+            redirect_target = f"{redirect_target}?team={team_id}"
+
+    student.delete()
+    return redirect(redirect_target)
+
+
+@require_POST
+@login_required
+def delete_program(request, program_id):
+    program = get_object_or_404(Program, id=program_id)
+
+    next_url = request.POST.get('next') or request.GET.get('next')
+    if next_url:
+        redirect_target = next_url
+    else:
+        redirect_target = reverse('program_list')
+
+    program.delete()
+    return redirect(redirect_target)
 
 
 class AddProgramToStudentView(View):
