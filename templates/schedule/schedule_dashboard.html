@@ -1,0 +1,801 @@
+{% extends 'program/base.html' %}
+{% load static %}
+
+{% block title %}Program Schedule — {{ meelad_fest_name|default:"Meelad Fest" }}{% endblock %}
+
+{% block page_title_bar %}{% endblock %}
+
+{% block extra_head %}
+<style>
+        .day-tab { scroll-snap-align: start; }
+        .day-tab.active { background: #4f46e5; color: #fff; box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35); border-color: #4f46e5; }
+        /* Day-tab sub-text: readable on both white (idle) and indigo (active) */
+        .day-tab .tab-date { color: #64748b; }
+        .day-tab .tab-meta { color: #4f46e5; }
+        .day-tab.active .tab-date,
+        .day-tab.active .tab-meta { color: rgba(255, 255, 255, 0.92); }
+        .modal-shell { transition: opacity 0.18s ease-in-out; }
+        .modal-shell .modal-content {
+            transform: translateY(12px) scale(0.97);
+            opacity: 0;
+            transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+        }
+        .modal-shell .modal-content.is-open {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+  </style>
+    {% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+
+    <!-- ============ Page header ============ -->
+    <div class="bg-white shadow-sm rounded-2xl mb-6 overflow-hidden">
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-6 sm:px-8">
+            <div class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white">📅 Program Schedule</h1>
+                    <p class="text-indigo-100 mt-1 text-sm sm:text-base">
+                        Coordinate programs across fest days — with automatic conflict alerts
+                        {% if meelad_fest_name %}<span class="font-semibold">· {{ meelad_fest_name }}</span>{% endif %}
+                    </p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button onclick="openPanel('addDayModal')"
+                        class="inline-flex items-center justify-center gap-2 px-5 py-3 bg-white text-indigo-700 font-bold rounded-xl shadow-lg hover:bg-indigo-50 transition text-sm sm:text-base">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                        Add Fest Day
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-gray-100">
+            <div class="px-6 py-4">
+                <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Fest Days</p>
+                <p class="text-2xl font-extrabold text-indigo-700">{{ days|length }}</p>
+            </div>
+            <div class="px-6 py-4">
+                <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Scheduled</p>
+                <p class="text-2xl font-extrabold text-indigo-700">{{ scheduled_count }} <span class="text-sm font-semibold text-gray-400">/ {{ total_programs }}</span></p>
+            </div>
+            <div class="px-6 py-4">
+                <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Unscheduled</p>
+                <p class="text-2xl font-extrabold text-amber-600">{{ unscheduled_count }}</p>
+            </div>
+            <div class="px-6 py-4">
+                <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Conflicts</p>
+                <p class="text-2xl font-extrabold {% if total_conflicts %}text-red-600{% else %}text-green-600{% endif %}">{{ total_conflicts }}</p>
+            </div>
+        </div>
+<!-- ============ Flash messages ============ -->
+    {% if messages %}
+    <div class="mb-6 space-y-2">
+        {% for message in messages %}
+        <div class="rounded-xl px-4 py-3 text-sm font-semibold shadow-sm border
+            {% if message.tags == 'error' %}bg-red-100 text-red-800 border-red-200
+            {% elif message.tags == 'success' %}bg-green-100 text-green-800 border-green-200
+            {% else %}bg-amber-100 text-amber-800 border-amber-200{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ============ Schedule-ready consent gate ============ -->
+    {% if schedule_consent_confirmed %}
+    <div class="mb-6 rounded-2xl border border-green-200 bg-white shadow-sm overflow-hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-4">
+            <div class="shrink-0 w-10 h-10 rounded-xl bg-green-100 text-green-700 flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="font-bold text-green-800">Schedule-ready — programs & participation confirmed</p>
+                <p class="text-sm text-green-700 mt-0.5">
+                    {% if schedule_consent_confirmed_at %}Confirmed on {{ schedule_consent_confirmed_at|date:"d/m/Y H:i" }}. {% endif %}
+                    The generated registration link is disabled so no new participants can join while you schedule.
+                </p>
+            </div>
+            <form method="post" action="{% url 'set_schedule_consent' %}" class="shrink-0">
+                {% csrf_token %}
+                <button type="submit" name="revoke" value="1"
+                    class="text-sm font-semibold text-amber-700 hover:text-amber-900 underline underline-offset-2" title="Re-enable registration link to make changes">
+                    Revoke consent
+                </button>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div class="mb-6 rounded-2xl border border-amber-200 bg-white shadow-sm overflow-hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-4">
+            <div class="shrink-0 w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>
+            <div class="flex-1 min-w-0">
+                <p class="font-bold text-amber-800">Confirm programs & participation to start scheduling</p>
+                <p class="text-sm text-amber-700 mt-0.5">
+                    Conflict detection needs the final participant data. Confirm that <b>all programs are added</b> and
+                    <b>program participation is complete</b> — scheduling buttons are locked until then.
+                </p>
+            </div>
+            <button onclick="openConsentModal()"
+                class="shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4"/></svg>
+                Confirm to continue
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ============ Conflicts warning panel ============ -->
+    {% if total_conflicts %}
+    <div class="mb-6 rounded-2xl border border-red-200 bg-white shadow-sm overflow-hidden">
+        <div class="bg-red-600 px-5 py-3 flex items-center justify-between gap-3">
+            <h2 class="text-white font-bold flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                {{ total_conflicts }} scheduling conflict(s) — fix them before the fest
+            </h2>
+        </div>
+        <div class="p-5 space-y-3">
+            {% for day_wrap in days %}
+                {% for c in day_wrap.conflicts %}
+                <div class="flex items-start gap-3 p-3 rounded-xl border
+                    {% if c.kind == 'venue' %}border-amber-200 bg-amber-50{% else %}border-red-200 bg-red-50{% endif %}">
+                    <span class="shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-lg
+                        {% if c.kind == 'venue' %}bg-amber-100{% else %}bg-red-100{% endif %}">
+                        {% if c.kind == 'venue' %}📍{% else %}👥{% endif %}
+                    </span>
+                    <div class="flex-1 text-sm text-gray-700">
+                        <p class="font-semibold text-gray-800">
+                            {% if c.kind == 'venue' %}Venue clash{% else %}Participant clash{% endif %}
+                            <span class="text-gray-400 font-normal">· {{ day_wrap.day.name }} ({{ day_wrap.day.date|date:"d M" }})</span>
+                        </p>
+                        {% if c.kind == 'venue' %}
+                        <p>“{{ c.a_program }}” ({{ c.a_period }})and “{{ c.b_program }}” ({{ c.b_period }})both use venue <span class="font-semibold text-amber-700">{{ c.venue }}</span>.</p>
+                        {% else %}
+                        <p>“{{ c.a_program }}” ({{ c.a_period }})overlaps “{{ c.b_program }}” ({{ c.b_period }})— shared participant(s):</p>
+                        <div class="mt-1 flex flex-wrap gap-1">
+                            {% for s in c.shared %}
+                            <span class="px-2 py-0.5 bg-white rounded-full border border-red-200 text-xs font-medium text-red-700">{{ s }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ============ Program search ============ -->
+    <div class="mb-6 card p-4 sm:p-5">
+        <form method="get" action="{% url 'schedule_dashboard' %}" class="flex flex-col sm:flex-row gap-2 sm:items-center">
+            <div class="relative flex-1">
+                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </span>
+                <input type="search" name="q" value="{{ search_query }}" autocomplete="off"
+                    placeholder="Search programs by title — filters the board and the pool below"
+                    class="w-full rounded-xl border border-gray-300 bg-gray-50 pl-11 pr-4 py-2.5 text-sm text-gray-900 outline-none ring-indigo-200 focus:ring focus:bg-white">
+            </div>
+            <div class="flex gap-2">
+                <button type="submit"
+                    class="px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition">
+                    Search
+                </button>
+                {% if search_query %}
+                <a href="{% url 'schedule_dashboard' %}"
+                    class="px-4 py-2.5 bg-gray-100 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-200 transition">
+                    Clear
+                </a>
+                {% endif %}
+            </div>
+        </form>
+        {% if search_query %}
+        <p class="mt-2 text-xs text-gray-500">
+            Filtering by <span class="font-semibold text-indigo-600">“{{ search_query }}”</span> — scheduled entries on the board and the unscheduled pool are filtered.
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- ============ Day tabs ============ -->
+    {% if days %}
+    <div class="flex gap-3 overflow-x-auto pb-2 mb-6 snap-x" id="dayTabs">
+        {% for day_wrap in days %}
+        <button onclick="showDay({{ day_wrap.day.id }})" data-day-tab="{{ day_wrap.day.id }}" type="button"
+            class="day-tab shrink-0 text-left px-4 py-3 rounded-2xl bg-white border border-gray-200 shadow-sm hover:border-indigo-300 transition {% if forloop.first %}active{% endif %}">
+            <span class="block font-bold text-sm sm:text-base">{{ day_wrap.day.name }}</span>
+            <span class="tab-date block text-xs">{{ day_wrap.day.date|date:"D, d M y" }}</span>
+            <span class="tab-meta mt-1 inline-flex items-center gap-1 text-[11px] font-semibold">
+                {{ day_wrap.entries|length }} scheduled
+                {% if day_wrap.conflicts %}<span class="ml-1 px-1.5 rounded-full bg-red-100 text-red-700">⚠ {{ day_wrap.conflicts|length }}</span>{% endif %}
+            </span>
+        </button>
+        {% endfor %}
+    </div>
+    {% endif %}
+<!-- ============ Schedule board (day panels) ============ -->
+    {% for day_wrap in days %}
+    <section id="dayPanel-{{ day_wrap.day.id }}" data-day-panel class="{% if not forloop.first %}hidden{% endif %} mb-10">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+                <h2 class="text-xl sm:text-2xl font-bold text-indigo-700 flex items-center gap-2">
+                    {{ day_wrap.day.name }}
+                    <span class="text-sm font-medium text-gray-600">· {{ day_wrap.day.date|date:"l, d M Y" }}</span>
+                </h2>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="openEditDayModal({{ day_wrap.day.id }})"
+                    data-day-id="{{ day_wrap.day.id }}"
+                    data-day-name="{{ day_wrap.day.name|escapejs }}"
+                    data-day-date="{{ day_wrap.day.date|date:'Y-m-d' }}"
+                    data-day-active="{% if day_wrap.day.is_active %}1{% else %}0{% endif %}"
+                    data-day-edit-url="{% url 'edit_fest_day' day_wrap.day.id %}"
+                    class="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:text-indigo-600 hover:border-indigo-300 transition">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 012.828 0L21 4a2 2 0 01-2.828 2.828L12 13l-4 1 1-4z"/></svg>
+                    Edit Day
+                </button>
+                <form method="post" action="{% url 'delete_fest_day' day_wrap.day.id %}" data-confirm="Delete this fest day and all its scheduled slots?" class="inline">
+                    {% csrf_token %}
+                    <button type="submit"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-red-200 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50 transition">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+{% if day_wrap.entries %}
+        <div class="space-y-3">
+            {% for wrap in day_wrap.entries %}
+            {% with entry=wrap.entry %}
+            <div class="bg-white rounded-2xl shadow-sm border {% if wrap.conflict_count %}border-red-300{% else %}border-gray-100{% endif %} p-4 sm:p-5">
+                <div class="flex flex-wrap items-start gap-3">
+                    <div class="w-14 shrink-0 text-center">
+                        <span class="block text-sm font-bold text-indigo-700">{{ entry.start_time|time:"g:i A" }}</span>
+                        <span class="block text-xs text-gray-400">· {{ entry.duration_minutes }} min</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h3 class="font-bold text-gray-800">{{ entry.program.title }}</h3>
+                            {% if wrap.conflict_count %}
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-bold"
+                                title="This slot has conflicts">
+                                ⚠ {{ wrap.conflict_count }} conflict{{ wrap.conflict_count|pluralize }}
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold">✓ Clear</span>
+                            {% endif %}
+                            {% if entry.program.is_general %}<span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">General</span>{% endif %}
+                            {% if entry.program.is_group %}<span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">Group</span>{% endif %}
+                            {% if not entry.program.is_group %}<span class="px-2 py-0.5 rounded-full {% if entry.program.non_stage %}bg-gray-200 text-gray-600{% else %}bg-indigo-100 text-indigo-700{% endif %} text-xs font-semibold">{{ entry.program.non_stage|yesno:"Non-stage,Stage" }}</span>{% endif %}
+                        </div>
+                        <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
+                            {% if entry.venue %}
+                            <span class="inline-flex items-center gap-1">📍 <span class="font-medium text-gray-600">{{ entry.venue.name }}</span></span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1">📍 <span class="italic">No venue</span></span>
+                            {% endif %}
+                            {% if entry.notes %}<span class="inline-flex items-center gap-1">📝 {{ entry.notes }}</span>{% endif %}
+                        </div>
+                    </div>
+                    <div class="ml-auto flex items-center gap-2">
+                        <button onclick="openEditScheduleModal({{ entry.id }})"
+                            data-program-id="{{ entry.program_id }}"
+                            data-program-title="{{ entry.program.title|escapejs }}"
+                            data-entry-id="{{ entry.id }}"
+                            data-day-id="{{ entry.fest_day_id }}"
+                            data-start-time="{{ entry.start_time|time:'H:i' }}"
+                            data-duration="{{ entry.duration_minutes }}"
+                            data-venue-id="{% if entry.venue_id %}{{ entry.venue_id }}{% endif %}"
+                            data-notes="{{ entry.notes|default:''|escapejs }}"
+                            data-edit-url="{% url 'edit_schedule' entry.id %}"
+                            class="px-3 py-1.5 text-sm font-semibold text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition">
+                            Edit
+                        </button>
+                        <form method="post" action="{% url 'delete_schedule' entry.id %}" data-confirm="Remove “{{ entry.program.title }}” from the schedule?" class="inline">
+                            {% csrf_token %}
+                            <button type="submit"
+                                class="px-3 py-1.5 text-sm font-semibold text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition">
+                                Remove
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endwith %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="bg-white border-2 border-dashed border-gray-200 rounded-2xl p-10 text-center">
+            <p class="text-4xl mb-2">🗓️</p>
+            <p class="text-gray-500 font-medium">{% if search_query %}No scheduled programs match your search on this day.{% else %}No programs scheduled for this day yet.{% endif %}</p>
+            <p class="text-sm text-gray-400 mt-1">{% if search_query %}Try a different title or clear the search.{% else %}Select a program from the unscheduled pool below and pick a time slot.{% endif %}</p>
+        </div>
+        {% endif %}
+    </section>
+    {% endfor %}
+<!-- ============ Unscheduled programs pool ============ -->
+    <div class="card overflow-hidden">
+        <div class="px-5 py-4 flex items-center justify-between gap-3 border-b border-gray-100">
+            <h2 class="text-lg font-bold text-indigo-700 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0l3-3m-3 3l-3-3m3 3V6m-9 6a9 9 0 1118 0 9 9 0 01-18 0z"/></svg>
+                Programs
+                <span class="text-xs font-semibold text-gray-400">{% if search_query %}{{ pool_count }} of {{ pool_total }} matching{% else %}{{ pool_count }} of {{ pool_total }} to schedule{% endif %}</span>
+            </h2>
+        </div>
+        {% if pool_total %}
+        <div class="p-4 space-y-6">
+            {% if not pool_count %}
+            <div class="rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-center text-sm font-semibold text-green-700">
+                🎉 Every listed program is already scheduled — edit any slot from the day boards above.
+            </div>
+            {% endif %}
+            {% for group in pool_categories %}
+            {% if group.total %}
+            <div class="rounded-2xl border border-gray-100 overflow-hidden">
+                <div class="px-4 py-3 bg-gradient-to-r from-indigo-50 to-purple-50 flex items-center justify-between gap-2">
+                    <h3 class="flex items-center gap-2 text-sm font-bold text-indigo-800">
+                        <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+                        {{ group.name }}
+                    </h3>
+                    <span class="px-2 py-0.5 rounded-full bg-white text-indigo-600 text-xs font-bold">{{ group.total }} program{{ group.total|pluralize }}</span>
+                </div>
+                <div class="p-4 space-y-4">
+                    {% if group.stage %}
+                    <div>
+                        <h4 class="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                            <span class="text-base">🎤</span> Stage
+                            <span class="px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600">{{ group.stage|length }}</span>
+                        </h4>
+                        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {% for program in group.stage %}{% include 'schedule/_pool_card.html' %}{% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if group.non_stage %}
+                    <div>
+                        <h4 class="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                            <span class="text-base">📋</span> Non-Stage
+                            <span class="px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600">{{ group.non_stage|length }}</span>
+                        </h4>
+                        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {% for program in group.non_stage %}{% include 'schedule/_pool_card.html' %}{% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="p-10 text-center text-gray-400">
+            <p class="text-3xl mb-2">{% if search_query %}🔍{% else %}📋{% endif %}</p>
+            <p class="font-medium">{% if search_query %}No programs match your search.{% else %}No programs to show yet — create them from the Program page.{% endif %}</p>
+        </div>
+        {% endif %}
+    </div>
+<!-- ============ Add Fest Day Modal ============ -->
+    <div id="addDayModal" class="modal-shell hidden fixed inset-0 items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 z-[250]">
+        <div class="modal-content max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl w-full max-w-md relative">
+            <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-2xl">
+                <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                    <span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-lg">🗓️</span>
+                    Add Fest Day
+                </h2>
+                <button onclick="closePanel('addDayModal')" aria-label="Close modal"
+                    class="shrink-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg flex items-center justify-center transition">✕</button>
+            </div>
+            <form method="post" action="{% url 'add_fest_day' %}" class="p-5 sm:p-6 space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label for="day-name" class="mb-1 block text-sm font-medium text-gray-700">Day Name</label>
+                    <input id="day-name" type="text" name="name" required placeholder="e.g. Day 1, Opening Day"
+                        class="mt-1 form-input">
+                </div>
+                <div>
+                    <label for="day-date" class="mb-1 block text-sm font-medium text-gray-700">Date</label>
+                    <input id="day-date" type="date" name="date" required
+                        class="mt-1 form-input">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closePanel('addDayModal')"
+                        class="btn-secondary">Cancel</button>
+                    <button type="submit"
+                        class="btn-primary">Add Day</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============ Edit Fest Day Modal ============ -->
+    <div id="editDayModal" class="modal-shell hidden fixed inset-0 items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 z-[250]">
+        <div class="modal-content max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl w-full max-w-md relative">
+            <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-2xl">
+                <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                    <span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-lg">✏️</span>
+                    Edit Fest Day
+                </h2>
+                <button onclick="closePanel('editDayModal')" aria-label="Close modal"
+                    class="shrink-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg flex items-center justify-center transition">✕</button>
+            </div>
+            <form method="post" action="" id="editDayForm" class="p-5 sm:p-6 space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label for="edit-day-name" class="mb-1 block text-sm font-medium text-gray-700">Day Name</label>
+                    <input id="edit-day-name" type="text" name="name" required
+                        class="mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-amber-200 focus:ring">
+                </div>
+                <div>
+                    <label for="edit-day-date" class="mb-1 block text-sm font-medium text-gray-700">Date</label>
+                    <input id="edit-day-date" type="date" name="date" required
+                        class="mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-amber-200 focus:ring">
+                </div>
+                <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                    <input type="checkbox" name="is_active" id="edit-day-active" class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-400">
+                    Active (show this day on the board)
+                </label>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closePanel('editDayModal')"
+                        class="btn-secondary">Cancel</button>
+                    <button type="submit"
+                        class="btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+<!-- ============ Add Schedule Modal ============ -->
+    <div id="addScheduleModal" class="modal-shell hidden fixed inset-0 items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 z-[250]">
+        <div class="modal-content max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl w-full max-w-lg relative">
+            <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-gradient-to-r from-emerald-600 to-green-500 rounded-t-2xl">
+                <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                    <span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-lg">⏰</span>
+                    Schedule Program
+                </h2>
+                <button onclick="closePanel('addScheduleModal')" aria-label="Close modal"
+                    class="shrink-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg flex items-center justify-center transition">✕</button>
+            </div>
+            <form method="post" action="{% url 'add_schedule' %}" id="addScheduleForm" class="p-5 sm:p-6 space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="program" id="add-program-id">
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Program</label>
+                    <p id="add-program-title" class="mt-1 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-gray-700 font-semibold">—</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="add-fest-day" class="mb-1 block text-sm font-medium text-gray-700">Fest Day</label>
+                        <select id="add-fest-day" name="fest_day" required
+                            class="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-gray-900 outline-none ring-emerald-200 focus:ring">
+                            <option value="">-- Select day --</option>
+                            {% for day_wrap in days %}
+                            <option value="{{ day_wrap.day.id }}">{{ day_wrap.day.name }} ({{ day_wrap.day.date|date:"d M" }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="add-start-time" class="mb-1 block text-sm font-medium text-gray-700">Start Time</label>
+                        <input id="add-start-time" type="time" name="start_time" required
+                            class="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-gray-900 outline-none ring-emerald-200 focus:ring">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="add-duration" class="mb-1 block text-sm font-medium text-gray-700">Duration</label>
+                        <select id="add-duration" name="duration_minutes"
+                            class="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-gray-900 outline-none ring-emerald-200 focus:ring">
+                            <option value="30">30 minutes</option>
+                            <option value="45">45 minutes</option>
+                            <option value="60" selected>1 hour</option>
+                            <option value="90">1.5 hours</option>
+                            <option value="120">2 hours</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="add-venue" class="mb-1 block text-sm font-medium text-gray-700">Venue (optional)</label>
+                        <select id="add-venue" name="venue"
+                            class="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-gray-900 outline-none ring-emerald-200 focus:ring">
+                            <option value="">-- No venue --</option>
+                            {% for venue in venues %}
+                            <option value="{{ venue.id }}">{{ venue.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label for="add-notes" class="mb-1 block text-sm font-medium text-gray-700">Notes (optional)</label>
+                    <input id="add-notes" type="text" name="notes" maxlength="255" placeholder="Stage setup, judges, etc."
+                        class="mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-emerald-200 focus:ring">
+                </div>
+
+                <!-- Live conflict preview -->
+                <div id="addConflictPreview" class="hidden rounded-xl border p-3 text-sm"></div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closePanel('addScheduleModal')"
+                        class="btn-secondary">Cancel</button>
+                    <button type="submit" id="addScheduleSubmit"
+                        class="px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition">Schedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+<!-- ============ Edit Schedule Modal ============ -->
+    <div id="editScheduleModal" class="modal-shell hidden fixed inset-0 items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 z-[250]">
+        <div class="modal-content max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl w-full max-w-lg relative">
+            <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-gradient-to-r from-sky-500 to-blue-500 rounded-t-2xl">
+                <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                    <span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-lg">✏️</span>
+                    Edit Schedule
+                </h2>
+                <button onclick="closePanel('editScheduleModal')" aria-label="Close modal"
+                    class="shrink-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg flex items-center justify-center transition">✕</button>
+            </div>
+            <form method="post" action="" id="editScheduleForm" class="p-5 sm:p-6 space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="program" id="edit-program-id">
+                <input type="hidden" name="exclude_pk" id="edit-exclude-pk">
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Program</label>
+                    <p id="edit-program-title" class="mt-1 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-gray-700 font-semibold">—</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="edit-fest-day" class="mb-1 block text-sm font-medium text-gray-700">Fest Day</label>
+                        <select id="edit-fest-day" name="fest_day" required
+                            class="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-gray-900 outline-none ring-sky-200 focus:ring">
+                            {% for day_wrap in days %}
+                            <option value="{{ day_wrap.day.id }}">{{ day_wrap.day.name }} ({{ day_wrap.day.date|date:"d M" }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="edit-start-time" class="mb-1 block text-sm font-medium text-gray-700">Start Time</label>
+                        <input id="edit-start-time" type="time" name="start_time" required
+                            class="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-gray-900 outline-none ring-sky-200 focus:ring">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="edit-duration" class="mb-1 block text-sm font-medium text-gray-700">Duration</label>
+                        <select id="edit-duration" name="duration_minutes"
+                            class="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-gray-900 outline-none ring-sky-200 focus:ring">
+                            <option value="30">30 minutes</option>
+                            <option value="45">45 minutes</option>
+                            <option value="60">1 hour</option>
+                            <option value="90">1.5 hours</option>
+                            <option value="120">2 hours</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="edit-venue" class="mb-1 block text-sm font-medium text-gray-700">Venue (optional)</label>
+                        <select id="edit-venue" name="venue"
+                            class="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-gray-900 outline-none ring-sky-200 focus:ring">
+                            <option value="">-- No venue --</option>
+                            {% for venue in venues %}
+                            <option value="{{ venue.id }}">{{ venue.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label for="edit-notes" class="mb-1 block text-sm font-medium text-gray-700">Notes (optional)</label>
+                    <input id="edit-notes" type="text" name="notes" maxlength="255"
+                        class="mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-sky-200 focus:ring">
+                </div>
+
+                <div id="editConflictPreview" class="hidden rounded-xl border p-3 text-sm"></div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closePanel('editScheduleModal')"
+                        class="btn-secondary">Cancel</button>
+                    <button type="submit"
+                        class="px-4 py-2 bg-sky-600 text-white rounded-xl hover:bg-sky-700 transition">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============ Schedule-ready Consent Modal ============ -->
+    <div id="consentModal" class="modal-shell hidden fixed inset-0 items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 z-[250]">
+        <div class="modal-content max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl w-full max-w-lg relative">
+            <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-2xl">
+                <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                    <span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-lg">✅</span>
+                    Confirm before scheduling
+                </h2>
+                <button onclick="closePanel('consentModal')" aria-label="Close modal"
+                    class="shrink-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg flex items-center justify-center transition">✕</button>
+            </div>
+            <div class="p-5 sm:p-6">
+                <p class="text-sm text-gray-600 leading-relaxed">
+                    Accurate conflict detection needs the <b>final</b> participant list for every program.
+                    Confirm both points below before you start scheduling:
+                </p>
+                <ul class="mt-4 space-y-3">
+                    <li class="flex items-start gap-3 p-3 rounded-xl bg-indigo-50 border border-indigo-100">
+                        <span class="shrink-0 w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center">1</span>
+                        <span class="text-sm text-gray-700"><b>All programs are added</b> — no new program will be created after this point.</span>
+                    </li>
+                    <li class="flex items-start gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                        <span class="shrink-0 w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">2</span>
+                        <span class="text-sm text-gray-700"><b>Program participation is complete</b> — every student is registered in all the programs they take part in.</span>
+                    </li>
+                </ul>
+                <div class="mt-5 p-3 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800 flex items-start gap-2">
+                    <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                    <span>After confirming, the generated <b>program registration link is disabled</b> and new students can no longer join programs there. You can <b>revoke</b> consent anytime to re-enable it.</span>
+                </div>
+                <form method="post" action="{% url 'set_schedule_consent' %}" class="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-2">
+                    {% csrf_token %}
+                    <button type="button" onclick="closePanel('consentModal')"
+                        class="btn-secondary">Cancel</button>
+                    <button type="submit" name="agree" value="1"
+                        class="btn-primary font-semibold">
+                        I confirm — all programs & participation are done
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+<!-- ============ Page scripts ============ -->
+    <script>
+        function showDay(dayId) {
+            document.querySelectorAll('[data-day-panel]').forEach(function (panel) {
+                panel.classList.toggle('hidden', panel.id !== 'dayPanel-' + dayId);
+            });
+            document.querySelectorAll('[data-day-tab]').forEach(function (tab) {
+                tab.classList.toggle('active', tab.dataset.dayTab === String(dayId));
+            });
+        }
+
+        function openAddScheduleModal(programId, programTitle) {
+            document.getElementById('add-program-id').value = programId;
+            document.getElementById('add-program-title').textContent = programTitle;
+            document.getElementById('add-fest-day').value = '';
+            document.getElementById('add-start-time').value = '';
+            document.getElementById('add-duration').value = '60';
+            document.getElementById('add-venue').value = '';
+            document.getElementById('add-notes').value = '';
+            hidePreview('addConflictPreview');
+            window.openPanel('addScheduleModal');
+            checkAddConflicts();
+        }
+
+        function openEditDayModal(dayId) {
+            var btn = document.querySelector('[data-day-id="' + dayId + '"]');
+            if (!btn) return;
+            document.getElementById('edit-day-name').value = btn.dataset.dayName;
+            document.getElementById('edit-day-date').value = btn.dataset.dayDate;
+            document.getElementById('edit-day-active').checked = btn.dataset.dayActive === '1';
+            document.getElementById('editDayForm').action = btn.dataset.dayEditUrl;
+            window.openPanel('editDayModal');
+        }
+
+        function openEditScheduleModal(entryId) {
+            var btn = document.querySelector('[data-entry-id="' + entryId + '"]');
+            if (!btn) return;
+            document.getElementById('edit-program-id').value = btn.dataset.programId;
+            document.getElementById('edit-exclude-pk').value = btn.dataset.entryId;
+            document.getElementById('edit-program-title').textContent = btn.dataset.programTitle;
+            document.getElementById('edit-fest-day').value = btn.dataset.dayId;
+            document.getElementById('edit-start-time').value = btn.dataset.startTime;
+            document.getElementById('edit-duration').value = btn.dataset.duration;
+            document.getElementById('edit-venue').value = btn.dataset.venueId || '';
+            document.getElementById('edit-notes').value = btn.dataset.notes || '';
+            document.getElementById('editScheduleForm').action = btn.dataset.editUrl;
+            hidePreview('editConflictPreview');
+            window.openPanel('editScheduleModal');
+            checkEditConflicts();
+        }
+
+        function openConsentModal() {
+            window.openPanel('consentModal');
+        }
+
+        function hidePreview(id) {
+            var el = document.getElementById(id);
+            el.classList.add('hidden');
+            el.innerHTML = '';
+        }
+
+        function getCookie(name) {
+            var value = '; ' + document.cookie;
+            var parts = value.split('; ' + name + '=');
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        function renderConflictPreview(containerId, data) {
+            var el = document.getElementById(containerId);
+            if (data.ok && data.conflicts.length === 0) {
+                el.className = 'rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700 font-medium';
+                el.innerHTML = '✓ No conflicts detected for this slot.';
+                el.classList.remove('hidden');
+                return;
+            }
+            var html = '<div class="font-bold mb-2 flex items-center gap-2">' +
+                '<span>⚠ ' + data.conflicts.length + ' conflict(s) detected</span></div>';
+            data.conflicts.forEach(function (c) {
+                var kind = c.kind === 'venue' ? '📍 Venue clash' : '👥 Participant clash';
+                html += '<div class="mb-2 p-2 rounded-lg ' + (c.kind === 'venue' ? 'bg-amber-50 border border-amber-200' : 'bg-red-50 border border-red-200') + '">';
+                html += '<p class="font-semibold text-gray-800">' + kind + '</p>';
+                if (c.kind === 'venue') {
+                    html += '<p class="text-gray-600">“' + c.program + '” overlaps “' + c.other_program + '” ( ' + c.other_period + '), both use <b>“' + c.venue + '”</b>.</p>';
+                } else {
+                    html += '<p class="text-gray-600">“' + c.program + '” overlaps “' + c.other_program + '” ( ' + c.other_period + ')</p>';
+                    html += '<div class="mt-1 flex flex-wrap gap-1">';
+                    (c.shared || []).forEach(function (s) {
+                        html += '<span class="px-2 py-0.5 rounded-full bg-white border border-red-200 text-xs font-medium text-red-700">' + s + '</span>';
+                    });
+                    html += '</div>';
+                }
+                html += '</div>';
+            });
+            el.className = 'rounded-xl border border-red-200 bg-white p-3 text-sm';
+            el.innerHTML = html;
+            el.classList.remove('hidden');
+        }
+function checkConflicts(payload, containerId) {
+            fetch("{% url 'check_schedule_conflicts' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify(payload),
+            })
+            .then(function (res){ return res.json(); })
+            .then(function (data) {
+                renderConflictPreview(containerId, data);
+            })
+            .catch(function () {
+                showToast("Could not check schedule conflicts. Please try again.", "error");
+            });
+        }
+
+        function checkAddConflicts() {
+            var payload = {
+                program: document.getElementById('add-program-id').value,
+                fest_day: document.getElementById('add-fest-day').value,
+                start_time: document.getElementById('add-start-time').value,
+                duration_minutes: document.getElementById('add-duration').value,
+                venue: document.getElementById('add-venue').value,
+            };
+            if (!payload.program || !payload.fest_day || !payload.start_time) {
+                hidePreview('addConflictPreview');
+                return;
+            }
+            checkConflicts(payload, 'addConflictPreview');
+        }
+
+        function checkEditConflicts() {
+            var payload = {
+                program: document.getElementById('edit-program-id').value,
+                fest_day: document.getElementById('edit-fest-day').value,
+                start_time: document.getElementById('edit-start-time').value,
+                duration_minutes: document.getElementById('edit-duration').value,
+                venue: document.getElementById('edit-venue').value,
+                exclude_pk: document.getElementById('edit-exclude-pk').value,
+            };
+            if (!payload.program || !payload.fest_day || !payload.start_time) {
+                hidePreview('editConflictPreview');
+                return;
+            }
+            checkConflicts(payload, 'editConflictPreview');
+        }
+
+        ['add-fest-day', 'add-start-time', 'add-duration', 'add-venue'].forEach(function (id) {
+            document.getElementById(id).addEventListener('change', checkAddConflicts);
+            document.getElementById(id).addEventListener('input', checkAddConflicts);
+        });
+        ['edit-fest-day', 'edit-start-time', 'edit-duration', 'edit-venue'].forEach(function (id) {
+            document.getElementById(id).addEventListener('change', checkEditConflicts);
+            document.getElementById(id).addEventListener('input', checkEditConflicts);
+        });
+    </script>
+
+</div>
+{% endblock %}
+    

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: DejaVu Sans, sans-serif; font-size: 12px; }
+    h2 { text-align: center; margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #000; padding: 6px; text-align: center; }
+    th { background-color: #f2f2f2; }
+  </style>
+</head>
+<body>
+  <h2>{{ program.name }} - {{ program.category.name }} ({{ section }})</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Sl No</th>
+        <th>Code Number</th>
+        <th>Full Name</th>
+        <th>Team Name</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for student in participants %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ student.code_number }}</td>
+        <td>{{ student.full_name }}</td>
+        <td>{{ student.team.name }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

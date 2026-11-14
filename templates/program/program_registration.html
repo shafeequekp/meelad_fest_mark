@@ -1,0 +1,324 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Program Registration Form</title>
+  {% include '_head_meta.html' %}
+<link rel="stylesheet" href="{% static 'program/css/app.min.css' %}?v=5">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<style>
+  .progress-bar { height: 5px; background-color: #4338ca; transition: width 0.3s ease-in-out; }
+  .form-step { transition: all 0.5s ease; }
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col p-4">
+
+<div class="m-auto w-full sm:w-11/12 md:w-3/4 lg:w-2/3 xl:w-1/2 bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl shadow-lg">
+<h2 class="text-2xl font-bold text-center mb-2" style="color: indigo">{{fest_name}} Program Registration</h2>
+<p class="text-center text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 text-lg font-semibold mb-4">
+  {{ madrasa_name }}
+</p>
+
+  <!-- Progress bar -->
+  {% if registration_locked %}
+  <div class="p-5 rounded-xl border border-amber-200 bg-amber-50 text-center">
+    <div class="text-5xl mb-3">🔒</div>
+    <h3 class="text-lg font-bold text-amber-800 mb-2">Program registration is closed</h3>
+    <p class="text-sm text-amber-700 leading-relaxed">
+      The coordinator has confirmed all programs and participation for the
+      fest, and scheduling is now in progress. No new student registrations are
+      accepted through this link.
+    </p>
+    <p class="text-xs text-amber-600 mt-3">Please contact your fest coordinator if you need to make a change.</p>
+  </div>
+  {% else %}
+  <!-- Progress bar -->
+  <div class="w-full bg-gray-300 rounded-full mb-6">
+    <div id="progress" class="progress-bar w-1/5 rounded-full"></div>
+  </div>
+
+  <form id="multiStepForm" method="POST">
+    {% csrf_token %}
+
+    <!-- Step 1: Team Selection -->
+    <div class="form-step">
+      <h3 class="text-lg font-semibold mb-4">Select Your Team</h3>
+      <select id="teamSelect" name="team" required class="w-full border border-gray-300 rounded-lg p-3 mb-4 text-sm sm:text-base
+focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+        <option value="" disabled selected>Select team</option>
+        {% for team in madrasa.team_set.all %}
+          <option value="{{ team.id }}">{{ team.name }}</option>
+        {% endfor %}
+      </select>
+      <div class="flex justify-end">
+        <button type="button" onclick="nextStep()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Next</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Gender -->
+    <div class="form-step hidden">
+      <h3 class="text-lg font-semibold mb-4">Select Your Gender</h3>
+      <select id="genderSelect" name="gender" required class="w-full border border-gray-300 rounded-lg p-3 mb-4 text-sm sm:text-base
+focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+" disabled>
+        <option value="" disabled {% if not is_boys_only and not is_girls_only %}selected{% endif %}>Select gender</option>
+        <option value="male" {% if is_boys_only %}selected{% endif %}>Male</option>
+        <option value="female" {% if is_girls_only %}selected{% endif %}>Female</option>
+      </select>
+      <div class="flex justify-between">
+        <button type="button" onclick="prevStep()" class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Back</button>
+        <button type="button" onclick="nextStep()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Next</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Category -->
+    <div class="form-step hidden">
+      <h3 class="text-lg font-semibold mb-4">Select Your Category</h3>
+      <select id="categorySelect" name="category" required class="w-full border border-gray-300 rounded-lg p-3 mb-4 text-sm sm:text-base
+focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+" disabled>
+        <option value="" disabled selected>Select category</option>
+      </select>
+      <div class="flex justify-between">
+        <button type="button" onclick="prevStep()" class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Back</button>
+        <button type="button" onclick="nextStep()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Next</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Student -->
+    <div class="form-step hidden">
+      <h3 class="text-lg font-semibold mb-4">Select Student</h3>
+      <select id="studentSelect" name="student" required class="w-full border border-gray-300 rounded-lg p-3 mb-4 text-sm sm:text-base
+focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+" disabled>
+        <option value="" disabled selected>Select student</option>
+      </select>
+      <div class="flex justify-between">
+        <button type="button" onclick="prevStep()" class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Back</button>
+        <button type="button" onclick="nextStep()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Next</button>
+      </div>
+    </div>
+
+    <!-- Step 5: Programs -->
+    <div class="form-step hidden">
+      <h3 class="text-lg font-semibold mb-4">Select Your Program(s)</h3>
+      <div id="programsContainer" class="flex flex-col mb-4"></div>
+      <div class="flex justify-between">
+        <button type="button" onclick="prevStep()" class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Back</button>
+        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Submit</button>
+      </div>
+    </div>
+
+  </form>
+  {% endif %}
+</div>
+
+
+
+<script>
+const steps = document.querySelectorAll('.form-step');
+const progress = document.getElementById('progress');
+
+// Extract madrasa_id from URL query parameters
+const urlParams = new URLSearchParams(window.location.search);
+const madrasaId = urlParams.get('institution_id');
+
+let currentStep = 0;
+
+function showStep(index) {
+  steps.forEach((step, i) => step.classList.toggle('hidden', i !== index));
+  progress.style.width = ((index + 1) / steps.length * 100) + '%';
+}
+
+function validateStep(index) {
+  const inputs = steps[index].querySelectorAll('select, input');
+  for (let input of inputs) {
+    if ((input.type === 'checkbox' && input.checked === false) && input.hasAttribute('required')) return false;
+    if ((input.type !== 'checkbox') && input.value === '') return false;
+  }
+  return true;
+}
+
+// Expose globally so onclick in HTML can access
+window.nextStep = function() {
+  if (!validateStep(currentStep)) { showToast('Please fill out fields to continue.', 'warning'); return; }
+  if (currentStep < steps.length - 1) { currentStep++; showStep(currentStep); }
+}
+
+window.prevStep = function() {
+  if (currentStep > 0) { currentStep--; showStep(currentStep); }
+}
+
+showStep(currentStep);
+
+// Single-section fests prefill the Gender step from the fest type chosen at
+// signup; a both-section fest keeps the manual "Select gender" behaviour.
+const defaultGender = "{% if is_boys_only %}male{% elif is_girls_only %}female{% endif %}";
+
+// Load categories when team changes
+$('#teamSelect').change(function() {
+  let teamId = $(this).val();
+  if (!teamId || !madrasaId) return;
+
+  if (defaultGender) {
+    // Single-section fest: gender stays locked to the fest's section.
+    $('#genderSelect').val(defaultGender);
+  } else {
+    $('#genderSelect').prop('disabled', false).val('');
+  }
+  $('#categorySelect').empty().append('<option value="" disabled selected>Select category</option>').prop('disabled', true);
+  $('#studentSelect').empty().append('<option value="" disabled selected>Select student</option>').prop('disabled', true);
+  $('#programsContainer').empty();
+
+  $.getJSON("{% url 'load_categories' %}", {team: teamId, madrasa_id: madrasaId}, function(data){
+    let cat = $('#categorySelect');
+    data.forEach(c => cat.append(`<option value="${c.id}">${c.name}</option>`));
+    cat.prop('disabled', false);
+  });
+});
+
+// Load students & programs when category or gender changes
+$('#categorySelect, #genderSelect').change(function(){
+  let categoryId = $('#categorySelect').val();
+  let gender = $('#genderSelect').val();
+  let teamId = $('#teamSelect').val();
+  if(!categoryId || !gender || !teamId) return;
+
+  // Load students
+  $.getJSON("{% url 'load_students' %}", {category: categoryId, gender: gender, team: teamId}, function(data){
+    let stu = $('#studentSelect');
+    stu.empty().append('<option value="" disabled selected>Select student</option>');
+    data.forEach(s => stu.append(`<option value="${s.id}">${s.name}</option>`));
+    stu.prop('disabled', false);
+  });
+
+  // Programs
+  $.getJSON("{% url 'load_programs' %}", {category: categoryId, gender: gender}, function(data){
+    let container = $('#programsContainer');
+    container.empty();
+    data.forEach(p => container.append(`<label class="mb-2 block"><input type="checkbox" name="programs" value="${p.id}" class="mr-2"> ${p.title}</label>`));
+  });
+});
+
+
+// Limit program selection
+const MAX_PROGRAMS = {{ max_programs|default:4 }};
+
+$('#programsContainer input[type="checkbox"]').on('change', function() {
+  const checkedCount = $('#programsContainer input[type="checkbox"]:checked').length;
+
+  if (checkedCount > MAX_PROGRAMS) {
+    showToast(`You can select up to ${MAX_PROGRAMS} programs only.`, 'warning');
+    this.checked = false; // uncheck the last one
+  }
+});
+
+
+// Form submission
+$('#multiStepForm').submit(function(e){
+  e.preventDefault();
+
+  if(!validateStep(currentStep)){
+    showToast('Please complete all required fields before submitting.', 'warning');
+    return;
+  }
+
+  const checkedPrograms = $('#programsContainer input[type="checkbox"]:checked').length;
+  if(checkedPrograms === 0){
+    showToast('Please select at least one program.', 'warning');
+    return;
+  }
+
+  if(checkedPrograms > MAX_PROGRAMS){
+    showToast(`You can select up to ${MAX_PROGRAMS} programs only.`, 'warning');
+    return;
+  }
+
+  const form = this;
+  window.MeeladLoader && MeeladLoader.form(form);
+
+  const studentId = $('#studentSelect').val();
+  const programIds = $('input[name="programs"]:checked').map(function(){
+    return $(this).val();
+  }).get();
+
+  $.ajax({
+    url: "{% url 'register_program' %}",
+    method: "POST",
+    data: {
+      csrfmiddlewaretoken: '{{ csrf_token }}',
+      student: studentId,
+      programs: programIds
+    },
+
+
+    {% comment %} success: function(response){
+      if(response.message === "success"){
+        const formContainer = $('#multiStepForm').closest('div');
+        formContainer.html(`
+          <div class="text-center py-10">
+            <h2 class="text-2xl font-bold mb-4 text-green-600">Thanks! Your programs were selected!</h2>
+            <a href="#" id="resetForm" class="text-indigo-600 underline hover:text-indigo-800">Submit another response or edit</a>
+          </div>
+        `);
+
+        $('#resetForm').click(function(e){
+          e.preventDefault();
+          location.reload();
+        });
+      } else {
+        showToast("Error registering program", 'error');
+      }
+    } {% endcomment %}
+
+    
+    success: function(response){
+      if(response.message === "success"){
+        const formContainer = $('#multiStepForm').closest('div');
+    
+        // Build a nice list of registered programs
+        const programList = response.programs.map(name => `<li>${name}</li>`).join('');
+    
+        formContainer.html(`
+          <div class="text-center py-10">
+            <h2 class="text-2xl font-bold mb-4 text-green-600">
+              Thanks! Your programs were selected!
+            </h2>
+            <ul class="text-gray-700 mb-4 list-disc list-inside">
+              ${programList}
+            </ul>
+            <a href="#" id="resetForm" class="text-indigo-600 underline hover:text-indigo-800">
+              Submit another response or edit
+            </a>
+          </div>
+        `);
+    
+        $('#resetForm').click(function(e){
+          e.preventDefault();
+          location.reload();
+        });
+      } else {
+        window.MeeladLoader && MeeladLoader.restore(form);
+        showToast("Error registering program", 'error');
+      }
+    },
+    error: function(){
+      window.MeeladLoader && MeeladLoader.restore(form);
+      showToast("Error registering program. Please try again.", 'error');
+    }
+    
+  });
+});
+
+</script>
+
+{% include '_submit_loader.html' %}
+
+{% include '_toast.html' %}
+
+{% include '_footer.html' %}
+
+</body>
+</html>

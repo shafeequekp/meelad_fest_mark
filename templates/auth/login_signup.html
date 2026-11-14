@@ -1,0 +1,412 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meelad — Login & Signup</title>
+  {% include '_head_meta.html' %}
+  <!-- Tailwind CSS CDN -->
+  <link rel="stylesheet" href="{% static 'program/css/app.min.css' %}?v=5">
+  <style>
+    /* smooth show/hide */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .active-tab { background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+    /* Signup-specific responsive safety */
+    #signup-form .phone-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+    }
+
+    #signup-form .phone-input-wrap .country-code-input {
+      width: 6rem;
+      flex: 0 0 auto;
+    }
+
+    #signup-form .phone-input-wrap .phone-number-input {
+      flex: 1 1 auto;
+      min-width: 0;
+      width: auto;
+    }
+
+    @media (max-width: 640px) {
+      #panel-signup {
+        overflow-x: hidden;
+      }
+
+      #panel-signup .signup-form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      #panel-signup .madrasa-form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      #signup-form .phone-input-wrap {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      #signup-form .phone-input-wrap .country-code-input,
+      #signup-form .phone-input-wrap .phone-number-input {
+        width: 100%;
+        flex-basis: auto;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-rose-50">
+  <div class="mx-auto max-w-6xl px-4 py-10">
+    <!-- Header -->
+    <header class="mb-10 text-center">
+      <h1 class="text-3xl font-bold tracking-tight text-gray-900">Meelad Portal</h1>
+      <p class="mt-2 text-gray-600">Welcome! Sign in to continue or create a new account.</p>
+    </header>
+
+    <div class="grid gap-6 lg:grid-cols-2">
+      <!-- Left: Hero / Tips -->
+      <section class="order-2 lg:order-1">
+        <div class="h-full rounded-2xl bg-white/70 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur">
+          <h2 class="mb-4 text-xl font-semibold text-gray-900">About your account</h2>
+          <ul class="list-disc space-y-2 pl-6 text-gray-700">
+            <li>You can log in using your <span class="font-medium">Email</span>.</li>
+            <li>During sign up, provide <span class="font-medium">Email compulsorily</span>.</li>
+            <li>Password must be at least <span class="font-medium">4 characters</span>. Use a mix of letters and numbers for more security.</li>
+            <li>You must add <span class="font-medium">Madrasa</span> and <span class="font-medium">Meelad fest name</span>; you can add teams later.</li>
+            <li>You must add students and programs for collecting students' programs</li>
+            <li>Based on fest type selection , the pages will be customized</li>
+          </ul>
+
+          <div class="mt-6 rounded-xl bg-indigo-50 p-4 text-indigo-900">
+            <p class="text-sm">
+              <span class="font-semibold">Admin note:</span>
+              You can add teams after login and update points inside each team anytime.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Auth Card -->
+      <section class="order-1 lg:order-2">
+        <div class="rounded-2xl bg-white/90 p-6 shadow-lg ring-1 ring-black/5">
+          {% if messages %}
+          <div class="mb-4 space-y-2">
+            {% for message in messages %}
+            <div class="rounded-xl px-4 py-3 text-sm font-semibold {% if message.tags == 'error' %}bg-rose-50 text-rose-700 border border-rose-200{% elif message.tags == 'success' %}bg-emerald-50 text-emerald-700 border border-emerald-200{% else %}bg-indigo-50 text-indigo-700 border border-indigo-200{% endif %}">
+              {{ message }}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <!-- Tabs -->
+          <div class="mb-6 flex rounded-xl bg-gray-100 p-1 text-sm">
+            <button id="tab-login" class="flex-1 rounded-lg px-4 py-2 font-medium transition active-tab">Login</button>
+            <button id="tab-signup" class="flex-1 rounded-lg px-4 py-2 font-medium transition">Sign up</button>
+          </div>
+
+          <!-- Login Panel -->
+          <div id="panel-login" class="tab-panel active">
+            <form method="post" action="{% url 'login' %}" class="space-y-4" novalidate>
+              {% csrf_token %}
+
+              {% if login_form.non_field_errors %}
+              <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {% for error in login_form.non_field_errors %}
+                <p class="flex items-start gap-2"><span aria-hidden="true">⚠</span><span>{{ error }}</span></p>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              <div>
+                <label for="login-email" class="mb-1 block text-sm font-medium text-gray-700">Email</label>
+                <input id="login-email" name="email" type="email" required autocomplete="email"
+                       value="{{ login_form.email.value|default:'' }}"
+                       class="w-full rounded-xl border bg-white px-4 py-2.5 text-gray-900 outline-none focus:ring {% if login_form.email.errors %}border-rose-400 bg-rose-50/50 ring-rose-200{% else %}border-gray-300 ring-indigo-200{% endif %}"
+                       placeholder="you@example.com" />
+                {% for error in login_form.email.errors %}
+                <p class="mt-1 text-xs font-medium text-rose-600">{{ error }}</p>
+                {% endfor %}
+              </div>
+
+              <div>
+                <label for="login-password" class="mb-1 block text-sm font-medium text-gray-700">Password</label>
+                <input id="login-password" name="password" type="password" required autocomplete="current-password"
+                       class="w-full rounded-xl border bg-white px-4 py-2.5 text-gray-900 outline-none focus:ring {% if login_form.password.errors %}border-rose-400 bg-rose-50/50 ring-rose-200{% else %}border-gray-300 ring-indigo-200{% endif %}"
+                       placeholder="••••••••" />
+                {% for error in login_form.password.errors %}
+                <p class="mt-1 text-xs font-medium text-rose-600">{{ error }}</p>
+                {% endfor %}
+              </div>
+
+              <div class="flex items-center justify-between">
+                <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                  <input type="checkbox" name="remember" class="h-4 w-4 rounded border-gray-300" />
+                  Remember me
+                </label>
+                <a href="{% url 'forgot_password' %}" class="text-sm font-medium text-indigo-700 hover:underline">Forgot password?</a>
+              </div>
+
+              <button type="submit" data-loader-text="Loading…"
+                      class="mt-2 w-full rounded-xl bg-indigo-600 px-4 py-2.5 font-semibold text-white shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                Sign in
+              </button>
+            </form>
+          </div>
+
+          <!-- Signup Panel -->
+          <div id="panel-signup" class="tab-panel">
+            <form id="signup-form" method="post" action="{% url 'signup' %}" class="signup-form space-y-4" enctype="multipart/form-data" novalidate>
+              {% csrf_token %}
+
+              {% if signup_form.non_field_errors %}
+              <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {% for error in signup_form.non_field_errors %}
+                <p class="flex items-start gap-2"><span aria-hidden="true">⚠</span><span>{{ error }}</span></p>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              <!-- Email / Phone -->
+              <div class="signup-form-grid grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label for="email" class="mb-1 block text-sm font-medium text-gray-700">Email</label>
+                  <input id="email" name="email" type="email" autocomplete="email" required
+                         value="{{ signup_form.email.value|default:'' }}"
+                         class="w-full rounded-xl border bg-white px-4 py-2.5 text-gray-900 outline-none focus:ring {% if signup_form.email.errors %}border-rose-400 bg-rose-50/50 ring-rose-200{% else %}border-gray-300 ring-indigo-200{% endif %}"
+                         placeholder="you@example.com" />
+                  <p id="email-error" class="mt-1 text-xs font-medium text-rose-600 {% if not signup_form.email.errors %}hidden{% endif %}">{% for error in signup_form.email.errors %}{{ error }} {% endfor %}</p>
+                </div>
+                <div>
+                  <label for="phone_number" class="mb-1 block text-sm font-medium text-gray-700">Phone</label>
+                  <div class="phone-input-wrap">
+                    <input id="country_code" name="country_code" type="text" value="{{ request.POST.country_code|default:'+91' }}"
+                           class="country-code-input rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring" />
+                    <input id="phone_number" name="phone_number" type="tel" required
+                           value="{{ signup_form.phone_number.value|default:'' }}"
+                           class="phone-number-input rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-900 outline-none ring-indigo-200 focus:ring"
+                           placeholder="9876543210" />
+                  </div>
+                  <p id="phone_number-error" class="mt-1 text-xs font-medium text-rose-600 {% if not signup_form.phone_number.errors %}hidden{% endif %}">{% for error in signup_form.phone_number.errors %}{{ error }} {% endfor %}</p>
+                </div>
+              </div>
+
+              <!-- Passwords -->
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label for="password1" class="mb-1 block text-sm font-medium text-gray-700">Password</label>
+                  <input id="password1" name="password1" type="password" required minlength="4" autocomplete="new-password"
+                         class="w-full rounded-xl border bg-white px-4 py-2.5 text-gray-900 outline-none focus:ring {% if signup_form.password1.errors %}border-rose-400 bg-rose-50/50 ring-rose-200{% else %}border-gray-300 ring-indigo-200{% endif %}"
+                         placeholder="At least 4 characters" />
+                  <p id="password1-error" class="mt-1 text-xs font-medium text-rose-600 {% if not signup_form.password1.errors %}hidden{% endif %}">{% for error in signup_form.password1.errors %}{{ error }} {% endfor %}</p>
+                </div>
+                <div>
+                  <label for="password2" class="mb-1 block text-sm font-medium text-gray-700">Confirm Password</label>
+                  <input id="password2" name="password2" type="password" required minlength="4" autocomplete="new-password"
+                         class="w-full rounded-xl border bg-white px-4 py-2.5 text-gray-900 outline-none focus:ring {% if signup_form.password2.errors %}border-rose-400 bg-rose-50/50 ring-rose-200{% else %}border-gray-300 ring-indigo-200{% endif %}"
+                         placeholder="Re-enter password" />
+                  <p id="password2-error" class="mt-1 text-xs font-medium text-rose-600 {% if not signup_form.password2.errors %}hidden{% endif %}">{% for error in signup_form.password2.errors %}{{ error }} {% endfor %}</p>
+                </div>
+              </div>
+
+              <!-- Madrasa details -->
+              <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <h3 class="mb-4 text-sm font-semibold text-gray-800">Madrasa details</h3>
+                <div class="madrasa-form-grid mt-2 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label for="madrasa_name" class="mb-1 block text-sm font-medium text-gray-700">Madrasa Name <span class="text-rose-600">*</span></label>
+                    <input id="madrasa_name" name="madrasa_name" type="text" required
+                           value="{{ signup_form.madrasa_name.value|default:'' }}"
+                           class="w-full rounded-xl border bg-white px-4 py-2.5 text-gray-900 outline-none focus:ring {% if signup_form.madrasa_name.errors %}border-rose-400 bg-rose-50/50 ring-rose-200{% else %}border-gray-300 ring-indigo-200{% endif %}"
+                           placeholder="Your Madrasa" />
+                    {% for error in signup_form.madrasa_name.errors %}
+                    <p class="mt-1 text-xs font-medium text-rose-600">{{ error }}</p>
+                    {% endfor %}
+                  </div>
+                  <div>
+                    <label for="meelad_fest_name" class="mb-1 block text-sm font-medium text-gray-700">Meelad Fest Name <span class="text-rose-600">*</span></label>
+                    <input id="meelad_fest_name" name="meelad_fest_name" type="text" required
+                           value="{{ signup_form.meelad_fest_name.value|default:'' }}"
+                           class="w-full rounded-xl border bg-white px-4 py-2.5 text-gray-900 outline-none focus:ring {% if signup_form.meelad_fest_name.errors %}border-rose-400 bg-rose-50/50 ring-rose-200{% else %}border-gray-300 ring-indigo-200{% endif %}"
+                           placeholder="Meelad Fest Name" />
+                    {% for error in signup_form.meelad_fest_name.errors %}
+                    <p class="mt-1 text-xs font-medium text-rose-600">{{ error }}</p>
+                    {% endfor %}
+                  </div>
+                  <div>
+                    <label for="{{ signup_form.fest_type.id_for_label }}" class="mb-1 block text-sm font-medium text-gray-700">Fest Type <span class="text-rose-600">*</span></label>
+                    <div class="relative">
+                      {{ signup_form.fest_type }}
+                      <svg class="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M5 7.5 10 12.5 15 7.5" />
+                      </svg>
+                    </div>
+                    {% for error in signup_form.fest_type.errors %}
+                    <p class="mt-1 text-xs font-medium text-rose-600">{{ error }}</p>
+                    {% endfor %}
+                    <p class="mt-1 text-xs text-gray-500">Boys only, Girls only, or Both — all pages, programs and scores follow this.</p>
+                  </div>
+                  <div>
+                    <label for="madrasa_reg_number" class="mb-1 block text-sm font-medium text-gray-700">Registration Number</label>
+                    <input id="madrasa_reg_number" name="madrasa_reg_number" type="text"
+                           class="form-input"
+                           placeholder="(Optional)" />
+                  </div>
+                  <div>
+                    <label for="madrasa_sadr" class="mb-1 block text-sm font-medium text-gray-700">Sadr Muallim</label>
+                    <input id="madrasa_sadr" name="madrasa_sadr" type="text"
+                           class="form-input"
+                           placeholder="(Optional)" />
+                  </div>
+                  <div>
+                    <label for="convenor_name_1" class="mb-1 block text-sm font-medium text-gray-700">Convenor Name 1</label>
+                    <input id="convenor_name_1" name="convenor_name_1" type="text"
+                           class="form-input"
+                           placeholder="(Optional)" />
+                  </div>
+                  <div>
+                    <label for="convenor_name_2" class="mb-1 block text-sm font-medium text-gray-700">Convenor Name 2</label>
+                    <input id="convenor_name_2" name="convenor_name_2" type="text"
+                           class="form-input"
+                           placeholder="(Optional)" />
+                  </div>
+                  <div class="sm:col-span-2">
+                    <label for="sadr_signature" class="mb-1 block text-sm font-medium text-gray-700">Sadr Signature PNG / JPG</label>
+                    <input id="sadr_signature" name="sadr_signature" type="file" accept="image/png,image/jpeg,image/jpg"
+                           class="form-input" />
+                    {% for error in signup_form.sadr_signature.errors %}
+                    <p class="mt-1 text-xs font-medium text-rose-600">{{ error }}</p>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" data-loader-text="Creating account…"
+                      class="w-full rounded-xl bg-emerald-600 px-4 py-2.5 font-semibold text-white shadow hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+                Create account
+              </button>
+            </form>
+          </div>
+
+          <!-- Student portal login (code-based) -->
+          <div class="mt-6 border-t border-gray-100 pt-4 text-center">
+            <p class="text-sm text-gray-500">Are you a <span class="font-semibold">student</span>?</p>
+            <a href="{% url 'student_login' %}"
+               class="mt-1.5 inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 hover:text-indigo-900 transition">
+              🎓 Login with your code — Student Portal &rarr;
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="mt-10 text-center text-xs text-gray-500">
+      © <span id="year"></span> Team Mahara. All rights reserved.
+    </footer>
+  </div>
+
+  <script>
+    // Tabs
+    const tabLogin = document.getElementById('tab-login');
+    const tabSignup = document.getElementById('tab-signup');
+    const panelLogin = document.getElementById('panel-login');
+    const panelSignup = document.getElementById('panel-signup');
+
+    function activate(tab) {
+      if (tab === 'login') {
+        panelLogin.classList.add('active');
+        panelSignup.classList.remove('active');
+        tabLogin.classList.add('active-tab');
+        tabSignup.classList.remove('active-tab');
+      } else {
+        panelSignup.classList.add('active');
+        panelLogin.classList.remove('active');
+        tabSignup.classList.add('active-tab');
+        tabLogin.classList.remove('active-tab');
+      }
+    }
+    tabLogin.addEventListener('click', () => activate('login'));
+    tabSignup.addEventListener('click', () => activate('signup'));
+    // After a failed POST the matching tab must stay open so the inline
+    // server-side errors rendered next to each field are visible.
+    activate('{% if signup_form.errors %}signup{% else %}login{% endif %}');
+
+    // Footer year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Signup validation — detailed, inline per-field errors.
+    function setFieldError(id, message) {
+      const box = document.getElementById(id + '-error');
+      const input = document.getElementById(id);
+      if (box) {
+        box.textContent = message;
+        box.classList.remove('hidden');
+      }
+      if (input) {
+        input.classList.remove('border-gray-300', 'ring-indigo-200');
+        input.classList.add('border-rose-400', 'ring-rose-200');
+      }
+    }
+
+    function clearFieldErrors(ids) {
+      ids.forEach(function (id) {
+        const box = document.getElementById(id + '-error');
+        const input = document.getElementById(id);
+        if (box) {
+          box.textContent = '';
+          box.classList.add('hidden');
+        }
+        if (input) {
+          input.classList.remove('border-rose-400', 'ring-rose-200');
+          input.classList.add('border-gray-300', 'ring-indigo-200');
+        }
+      });
+    }
+
+    document.getElementById('signup-form').addEventListener('submit', function (e) {
+      const email = document.getElementById('email').value.trim();
+      const cc = document.getElementById('country_code').value.trim();
+      const phone = document.getElementById('phone_number').value.trim();
+      const p1 = document.getElementById('password1').value;
+      const p2 = document.getElementById('password2').value;
+
+      clearFieldErrors(['email', 'phone_number', 'password1', 'password2']);
+
+      let firstInvalid = null;
+      const fail = function (id, msg) {
+        setFieldError(id, msg);
+        if (!firstInvalid) firstInvalid = id;
+      };
+
+      if (!email && !phone) {
+        fail('email', 'Provide at least an Email or a Phone Number.');
+      }
+      if (phone && !/^\d{10,15}$/.test(phone.replace(/\D/g, ''))) {
+        fail('phone_number', 'Phone must be 10–15 digits (numbers only).');
+      }
+      if (cc && !/^\+?\d{1,4}$/.test(cc)) {
+        fail('phone_number', 'Country code must look like +91.');
+      }
+      if (p1.length < 4) {
+        fail('password1', 'Password must be at least 4 characters.');
+      }
+      if (p1 !== p2) {
+        fail('password2', 'Passwords do not match.');
+      }
+
+      if (firstInvalid) {
+        e.preventDefault();
+        const el = document.getElementById(firstInvalid);
+        if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+  </script>
+
+  {% include '_submit_loader.html' %}
+  {% include '_skeleton_loader.html' %}
+</body>
+</html>

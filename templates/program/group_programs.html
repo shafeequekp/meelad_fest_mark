@@ -1,0 +1,225 @@
+{% extends 'program/base.html' %}
+
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Group Programs — {{ meelad_fest_name|default:"Meelad Fest" }}{% endblock %}
+
+{% block page_title_bar %}{% endblock %}
+
+{% block body_attrs %}data-skeleton-on-reload{% endblock %}
+
+{% block extra_head %}
+<style>
+    .program-type-heading {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .program-type-heading h3 {
+      font-size: 0.875rem; font-weight: 700; letter-spacing: 0.05em;
+      text-transform: uppercase; color: #4338ca; white-space: nowrap;
+    }
+    .program-type-heading::after {
+      content: ""; flex: 1; height: 1px; background-color: #e5e7eb;
+    }
+
+    .tab-btn {
+      color: #374151;
+      position: relative;
+      z-index: 10;
+    }
+
+    .tab-btn.active {
+      color: #fff;
+    }
+  </style>
+  {% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+
+  <!-- Page header -->
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2.5">
+        <span class="shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
+        </span>
+        Group Programs
+      </h1>
+      <p class="text-sm text-gray-500 mt-1">Manage group programs — form teams/groups from registered participants, add results and publish.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <a href="{% url 'program_list' %}"
+        class="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3.5 py-2 rounded-xl transition">← Back to Programs</a>
+    </div>
+  </div>
+
+    <!-- Add Group Program (expandable) -->
+    <div class="card p-4 sm:p-6 mb-8">
+      <button type="button" onclick="toggleAddProgram('addGroupProgramSection', this)"
+        class="w-full flex items-center justify-between gap-3 text-left focus:outline-none"
+        aria-expanded="false">
+        <span class="flex items-center gap-2 text-xl font-bold text-indigo-700">
+          <svg class="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+          Add Group Program
+        </span>
+        <span
+          class="add-chevron inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 transition-transform duration-200">▼</span>
+      </button>
+      <div id="addGroupProgramSection" class="hidden mt-5 border-t border-gray-100 pt-5">
+        <form method="post" data-ajax-form data-collapse-target="addGroupProgramSection"
+          class="grid gap-4 sm:grid-cols-2">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add">
+          <input type="hidden" name="next" value="{% url 'group_programs' %}">
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Program Title *</label>
+            <input type="text" name="title" required
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300">
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Description</label>
+            <input type="text" name="description"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300">
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Section *</label>
+            <select name="section" required
+              class="w-full border rounded-lg px-3 py-2 bg-white focus:ring focus:ring-indigo-300">
+              {% if not is_girls_only %}
+              <option value="boys" {% if is_boys_only %}selected{% endif %}>👦 Boys</option>
+              {% endif %}
+              {% if not is_boys_only %}
+              <option value="girls" {% if is_girls_only %}selected{% endif %}>👧 Girls</option>
+              {% endif %}
+            </select>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Category *</label>
+            <select name="category_id" required
+              class="w-full border rounded-lg px-3 py-2 bg-white focus:ring focus:ring-indigo-300">
+              <option value="">-- Select Category --</option>
+              {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
+            </select>
+            <p class="text-xs text-gray-500 mt-1">Stage program by default.</p>
+          </div>
+          <div class="sm:col-span-2 flex justify-end">
+            <button type="submit"
+              class="bg-indigo-600 text-white font-semibold px-5 py-2 rounded-lg shadow hover:bg-indigo-700 transition">
+              Save Group Program
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- List of Group Programs -->
+    <div class="card p-4 sm:p-6 mb-8">
+      <div class="program-type-heading">
+        <h3>Group Programs</h3>
+      </div>
+
+      {% if group_programs %}
+      <div data-ajax-list>
+        {% include 'program/_group_sections.html' %}
+      </div>
+      {% else %}
+      <div data-ajax-list>
+        <p class="text-sm text-gray-400 italic py-6 text-center">No group programs yet. Add one using the Add Group Program button.</p>
+      </div>
+      {% endif %}
+<!-- Overall Team-wise Group Ranking -->
+    {% if group_team_results %}
+    <div class="card p-6">
+      <h2 class="text-xl font-bold text-indigo-700 mb-4">🏆 Overall Team-wise Group Ranking</h2>
+      <p class="text-sm text-gray-500 mb-4">Points summed across all published group programs.</p>
+      <div class="overflow-x-auto">
+        <table class="min-w-full bg-white border rounded-lg shadow">
+          <thead class="bg-indigo-600 text-white">
+            <tr>
+              <th class="px-4 py-3 text-left">Rank</th>
+              <th class="px-4 py-3 text-left">Team</th>
+              <th class="px-4 py-3 text-center">Position</th>
+              <th class="px-4 py-3 text-center">Total Group Points</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            {% for row in group_team_results %}
+            <tr class="hover:bg-gray-50 transition {% if forloop.counter <= 3 %}bg-green-100{% endif %}">
+              <td class="px-4 py-3">
+                <span class="text-lg font-bold">
+                  {% if row.medal %}{{ row.medal }}{% else %}{{ row.rank }}{% endif %}
+                </span>
+              </td>
+              <td class="px-4 py-3 font-semibold">{{ row.team__name }}</td>
+              <td class="px-4 py-3 text-center">
+                {% if row.position_text %}
+                <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold
+                    {% if row.position_text == 'First' %}bg-yellow-100 text-yellow-800
+                    {% elif row.position_text == 'Second' %}bg-gray-200 text-gray-700
+                    {% elif row.position_text == 'Third' %}bg-amber-100 text-amber-800{% endif %}">
+                  {{ row.position_text }}
+                </span>
+                {% else %}<span class="text-gray-400">—</span>{% endif %}
+              </td>
+              <td class="px-4 py-3 text-center font-bold text-indigo-700">{{ row.total_group|floatformat:0 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+<script>
+  // Expand/collapse the Add Group Program form (used by the header button).
+  window.toggleAddProgram = function (sectionId, btn) {
+    var sec = document.getElementById(sectionId);
+    if (!sec) return;
+    var willShow = sec.classList.contains("hidden");
+    sec.classList.toggle("hidden");
+    if (btn) {
+      btn.setAttribute("aria-expanded", willShow ? "true" : "false");
+      var chev = btn.querySelector(".add-chevron");
+      if (chev) chev.classList.toggle("rotate-180", willShow);
+    }
+    if (willShow) {
+      var first = sec.querySelector("input:not([type=hidden]), select");
+      if (first) setTimeout(function () { first.focus(); }, 80);
+    }
+  };
+
+  function showSection(section) {
+    const boys = document.getElementById("boysSection");
+    const girls = document.getElementById("girlsSection");
+    const boysTab = document.getElementById("boysTab");
+    const girlsTab = document.getElementById("girlsTab");
+    const indicator = document.getElementById("sliderIndicator");
+    if (boys) boys.classList.add("hidden");
+    if (girls) girls.classList.add("hidden");
+    const sectionDiv = document.getElementById(section + "Section");
+    if (sectionDiv) sectionDiv.classList.remove("hidden");
+    if (boysTab) boysTab.classList.remove("active");
+    if (girlsTab) girlsTab.classList.remove("active");
+    if (section === "boys") {
+      if (boysTab) boysTab.classList.add("active");
+      if (indicator) indicator.style.transform = "translateX(0%)";
+    } else {
+      if (girlsTab) girlsTab.classList.add("active");
+      if (indicator) indicator.style.transform = "translateX(100%)";
+    }
+  }
+  window.showSection = showSection;
+  // Only drive the slider in both-section mode; single-section fests render
+  // just one panel with no tabs.
+  {% if is_both_sections %}
+  showSection("boys");
+  {% endif %}
+</script>
+
+{% endblock %}

@@ -1,0 +1,27 @@
+{% comment %}
+Reusable empty-state block for lists/panels that have no data yet.
+
+Usage:
+  {% include '_empty_state.html' with icon='🎓' title='No students in this category' message='Add students to get started.' action_onclick="openModal()" action_label='+ Add Student' %}
+
+All parameters are optional. Provide either `action_url` (renders a link) or
+`action_onclick` (renders a button, remember to escape quotes inside the JS).
+{% endcomment %}
+<div data-pager-ignore class="bg-white border-2 border-dashed border-gray-200 rounded-2xl p-10 sm:p-12 text-center">
+  {% if icon %}<p class="text-5xl mb-3">{{ icon }}</p>{% endif %}
+  <h3 class="text-lg font-bold text-gray-700 mb-1">{{ title|default:"Nothing here yet" }}</h3>
+  {% if message %}<p class="text-gray-500 text-sm max-w-sm mx-auto mb-4">{{ message }}</p>{% endif %}
+  {% if action_url %}
+  <a href="{{ action_url }}"
+    class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+    {{ action_label|default:"Add" }}
+  </a>
+  {% elif action_onclick %}
+  <button type="button" onclick="{{ action_onclick }}"
+    class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+    {{ action_label|default:"Add" }}
+  </button>
+  {% endif %}
+</div>

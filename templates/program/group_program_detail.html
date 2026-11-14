@@ -1,0 +1,442 @@
+{% extends 'program/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}{{ program.title }} — Group Management{% endblock %}
+
+{% block page_title_bar %}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .section-heading {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #4338ca;
+      margin-bottom: 1rem;
+    }
+    .section-heading::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background-color: #e5e7eb;
+    }
+    #resultModal.flex { animation: fadeIn 0.2s ease-in-out; }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+  {% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+
+    <!-- Back -->
+    <a href="{% url 'group_programs' %}"
+      class="inline-flex items-center gap-1 text-sm font-semibold text-indigo-700 hover:text-indigo-800 mb-4">← Back to Group Programs</a>
+
+    <!-- Program header -->
+    <div class="bg-white shadow-sm rounded-2xl border border-gray-100 p-5 sm:p-6 mb-6">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold text-indigo-700">{{ program.title }}</h1>
+          {% if program.description %}
+          <p class="text-gray-500 mt-1 text-sm">{{ program.description }}</p>
+          {% endif %}
+          <div class="flex flex-wrap gap-2 mt-3">
+            <span class="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
+              👥 {{ participants|length }} registered participant{% if participants|length != 1 %}s{% endif %}
+            </span>
+            <span class="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700">
+              🗂 {{ groups|length }} group{% if groups|length != 1 %}s{% endif %}
+            </span>
+            <span
+              class="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full
+              {% if program.is_result_published %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-500{% endif %}">
+              {% if program.is_result_published %}✅ Published{% else %}Draft{% endif %}
+            </span>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <!-- Set Result -->
+          {% if groups|length < 2 %}
+          <button type="button" disabled
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-gray-400 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed"
+            title="Create at least two groups first">🏆 Set Result</button>
+          {% elif program.is_result_published %}
+          <button type="button" disabled
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-gray-400 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed"
+            title="Unpublish first to change the result">🏆 Set Result</button>
+          {% else %}
+          <button type="button" onclick="openResultModal()"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-white bg-indigo-600 border border-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 transition">🏆 Set Result</button>
+          {% endif %}
+
+          <!-- Publish / Unpublish -->
+          {% if not group_results %}
+          <button type="button" disabled
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-gray-400 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed"
+            title="Add a result first before publishing">📤 Publish</button>
+          {% elif program.is_result_published %}
+          <button type="button" onclick="publishResult(this, '{{ program.id }}')"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-gray-700 bg-gray-100 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-200 transition">📪 Unpublish</button>
+          {% else %}
+          <button type="button" onclick="publishResult(this, '{{ program.id }}')"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg shadow-sm hover:bg-indigo-100 transition">📤 Publish</button>
+          {% endif %}
+
+          <!-- Download result poster (only once the result is published) -->
+          {% if group_results and program.is_result_published %}
+          <a href="{% url 'download_results_poster_image' program.id poster_section %}"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 transition"
+            title="Download Result Poster">🖼 Poster</a>
+          <a href="{% url 'download_results_poster_image' program.id poster_section %}?force=1"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-amber-700 bg-amber-100 border border-amber-200 rounded-lg hover:bg-amber-200 transition"
+            title="Force re-render and download a fresh poster (bypasses cache)">↻ Force</a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Result summary -->
+      {% if group_results %}
+      <div class="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
+        {% if group_results.first %}<span class="px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-semibold">🥇 {{ group_results.first.display_name }}</span>{% endif %}
+        {% if group_results.second %}<span class="px-3 py-1 rounded-full bg-gray-200 text-gray-700 text-xs font-semibold">🥈 {{ group_results.second.display_name }}</span>{% endif %}
+        {% if group_results.third %}<span class="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">🥉 {{ group_results.third.display_name }}</span>{% endif %}
+      </div>
+      {% endif %}
+<!-- Existing Groups -->
+    <div class="bg-white shadow-sm rounded-2xl border border-gray-100 p-5 sm:p-6 mb-6">
+      <div class="section-heading">🗂 Existing Groups</div>
+
+      {% if groups %}
+      <div class="space-y-3">
+        {% for group in groups %}
+        <div class="rounded-xl border border-gray-200 bg-gray-50 overflow-hidden">
+          <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 flex-wrap gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-bold text-indigo-700 text-sm">
+                {{ group.display_name }}
+              </span>
+              {% if group.team %}
+              <span class="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">Team: {{ group.team.name }}</span>
+              {% endif %}
+              {% if group.group_program_position %}
+              <span class="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full
+                {% if group.group_program_position.name == 'first' %}bg-yellow-100 text-yellow-800
+                {% elif group.group_program_position.name == 'second' %}bg-gray-200 text-gray-700
+                {% else %}bg-amber-100 text-amber-800{% endif %}">
+                Winner: {{ group.group_program_position.get_name_display }}
+              </span>
+              {% else %}
+              <span class="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-200 text-gray-600">No result yet</span>
+              {% endif %}
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button"
+                onclick="event.stopPropagation(); deleteGroup(this, {{ group.id }})"
+                class="text-xs font-semibold text-red-500 hover:bg-red-50 border border-red-200 rounded-lg px-2 py-1 transition"
+                title="Delete this group">🗑 Delete Group</button>
+            </div>
+          </div>
+          <div class="px-4 py-3">
+            <div class="flex flex-wrap gap-2">
+              {% for m in group.participants.all %}
+              <span class="inline-flex items-center gap-2 text-xs bg-white border border-indigo-100 px-2.5 py-1 rounded-lg">
+                👤 {{ m.full_name }}
+                <span class="text-[10px] text-gray-400 font-medium">{{ m.team.name|default:"—" }}</span>
+              </span>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-400 italic py-4">No groups yet. Select participants below and click "Create Group".</p>
+      {% endif %}
+    </div>
+
+    <!-- Participants & Group Creation -->
+    <div class="bg-white shadow-sm rounded-2xl border border-gray-100 p-5 sm:p-6 mb-6">
+      <div class="section-heading">👥 Registered Participants</div>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <p class="text-sm text-gray-500">
+          Select <strong>2 or more</strong> participants from the <strong>same team</strong> to form a group.
+        </p>
+        <div class="flex flex-wrap items-center gap-2">
+          <input type="text" id="participantSearch" oninput="filterParticipants()"
+            placeholder="🔍 Search by name or code... "
+            class="w-full sm:w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring focus:ring-indigo-300">
+          <button type="button" id="createGroupBtn" onclick="event.stopPropagation(); createGroup(this)"
+            class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-lg shadow-sm hover:bg-emerald-700 transition">
+            ➕ Create Group
+          </button>
+        </div>
+        <div class="w-full mt-1 flex flex-wrap items-center gap-3 text-xs font-semibold text-gray-500">
+          <span id="selectionCount"></span>
+          <span id="searchStats"></span>
+        </div>
+      </div>
+
+      {% if participants %}
+      <div class="overflow-x-auto border border-gray-200 rounded-xl">
+        <table id="participantTable" class="min-w-full text-sm">
+          <thead class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
+            <tr>
+              <th class="px-3 py-2 text-left w-10"></th>
+              <th class="px-3 py-2 text-left">Participant</th>
+              <th class="px-3 py-2 text-left">Code</th>
+              <th class="px-3 py-2 text-left">Team</th>
+              <th class="px-3 py-2 text-left">Group Membership</th>
+              <th class="px-3 py-2 text-center">Remove</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for p in participants %}
+            <tr class="hover:bg-gray-50" data-name="{{ p.full_name|lower }}" data-code="{{ p.code_number|default:'' }}">
+              <td class="px-3 py-2 text-center">
+                <input type="checkbox" class="assign-cb" value="{{ p.id }}"
+                  {% if p.id in assigned_ids %}disabled{% endif %}>
+              </td>
+              <td class="px-3 py-2 font-semibold text-gray-800">{{ p.full_name }}</td>
+              <td class="px-3 py-2 text-gray-500">{{ p.code_number|default:"—" }}</td>
+              <td class="px-3 py-2">
+                <span class="inline-flex text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-semibold">{{ p.team.name|default:"—" }}</span>
+              </td>
+              <td class="px-3 py-2">
+                {% if p.id in assigned_ids %}
+                <span class="inline-flex text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-semibold">✓ In a group</span>
+                {% else %}
+                <span class="inline-flex text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-normal">Unassigned</span>
+                {% endif %}
+              </td>
+              <td class="px-3 py-2 text-center">
+                {% if p.id in assigned_ids %}
+                <button type="button" disabled
+                  class="text-gray-300 text-base font-bold cursor-not-allowed" title="Remove from its group first to remove this participant">✕</button>
+                {% else %}
+                <button type="button" onclick="removeParticipant(this, {{ p.id }}, '{{ p.full_name|escapejs }}')"
+                  class="text-red-400 hover:text-red-600 text-base font-bold" title="Remove from program">✕</button>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-400 italic py-4">No participants registered for this program yet.</p>
+      {% endif %}
+    </div>
+<!-- Result Modal -->
+  <div id="resultModal" class="hidden fixed inset-0 z-[170] items-center justify-center bg-gray-900 bg-opacity-60 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+      <h3 class="text-xl font-bold text-indigo-700 mb-4">Set Result — Group-wise</h3>
+
+      <div class="space-y-4 mb-6">
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">🥇 First &nbsp;Group</label>
+          <select id="firstGroupSelect" class="w-full border rounded-lg px-3 py-2 bg-white">
+            <option value="">-- Select Group --</option>
+            {% for group in groups %}
+              {% if not group.group_program_position or group.group_program_position.name == 'first' %}
+              <option {% if group.group_program_position.name == 'first' %}selected{% endif %} value="{{ group.id }}">{{ group.display_name }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">🥈 Second Group</label>
+          <select id="secondGroupSelect" class="w-full border rounded-lg px-3 py-2 bg-white">
+            <option value="">-- Select Group --</option>
+            {% for group in groups %}
+              {% if not group.group_program_position or group.group_program_position.name == 'second' %}
+              <option {% if group.group_program_position.name == 'second' %}selected{% endif %} value="{{ group.id }}">{{ group.display_name }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">🥉 Third &nbsp;Group</label>
+          <select id="thirdGroupSelect" class="w-full border rounded-lg px-3 py-2 bg-white">
+            <option value="">-- Select Group --</option>
+            {% for group in groups %}
+              {% if not group.group_program_position or group.group_program_position.name == 'third' %}
+              <option {% if group.group_program_position.name == 'third' %}selected{% endif %} value="{{ group.id }}">{{ group.display_name }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3">
+        <button type="button" onclick="closeResultModal()"
+          class="px-5 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow hover:bg-gray-300 transition">Cancel</button>
+        <button type="button" onclick="saveGroupPrizes(this)"
+          class="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow hover:bg-indigo-700 transition">Save Result</button>
+      </div>
+    </div>
+  </div>
+
+  </div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+
+    const PROGRAM_ID = {{ program.id }};
+    const CSRF = "{{ csrf_token }}";
+
+    function postForm(action, extra) {
+      const fd = new FormData();
+      fd.append("action", action);
+      Object.entries(extra || {}).forEach(([k, v]) => {
+        if (Array.isArray(v)) {
+          v.forEach(item => fd.append(k, item));
+        } else {
+          fd.append(k, v);
+        }
+      });
+      return fetch(`/program/group-programs/${PROGRAM_ID}/`, {
+        method: "POST",
+        headers: { "X-CSRFToken": CSRF },
+        body: fd
+      }).then(r => r.json()).then(d => {
+        if (d.message === "success") return d;
+        throw new Error(d.details || "Request failed.");
+      });
+    }
+
+    // Helper: show how many unassigned participants are selected (for the counter)
+    function updateSelectionCount() {
+      const el = document.getElementById("selectionCount");
+      if (!el) return;
+      const n = document.querySelectorAll(".assign-cb:checked:not(:disabled)").length;
+      el.textContent = n > 0 ? `${n} unassigned participant${n === 1 ? "" : "s"} selected` : "";
+    }
+
+    // Create a group from the selected (currently unassigned) participants.
+    window.createGroup = function (btn) {
+      const checked = Array.from(document.querySelectorAll(".assign-cb:checked"));
+      // Only enabled (unassigned) selections can form a group; disabled ones are
+      // already assigned elsewhere and are ignored so they never lower the count.
+      const ids = checked.filter(cb => !cb.disabled).map(cb => cb.value);
+      if (ids.length < 2) {
+        const stuck = checked.filter(cb => cb.disabled).length;
+        if (stuck > 0) {
+          showToast("One or more selected participants are already in a group.", "warning");
+        } else if (checked.length === 0) {
+          showToast("Select at least two unassigned participants to form a group.", "warning");
+        } else {
+          showToast("A group needs at least two members — please select two or more.", "warning");
+        }
+        return;
+      }
+      window.MeeladLoader && MeeladLoader.button(btn);
+      postForm("create_group", { participant_ids: ids })
+        .then(() => { showToast("Group created!", "success"); setTimeout(() => location.reload(), 900); })
+        .catch(e => { window.MeeladLoader && MeeladLoader.restoreButton(btn); showToast(e.message, "error"); });
+    };
+
+    // Filter the participant table by name or code (shows a live match count).
+    window.filterParticipants = function () {
+      const q = (document.getElementById("participantSearch").value || "").trim().toLowerCase();
+      let shown = 0, total = 0;
+      document.querySelectorAll("#participantTable tbody tr").forEach(row => {
+        total++;
+        const name = (row.dataset.name || "").toLowerCase();
+        const code = (row.dataset.code || "").toLowerCase();
+        const visible = (!q || name.includes(q) || code.includes(q));
+        row.style.display = visible ? "" : "none";
+        if (visible) shown++;
+      });
+      const stats = document.getElementById("searchStats");
+      if (stats) stats.textContent = q ? `Showing ${shown} of ${total} participant${total === 1 ? "" : "s"}` : "";
+    };
+
+    // Delete a whole group
+    window.deleteGroup = function (btn, groupId) {
+      window.MeeladConfirm.show("Delete this group? Its members will become unassigned.").then(function (ok) {
+        if (!ok) return;
+        window.MeeladLoader && MeeladLoader.button(btn);
+        postForm("delete_group", { group_id: groupId })
+          .then(() => { showToast("Group deleted.", "success"); setTimeout(() => location.reload(), 900); })
+          .catch(e => { window.MeeladLoader && MeeladLoader.restoreButton(btn); showToast(e.message, "error"); });
+      });
+    };
+
+    // Remove a participant from the program entirely
+    window.removeParticipant = function (btn, participantId, name) {
+      window.MeeladConfirm.show(`Remove "${name}" from this program?`).then(function (ok) {
+        if (!ok) return;
+        window.MeeladLoader && MeeladLoader.button(btn);
+        postForm("remove_participant", { participant_id: participantId })
+          .then(() => { showToast("Participant removed.", "success"); setTimeout(() => location.reload(), 900); })
+          .catch(e => { window.MeeladLoader && MeeladLoader.restoreButton(btn); showToast(e.message, "error"); });
+      });
+    };
+
+    // Result modal
+    window.openResultModal = function () {
+      const modal = document.getElementById("resultModal");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    };
+    window.closeResultModal = function () {
+      const modal = document.getElementById("resultModal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    };
+    document.getElementById("resultModal").addEventListener("click", function (e) {
+      if (e.target === this) closeResultModal();
+    });
+
+    window.saveGroupPrizes = function (btn) {
+      const norm = v => v && v.trim() !== "" ? v : null;
+      window.MeeladLoader && MeeladLoader.button(btn);
+      fetch(`/program/${PROGRAM_ID}/save-group-prize/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": CSRF },
+        body: JSON.stringify({
+          first: norm(document.getElementById("firstGroupSelect").value),
+          second: norm(document.getElementById("secondGroupSelect").value),
+          third: norm(document.getElementById("thirdGroupSelect").value),
+        })
+      })
+        .then(r => r.json())
+        .then(d => {
+          if (d.message === "success") { showToast("Result saved!", "success"); setTimeout(() => location.reload(), 900); }
+          else throw new Error(d.details || "Failed to save result.");
+        })
+        .catch(e => { window.MeeladLoader && MeeladLoader.restoreButton(btn); showToast(e.message, "error"); });
+    };
+
+    window.publishResult = function (btn) {
+      window.MeeladLoader && MeeladLoader.button(btn);
+      fetch(`/program/${PROGRAM_ID}/publish_result/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": CSRF }
+      })
+        .then(r => r.json())
+        .then(d => { if (d.message === "success") { showToast("Publish status updated.", "success"); setTimeout(() => location.reload(), 900); } else { window.MeeladLoader && MeeladLoader.restoreButton(btn); throw new Error("Failed to update publish status."); } })
+        .catch(e => { window.MeeladLoader && MeeladLoader.restoreButton(btn); showToast(e.message, "error"); });
+    };
+
+    // Keep the selection counter in sync as checkboxes are toggled.
+    window.updateSelectionCount = updateSelectionCount;
+    Array.from(document.querySelectorAll(".assign-cb")).forEach(cb => {
+      cb.addEventListener("change", updateSelectionCount);
+    });
+    updateSelectionCount();
+
+  });
+</script>
+
+{% endblock %}

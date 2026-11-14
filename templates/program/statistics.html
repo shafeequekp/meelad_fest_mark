@@ -1,0 +1,469 @@
+{% extends 'program/base.html' %}
+
+{% load static %}
+
+
+{% block title %}Statistics Reports{% endblock %}
+{% block page_title_bar %}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-8">
+
+  <!-- Page header — same band + stat-strip pattern as Venues / Programs / Results -->
+  <div class="bg-white shadow-sm rounded-2xl overflow-hidden">
+    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-6 sm:px-8">
+      <div class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div>
+          <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white">📊 Statistics</h1>
+          <p class="text-indigo-100 mt-1 text-sm sm:text-base">
+            Points, participation and analytics
+            {% if meelad_fest_name %}<span class="font-semibold">· {{ meelad_fest_name }}</span>{% endif %}
+          </p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3">
+          {% if chart_data.has_points %}
+          <button id="download-all-charts" type="button"
+            title="Download every chart as a PNG"
+            data-no-skeleton
+            class="inline-flex items-center justify-center gap-2 px-5 py-3 bg-white text-indigo-700 font-bold rounded-xl shadow-lg hover:bg-indigo-50 transition text-sm sm:text-base">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a1 1 0 001 1h14a1 1 0 001-1v-2M12 4v12m0 0l-4-4m4 4l4-4"/>
+            </svg>
+            Download all charts
+          </button>
+          {% endif %}
+          <a href="{% url 'statistics_download_report' %}?report=students"
+             data-no-skeleton
+             data-stat-export="students"
+             class="inline-flex items-center justify-center gap-2 px-5 py-3 bg-indigo-700 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-800 transition text-sm sm:text-base border border-indigo-500">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 5V3a4 4 0 018 0v2"/>
+            </svg>
+            Export data
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-gray-100">
+      <div class="px-6 py-4">
+        <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Total Students</p>
+        <p class="text-2xl font-extrabold text-indigo-700">{{ total_students }}</p>
+      </div>
+      <div class="px-6 py-4">
+        <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Total Categories</p>
+        <p class="text-2xl font-extrabold text-indigo-700">{{ categories.count }}</p>
+      </div>
+      <div class="px-6 py-4">
+        <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">All Points</p>
+        <p class="text-2xl font-extrabold text-indigo-700">{{ total_points }}</p>
+      </div>
+      <div class="px-6 py-4">
+        <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Top 10 Students</p>
+        <p class="text-2xl font-extrabold text-indigo-700">{{ top_students.count }}</p>
+      </div>
+    </div>
+  </div>
+
+  {% if chart_data.has_points %}
+  <section class="bg-white rounded-2xl shadow-sm border border-indigo-100 p-5">
+    <div>
+      <h2 class="text-lg font-bold text-indigo-700">Fest Analytics</h2>
+      <p class="text-sm text-gray-500">Visual breakdown of points and participation</p>
+    </div>
+
+    <div class="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      {% include 'program/_chart_card.html' with chart_id='chartTeams' title='Points by Team' subtitle='Share of total fest points' icon='shield' %}
+      {% include 'program/_chart_card.html' with chart_id='chartCategories' title='Points by Category' subtitle='Which categories earned the most' icon='category' %}
+      {% if is_both_sections %}
+      {% include 'program/_chart_card.html' with chart_id='chartSections' title='Boys vs Girls Points' subtitle='Section-wise point share' icon='scale' %}
+      {% endif %}
+    </div>
+
+    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+      {% include 'program/_chart_card.html' with chart_id='chartTopStudents' title='Top 10 Students' subtitle='Highest individual points' icon='top' %}
+      {% include 'program/_chart_card.html' with chart_id='chartParticipation' title='Participation by Team' subtitle='Students registered per team' icon='users' %}
+    </div>
+  </section>
+  {% else %}
+  <section class="bg-white rounded-2xl shadow-sm border border-indigo-100 p-8 text-center">
+    <div class="flex justify-center mb-3">{% include 'program/_icon.html' with name='chart' %}</div>
+    <h2 class="text-lg font-bold text-indigo-700">Fest Analytics</h2>
+    <p class="mt-2 text-sm text-gray-500 max-w-md mx-auto">
+      Charts will appear here once results are entered and students have earned points.
+      Add scores from the scoreboard, then revisit this page.
+    </p>
+  </section>
+  {% endif %}
+
+  <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="bg-white rounded-2xl shadow-sm border border-indigo-100 p-5">
+      <div class="flex justify-between items-center">
+        <h2 class="text-lg font-bold text-indigo-700">Section Points</h2>
+        {% if is_both_sections %}
+        <span class="text-xs font-semibold px-3 py-1 rounded-full bg-indigo-100 text-indigo-700">Boys / Girls</span>
+        {% endif %}
+      </div>
+      <div class="mt-4 space-y-4">
+        {% if not is_girls_only %}
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-medium text-gray-700">Boys total points</span>
+          <span class="font-bold text-sky-700">{{ boys_points }}</span>
+        </div>
+        {% endif %}
+        {% if not is_boys_only %}
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-medium text-gray-700">Girls total points</span>
+          <span class="font-bold text-pink-700">{{ girls_points }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-indigo-100 p-5">
+      <div class="flex justify-between items-center">
+        <h2 class="text-lg font-bold text-indigo-700">Download Reports</h2>
+        {% include 'program/_icon.html' with name='download' %}
+      </div>
+      <div class="mt-4 space-y-3">
+        <a href="{% url 'statistics_download_report' %}?report=students" class="block px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 font-semibold text-center">All Students Point Data</a>
+        <a href="{% url 'statistics_download_report' %}?report=category-performance" class="block px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-semibold text-center">Category Performance by Team</a>
+        <a href="{% url 'statistics_download_report' %}?report=top-ten" class="block px-4 py-2 rounded-xl bg-amber-500 text-white hover:bg-amber-600 font-semibold text-center">Top 10 Students Overall</a>
+        <a href="{% url 'statistics_download_report' %}?report=top-category-section" class="block px-4 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700 font-semibold text-center">Top Students by Section & Category</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-2xl shadow-sm border border-indigo-100 overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+      <h2 class="text-xl font-bold text-indigo-700">Top 10 Students</h2>
+      <span class="text-sm text-gray-500">Highest Points</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600">Rank</th>
+            <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600">Student</th>
+            <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600">Code</th>
+            <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600">Section</th>
+            <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600">Category</th>
+            <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600">Team</th>
+            <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600">Points</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for student in top_students %}
+            <tr>
+              <td class="px-4 py-3 text-sm font-bold text-indigo-700">#{{ forloop.counter }}</td>
+              <td class="px-4 py-3 text-sm font-semibold text-gray-900">{{ student.full_name }}</td>
+              <td class="px-4 py-3 text-sm text-gray-700">{{ student.code_number }}</td>
+              <td class="px-4 py-3 text-sm text-gray-700">
+                {% if student.gender == 'male' %}Boys{% elif student.gender == 'female' %}Girls{% else %}{{ student.gender }}{% endif %}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-700">{{ student.category.name }}</td>
+              <td class="px-4 py-3 text-sm text-gray-700">{{ student.team.name }}</td>
+              <td class="px-4 py-3 text-sm font-bold text-gray-900">{{ student.total_point }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="7" class="px-4 py-6 text-center text-gray-500">No student points are available yet.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-2xl shadow-sm border border-indigo-100 p-5">
+    <h2 class="text-lg font-bold text-indigo-700 mb-4">All Categories & Teams Summary</h2>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600">Team</th>
+            <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600">Category</th>
+            {% if not is_girls_only %}
+            <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600">Boys Points</th>
+            {% endif %}
+            {% if not is_boys_only %}
+            <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600">Girls Points</th>
+            {% endif %}
+            <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600">Students</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for row in summary_rows %}
+            <tr>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ row.team.name }}</td>
+              <td class="px-4 py-3 text-sm text-gray-700">{{ row.category.name }}</td>
+              {% if not is_girls_only %}
+              <td class="px-4 py-3 text-sm text-gray-700">{{ row.boys_points }}</td>
+              {% endif %}
+              {% if not is_boys_only %}
+              <td class="px-4 py-3 text-sm text-gray-700">{{ row.girls_points }}</td>
+              {% endif %}
+              <td class="px-4 py-3 text-sm text-gray-700">{{ row.students_count }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="px-4 py-6 text-center text-gray-500">No team/category data found.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+
+{{ chart_data|json_script:'fest-chart-data' }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  // Offline fallback: serve the local Chart.js copy if the CDN fails to load.
+  if (typeof Chart === 'undefined') {
+    document.write('<script src="{% static "program/js/chart.umd.min.js" %}"><\/script>');
+  }
+</script>
+<script src="{% static 'program/js/statistics.js' %}"></script>
+<script>
+(function () {
+  'use strict';
+
+  var PALETTE = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#0ea5e9',
+                 '#8b5cf6', '#14b8a6', '#f97316', '#d946ef', '#84cc16'];
+  var byId = {};              // chart canvas id -> { cfg, chart }
+
+  function toast(msg, type) {
+    if (typeof window.MeeladToast === 'function') {
+      try { window.MeeladToast(msg, type || 'info'); return; } catch (e) { /* fall through */ }
+    }
+    var t = document.createElement('div');   // minimal fallback feedback
+    t.className = 'fixed bottom-5 right-5 z-70 px-4 py-2 rounded-lg shadow-lg text-sm text-white '
+      + (type === 'error' ? 'bg-rose-600' : type === 'success' ? 'bg-emerald-600' : 'bg-gray-800');
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 3200);
+  }
+
+  function chartConfigs(data) {
+    var cfgs = [];
+    if (document.getElementById('chartTeams')) {
+      cfgs.push({ id: 'chartTeams', file: 'points-by-team', type: 'doughnut',
+        labels: data.teams.labels, values: data.teams.points,
+        colors: data.teams.colors, label: 'Points' });
+    }
+    if (document.getElementById('chartCategories')) {
+      cfgs.push({ id: 'chartCategories', file: 'points-by-category', type: 'pie',
+        labels: data.categories.labels, values: data.categories.points,
+        colors: PALETTE, label: 'Points' });
+    }
+    if (document.getElementById('chartSections')) {
+      cfgs.push({ id: 'chartSections', file: 'boys-vs-girls-points', type: 'pie',
+        labels: data.sections.labels, values: data.sections.points,
+        colors: ['#0ea5e9', '#ec4899'], label: 'Points' });
+    }
+    if (document.getElementById('chartTopStudents')) {
+      cfgs.push({ id: 'chartTopStudents', file: 'top-10-students', type: 'bar',
+        labels: data.top_students.labels, values: data.top_students.points,
+        colors: '#6366f1', label: 'Points', horizontal: true });
+    }
+    if (document.getElementById('chartParticipation')) {
+      cfgs.push({ id: 'chartParticipation', file: 'participation-by-team', type: 'bar',
+        labels: data.teams.labels, values: data.teams.students,
+        colors: '#14b8a6', label: 'Students' });
+    }
+    return cfgs;
+  }
+
+  function showFallback(canvas) {
+    var box = canvas.parentElement;
+    box.innerHTML = '<div class="h-64 flex items-center justify-center text-sm '
+      + 'text-gray-500 bg-gray-100 rounded-lg px-4 text-center">'
+      + 'Charts could not load (no internet access to the chart library). '
+      + 'The data is still available in the tables below.</div>';
+  }
+
+  function hideDownloadButtons() {
+    document.querySelectorAll('[data-chart-download]').forEach(function (b) { b.remove(); });
+    var all = document.getElementById('download-all-charts');
+    if (all) all.remove();
+  }
+
+  function buildCharts(data) {
+    if (!window.Chart) {                       // CDN blocked / offline
+      hideDownloadButtons();
+      document.querySelectorAll('canvas[id]').forEach(showFallback);
+      return;
+    }
+    var reduceMotion = window.matchMedia
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    Chart.defaults.font.family = 'inherit';
+    Chart.defaults.plugins.legend.position = 'bottom';
+    // Per-chart try/catch: one bad config must never kill the other charts
+    // (or leave every download button dead).
+    chartConfigs(data).forEach(function (cfg) {
+      var canvas = document.getElementById(cfg.id);
+      if (!canvas) return;
+      try {
+        var dataset = {
+          label: cfg.label,
+          data: cfg.values,
+          backgroundColor: cfg.colors,
+          borderWidth: 2,
+          borderColor: '#ffffff',
+          borderRadius: cfg.type === 'bar' ? 6 : 0
+        };
+        var options = {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: reduceMotion ? false : { duration: 700 },
+          plugins: {
+            tooltip: {
+              callbacks: { label: function (ctx) {
+                return ' ' + ctx.label + ': ' + ctx.parsed[
+                  cfg.type === 'bar' ? 'x' : 'y'
+                ].toLocaleString() + ' ' + cfg.label.toLowerCase();
+              } }
+            }
+          }
+        };
+        if (cfg.horizontal) {
+          options.indexAxis = 'y';
+          options.scales = { x: { beginAtZero: true, ticks: { precision: 0 } } };
+        } else if (cfg.type === 'bar') {
+          options.scales = { y: { beginAtZero: true, ticks: { precision: 0 } } };
+        }
+        byId[cfg.id] = { cfg: cfg, chart: new Chart(canvas, {
+          type: cfg.horizontal ? 'bar' : cfg.type,
+          data: { labels: cfg.labels, datasets: [dataset] },
+          options: options
+        }) };
+      } catch (err) {
+        showFallback(canvas);
+      }
+    });
+  }
+
+  // ---- Export CSV (AJAX blob download, no page reload) ----
+  function exportReport(report) {
+    var btn = document.querySelector('[data-stat-export="' + report + '"]');
+    if (!btn) return;
+    if (!window.StatisticsDownload) {
+      window.MeeladToast && window.MeeladToast('Download helper not ready.', 'error');
+      return;
+    }
+    if (prepareDownload(btn, 'Preparing ' + report + '…')) {
+      StatisticsDownload.downloadBlob(
+        '{% url "statistics_download_report" %}?report=' + report,
+        report + '_report.csv'
+      );
+    }
+  }
+
+  function saveBlob(blob, filename) {
+    // Anchor must be appended to the DOM before click() — detached anchors
+    // with blob/data URLs are silently ignored by some browsers/webviews.
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+
+  function saveDataUrl(canvas, filename) {
+    var a = document.createElement('a');
+    a.download = filename + '.png';
+    a.href = canvas.toDataURL('image/png');
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  function downloadPng(canvas, filename) {
+    if (!canvas || !canvas.width || !canvas.height) throw new Error('empty canvas');
+    // Flatten onto white so the PNG is readable outside the page background.
+    var flat = document.createElement('canvas');
+    flat.width = canvas.width; flat.height = canvas.height;
+    var ctx = flat.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, flat.width, flat.height);
+    ctx.drawImage(canvas, 0, 0);
+    if (flat.toBlob) {
+      flat.toBlob(function (blob) {
+        if (blob) { saveBlob(blob, filename + '.png'); }
+        else { saveDataUrl(flat, filename); }  // null blob -> data-URL fallback
+      }, 'image/png');
+    } else {
+      saveDataUrl(flat, filename);
+    }
+  }
+
+  function downloadOne(id) {
+    var entry = byId[id];
+    if (!entry) { toast('Chart is not ready yet.', 'error'); return; }
+    try {
+      downloadPng(entry.chart.canvas, entry.cfg.file);
+      toast('Chart downloaded as PNG.', 'success');
+    } catch (err) {
+      toast('Could not download this chart.', 'error');
+    }
+  }
+
+  function downloadAll() {
+    var ids = Object.keys(byId);
+    if (!ids.length) { toast('No charts are available to download.', 'error'); return; }
+    var allBtn = document.getElementById('download-all-charts');
+    if (allBtn && allBtn.dataset.dlBusy === '1') return; // already running
+    if (allBtn) prepareDownload(allBtn, 'Downloading\u2026');
+    toast('Downloading ' + ids.length + ' charts\u2026', 'info');
+    ids.forEach(function (id, i) {
+      setTimeout(function () {
+        try { downloadPng(byId[id].chart.canvas, byId[id].cfg.file); }
+        catch (err) { toast('Could not download one of the charts.', 'error'); }
+      }, i * 450);
+    });
+    if (allBtn) {
+      setTimeout(function () { finishDownload(allBtn); }, ids.length * 450 + 1600);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    // Register the delegated handler FIRST — a failure anywhere in the chart
+    // build can then never leave the download buttons dead.
+    document.addEventListener('click', function (ev) {
+      var btn = ev.target.closest('[data-chart-download]');
+      if (btn) { downloadOne(btn.getAttribute('data-chart-download')); return; }
+      if (ev.target.closest('#download-all-charts')) { downloadAll(); }
+    });
+
+    // Export links (data-stat-export) use the AJAX blob helper.
+    document.querySelectorAll('[data-stat-export]').forEach(function (a) {
+      a.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        exportReport(a.getAttribute('data-stat-export'));
+      });
+    });
+
+    var dataEl = document.getElementById('fest-chart-data');
+    var data = null;
+    if (dataEl) {
+      try { data = JSON.parse(dataEl.textContent); } catch (err) { data = null; }
+    }
+    if (!data) {
+      hideDownloadButtons();
+      document.querySelectorAll('canvas[id]').forEach(showFallback);
+      return;
+    }
+    try { buildCharts(data); } catch (err) {
+      hideDownloadButtons();
+      document.querySelectorAll('canvas[id]').forEach(showFallback);
+    }
+  });
+})();
+</script>
+{% endblock %}

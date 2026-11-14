@@ -1,0 +1,1495 @@
+{% extends 'program/base.html' %}
+{% load static %}
+
+{% block title %}{{ category.name }} — Meelad Fest{% endblock %}
+
+{% block page_title_bar %}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .slider-wrapper {
+      display: flex;
+      width: 100%;
+      transition: transform 0.4s ease-in-out;
+    }
+
+    .slider-section {
+      width: 100%;
+      flex-shrink: 0;
+      overflow-y: visible;
+    }
+
+    [x-cloak] {
+      display: none !important;
+    }
+
+    .gender-tab.active {
+      color: #fff;
+    }
+
+    .tab-slider {
+      transition: transform 0.3s ease-in-out;
+    }
+
+    /* Modal animation */
+    .modal-enter {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+
+    .modal-enter-active {
+      opacity: 1;
+      transform: scale(1);
+      transition: all 0.3s ease-out;
+    }
+
+    .modal-exit {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .modal-exit-active {
+      opacity: 0;
+      transform: scale(0.95);
+      transition: all 0.2s ease-in;
+    }
+  </style>
+  <script>
+
+
+
+
+
+    let genderIndex = 0; // 0 = first section, 1 = second section
+    let sectionIndex = 0; // 0 = Students, 1 = Programs
+
+    function goToGender(index) {
+      genderIndex = index;
+      // Panels/tabs for the inactive fest section are not rendered at all on
+      // boys-only / girls-only fests, so every lookup must be null-safe.
+      const boysSection = document.getElementById('boysSection');
+      const girlsSection = document.getElementById('girlsSection');
+      if (boysSection) boysSection.classList.toggle('hidden', index !== 0);
+      if (girlsSection) girlsSection.classList.toggle('hidden', index !== 1);
+
+      const slider = document.getElementById('genderSlider');
+      if (slider) slider.style.transform = `translateX(${index * 100}%)`;
+
+      const boysTab = document.getElementById('boysTab');
+      const girlsTab = document.getElementById('girlsTab');
+      if (boysTab) boysTab.classList.toggle('active', index === 0);
+      if (girlsTab) girlsTab.classList.toggle('active', index === 1);
+
+      goToSlide(0, index);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      // Single-section fests render only one gender panel — open that one.
+      goToGender(document.getElementById('boysSection') ? 0 : 1);
+    });
+
+
+
+    function goToSlide(index, gender = genderIndex) {
+      const wrapper = gender === 0
+        ? document.getElementById("boysSliderWrapper")
+        : document.getElementById("girlsSliderWrapper");
+      const slider = gender === 0
+        ? document.getElementById("boysTabSlider")
+        : document.getElementById("girlsTabSlider");
+
+      sectionIndex = index;
+      if (wrapper) wrapper.style.transform = `translateX(-${index * 100}%)`;
+      if (slider) slider.style.transform = `translateX(${index * 100}%)`;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function toggleModal(id, gender = null) {
+      const modal = document.getElementById(id);
+      if (!modal) return;
+
+      if (modal.classList.contains("hidden")) {
+        const genderInput = modal.querySelector('#programGender');
+        if (genderInput) {
+          genderInput.value = gender || (genderIndex === 0 ? 'male' : 'female');
+        }
+
+        /* openPanel adds the `flex` class (required for centering) and the
+           shared header script animates the panel via `.is-open`. */
+        openPanel(id);
+      } else {
+        closePanel(id);
+      }
+    }
+
+    function openEditModal(btn) {
+      document.getElementById('editStudentName').value = btn.dataset.name || '';
+      document.getElementById('editStudentGender').value = btn.dataset.gender || '';
+      document.getElementById('editStudentCode').value = btn.dataset.code || '';
+      document.getElementById('editStudentTeam').value = btn.dataset.team || '';
+      document.getElementById('editStudentForm').action = btn.dataset.editUrl;
+      toggleModal('editStudentModal');
+    }
+
+
+  </script>
+
+  <script src="{% static 'program/js/alpine.min.js' %}" defer></script>
+  <script src="{% static 'program/js/qrcode.min.js' %}" defer></script>
+
+  <script>
+    const madrasaId = "{{ madrasa_id }}";
+    const regLinkActive = "{{ reg_link_active|yesno:'true,false' }}";
+    const regLink = "{{ form_url }}"
+    const parentLink = "{{ parent_form_url }}"
+    const festName = "{{ meelad_fest_name|default:'Meelad Fest'|escapejs }}"
+
+    /* ---- QR image sharing (WhatsApp) ------------------------------------
+       qrcode.min.js paints the QR into a <canvas> (it later swaps it for an
+       identical <img data:…>). A wa.me link can only carry *text*, so to send
+       the QR image itself we export the canvas as a PNG and hand it to the
+       native share sheet (Web Share Level 2 — WhatsApp is one of the targets).
+       Browsers without file sharing fall back to copying the PNG to the
+       clipboard (or downloading it) and opening the WhatsApp chat, so the
+       image only has to be pasted / attached. */
+    window.meeladQrSource = function (hostId) {
+      const host = document.getElementById(hostId);
+      if (!host) return null;
+      const canvas = host.querySelector("canvas");
+      if (canvas && canvas.width) return { kind: "canvas", el: canvas };
+      const img = host.querySelector("img");
+      if (img && img.src) return { kind: "img", el: img };
+      return null;
+    };
+
+    window.meeladQrPngFile = function (hostId, filename, size) {
+      return new Promise(function (resolve) {
+        const src = window.meeladQrSource(hostId);
+        if (!src) { resolve(null); return; }
+
+        const draw = function (source) {
+          try {
+            size = size || 640;                     // crisp enough to scan
+            const pad = Math.round(size * 0.06);    // quiet zone around code
+            const out = document.createElement("canvas");
+            out.width = size;
+            out.height = size;
+            const ctx = out.getContext("2d");
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, size, size);
+            ctx.imageSmoothingEnabled = false;      // keep module edges sharp
+            ctx.drawImage(source, pad, pad, size - pad * 2, size - pad * 2);
+            out.toBlob(function (blob) {
+              resolve(blob ? new File([blob], filename, { type: "image/png" }) : null);
+            }, "image/png");
+          } catch (err) {
+            console.error("❌ Could not export QR code:", err);
+            resolve(null);
+          }
+        };
+
+        if (src.kind === "canvas") { draw(src.el); return; }
+        if (src.el.complete && src.el.naturalWidth) { draw(src.el); return; }
+        src.el.addEventListener("load", function () { draw(src.el); }, { once: true });
+        src.el.addEventListener("error", function () { resolve(null); }, { once: true });
+      });
+    };
+
+    window.meeladDownloadQr = function (file, filename) {
+      const url = URL.createObjectURL(file);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename || "meelad-qr.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    };
+
+    window.meeladOpenWhatsApp = function (text) {
+      const url = "https://wa.me/?text=" + encodeURIComponent(text || "");
+      const win = window.open(url, "_blank", "noopener");
+      if (!win) showToast("Allow pop-ups to open WhatsApp.", "warning");
+      return win;
+    };
+
+    /* Share a rendered QR as an image on WhatsApp.
+       opts: { text, filename, title, button } */
+    window.meeladShareQr = function (hostId, opts) {
+      opts = opts || {};
+      const text = opts.text || ("🏆 " + festName);
+      const filename = opts.filename || "meelad-qr.png";
+      const btn = opts.button || null;
+      if (btn) prepareDownload(btn, "Preparing…");
+
+      /* No file sharing: copy (preferred) or download the PNG, then open the
+         chat so the image only needs pasting / attaching. */
+      const fallback = function (file) {
+        const copyPng = (navigator.clipboard && typeof ClipboardItem !== "undefined")
+          ? navigator.clipboard.write([new ClipboardItem({ "image/png": file })])
+          : Promise.reject(new Error("image clipboard unsupported"));
+        return copyPng
+          .then(function () {
+            meeladOpenWhatsApp(text);
+            showToast("QR code copied — paste it into the WhatsApp chat.", "success");
+          })
+          .catch(function () {
+            meeladDownloadQr(file, filename);
+            meeladOpenWhatsApp(text);
+            showToast("QR code downloaded — attach it to the WhatsApp chat.", "info");
+          });
+      };
+
+      return window.meeladQrPngFile(hostId, filename)
+        .then(function (file) {
+          if (!file) {
+            showToast("QR code is not ready yet — try again.", "warning");
+            return;
+          }
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            return navigator.share({
+              files: [file],
+              title: opts.title || festName,
+              text: text,
+            }).catch(function (err) {
+              if (err && err.name === "AbortError") return; // sheet dismissed
+              return fallback(file);                        // denied / unsupported
+            });
+          }
+          return fallback(file);
+        })
+        .catch(function (err) {
+          console.error("❌ Could not share QR code:", err);
+          showToast("Could not share the QR code.", "error");
+        })
+        .then(function () { if (btn) finishDownload(btn); },
+              function () { if (btn) finishDownload(btn); });
+    };
+
+    function programLinkModal() {
+      return {
+        openModal: false,
+        hasLink: regLinkActive === "true",
+        registerLink: regLink || "",
+        showQR: false,
+
+        generateLink(ev) {
+          if (this.hasLink && this.registerLink) {
+            showToast("Registration link already active!", "warning");
+            return;
+          }
+          const btn = ev && ev.currentTarget;
+          if (btn && btn.dataset.dlBusy === '1') return;
+          if (btn) prepareDownload(btn, "Generating…");
+
+          fetch("{% url 'generate_program_link' %}", {
+            method: "POST",
+            headers: {
+              "X-CSRFToken": "{{ csrf_token }}",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ institution_id: madrasaId }),
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.link) {
+                this.hasLink = true;
+                this.registerLink = data.link;
+                showToast("Registration link generated.", "success");
+              } else {
+                showToast(data.error || "Could not generate link.", "error");
+              }
+            })
+            .catch(err => {
+              console.error("❌ Error generating link:", err);
+              showToast("Error generating link.", "error");
+            })
+            .finally(() => { if (btn) finishDownload(btn); });
+        },
+
+        copyToClipboard() {
+          if (!this.registerLink) {
+            showToast("No link to copy!", "warning");
+            return;
+          }
+
+          navigator.clipboard.writeText(this.registerLink)
+            .then(() => {
+              showToast("Link copied to clipboard!", "success");
+              this.openModal = false;
+            })
+            .catch(() => {
+              showToast("Failed to copy link.", "error");
+            });
+        },
+
+        shareWhatsApp(qrHostId) {
+          if (!this.registerLink) {
+            showToast("No link to share!", "warning");
+            return;
+          }
+          const text = "🏆 " + festName + " — open programs, register & view results:\n" + this.registerLink;
+          /* QR panel open → the QR image rides along (native share sheet);
+             otherwise WhatsApp carries the text link only. */
+          if (this.showQR && qrHostId && window.meeladQrSource(qrHostId)) {
+            window.meeladShareQr(qrHostId, { text: text, filename: "meelad-registration-qr.png" });
+            return;
+          }
+          window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank", "noopener");
+        },
+
+        toggleQR(elId) {
+          this.showQR = !this.showQR;
+          if (this.showQR) this.renderQR(elId);
+        },
+
+        /* Shares the QR *image* itself (native share sheet where the browser
+           supports it, clipboard / download + chat fallback elsewhere). */
+        shareQRWhatsApp(elId, ev) {
+          if (!this.registerLink) {
+            showToast("No link to share!", "warning");
+            return;
+          }
+          this.showQR = true;
+          if (!this.renderQR(elId)) {
+            showToast("Could not prepare the QR code.", "error");
+            return;
+          }
+          window.meeladShareQr(elId, {
+            text: "🏆 " + festName + " — scan this QR code to register:\n" + this.registerLink,
+            filename: "meelad-registration-qr.png",
+            button: ev && ev.currentTarget,
+          });
+        },
+
+        renderQR(elId) {
+          if (!this.registerLink || typeof QRCode === "undefined") return false;
+          const host = document.getElementById(elId);
+          if (!host) return false;
+          host.innerHTML = "";
+          new QRCode(host, {
+            text: this.registerLink,
+            width: 128,
+            height: 128,
+            correctLevel: QRCode.CorrectLevel.M
+          });
+          return true;
+        },
+
+        async revokeLink() {
+          const ok = await MeeladConfirm.show("Are you sure you want to revoke this link?", { title: "Revoke link?", confirmText: "Revoke" });
+          if (!ok) return;
+
+          fetch("{% url 'revoke_program_link' %}", {
+            method: "POST",
+            headers: {
+              "X-CSRFToken": "{{ csrf_token }}",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ institution_id: madrasaId }),
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                this.hasLink = false;
+                this.registerLink = "";
+                showToast("Link revoked successfully.", "success");
+                this.openModal = false;
+              } else {
+                showToast(data.error || "Could not revoke link.", "error");
+              }
+            })
+            .catch(err => {
+              console.error("❌ Error revoking link:", err);
+              showToast("Error revoking link.", "error");
+            });
+        }
+      }
+    }
+
+    // ---- Parents / Students portal link ----
+    const parentLinkActive = "{{ parent_link_active|yesno:'true,false' }}";
+
+    function parentLinkModal() {
+      return {
+        openModal: false,
+        hasLink: parentLinkActive === "true",
+        registerLink: parentLink || "",
+        showQR: false,
+
+        generateLink(ev) {
+          if (this.hasLink) {
+            showToast("Students & Results link already active!", "warning");
+            return;
+          }
+          const btn = ev && ev.currentTarget;
+          if (btn && btn.dataset.dlBusy === '1') return;
+          if (btn) prepareDownload(btn, "Generating…");
+
+          fetch("{% url 'generate_parent_link' %}", {
+            method: "POST",
+            headers: {
+              "X-CSRFToken": "{{ csrf_token }}",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ institution_id: madrasaId }),
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.link) {
+                this.hasLink = true;
+                this.registerLink = data.link;
+                showToast("Students & Results link generated.", "success");
+              } else {
+                showToast(data.error || "Could not generate link.", "error");
+              }
+            })
+            .catch(err => {
+              console.error("❌ Error generating link:", err);
+              showToast("Error generating link.", "error");
+            })
+            .finally(() => { if (btn) finishDownload(btn); });
+        },
+
+        copyToClipboard() {
+          if (!this.registerLink) {
+            showToast("No link to copy!", "warning");
+            return;
+          }
+          navigator.clipboard.writeText(this.registerLink)
+            .then(() => {
+              showToast("Link copied to clipboard!", "success");
+              this.openModal = false;
+            })
+            .catch(() => showToast("Failed to copy link.", "error"));
+        },
+
+        shareWhatsApp(qrHostId) {
+          if (!this.registerLink) {
+            showToast("No link to share!", "warning");
+            return;
+          }
+          const text = "🏆 " + festName + " — programs & results are live:\n" + this.registerLink;
+          /* QR panel open → the QR image rides along (native share sheet);
+             otherwise WhatsApp carries the text link only. */
+          if (this.showQR && qrHostId && window.meeladQrSource(qrHostId)) {
+            window.meeladShareQr(qrHostId, { text: text, filename: "meelad-results-qr.png" });
+            return;
+          }
+          window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank", "noopener");
+        },
+
+        toggleQR(elId) {
+          this.showQR = !this.showQR;
+          if (this.showQR) this.renderQR(elId);
+        },
+
+        /* Shares the QR *image* itself (native share sheet where the browser
+           supports it, clipboard / download + chat fallback elsewhere). */
+        shareQRWhatsApp(elId, ev) {
+          if (!this.registerLink) {
+            showToast("No link to share!", "warning");
+            return;
+          }
+          this.showQR = true;
+          if (!this.renderQR(elId)) {
+            showToast("Could not prepare the QR code.", "error");
+            return;
+          }
+          window.meeladShareQr(elId, {
+            text: "🏆 " + festName + " — scan this QR code for programs & results:\n" + this.registerLink,
+            filename: "meelad-results-qr.png",
+            button: ev && ev.currentTarget,
+          });
+        },
+
+        renderQR(elId) {
+          if (!this.registerLink || typeof QRCode === "undefined") return false;
+          const host = document.getElementById(elId);
+          if (!host) return false;
+          host.innerHTML = "";
+          new QRCode(host, {
+            text: this.registerLink,
+            width: 128,
+            height: 128,
+            correctLevel: QRCode.CorrectLevel.M
+          });
+          return true;
+        },
+
+        async revokeLink() {
+          const ok = await MeeladConfirm.show("Are you sure you want to revoke this link?", { title: "Revoke link?", confirmText: "Revoke" });
+          if (!ok) return;
+          fetch("{% url 'revoke_parent_link' %}", {
+            method: "POST",
+            headers: {
+              "X-CSRFToken": "{{ csrf_token }}",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ institution_id: madrasaId }),
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                this.hasLink = false;
+                this.registerLink = "";
+                showToast("Link revoked successfully.", "success");
+                this.openModal = false;
+              } else {
+                showToast(data.error || "Could not revoke link.", "error");
+              }
+            })
+            .catch(err => {
+              console.error("❌ Error revoking link:", err);
+              showToast("Error revoking link.", "error");
+            });
+        }
+      }
+    }
+  </script>
+  {% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+
+    <!-- Page Header -->
+    <div class="bg-white shadow-sm rounded-2xl mb-6 overflow-hidden" x-data="programLinkModal()">
+      <div class="{% if has_team_theme %}team-header-band{% else %}bg-gradient-to-r from-indigo-600 to-purple-600{% endif %} px-6 py-6 sm:px-8">
+        <div class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div>
+            {% if has_team_theme and active_team %}
+            <p class="inline-flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-wider text-white/90">
+              <span class="w-2.5 h-2.5 rounded-full ring-2 ring-white/70" style="background: {{ team_theme_hex }};"></span>
+              {{ active_team.name }}{% if team_theme_label %} · {{ team_theme_label }}{% endif %}
+            </p>
+            {% endif %}
+            <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white flex items-center gap-3">
+              <span class="shrink-0 w-11 h-11 rounded-xl bg-white/15 border border-white/25 flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+              </span>
+              <span>{{ team_name }} — {{ category.name }}</span>
+            </h1>
+            <p class="text-indigo-100 mt-1 text-sm sm:text-base">Manage students and programs for this category</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+            <button @click="openModal = true"
+              class="inline-flex items-center gap-2 px-4 py-2 bg-white text-indigo-700 font-semibold rounded-xl shadow hover:bg-indigo-50 transition text-sm">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 015.657 0l2.829 2.829a4 4 0 010 5.657l-1.414 1.414M10.172 13.828a4 4 0 01-5.657 0l-2.829-2.829a4 4 0 010-5.657l1.414-1.414"/></svg>
+              <span>Reg Link</span>
+            </button>
+
+            <div x-data="parentLinkModal()" class="relative inline-block">
+              <button @click="openModal = true"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white font-semibold rounded-xl shadow hover:bg-emerald-600 transition text-sm">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <span>Results Link</span>
+              </button>
+
+              <!-- Parents / Students Portal Link Modal (nested INSIDE the
+                   parentLinkModal() scope so it binds to its own openModal) -->
+              <div x-show="openModal" x-transition.opacity x-cloak
+                class="modal-shell fixed inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 z-[250]">
+                <div class="modal-content max-h-[92vh] overflow-y-auto bg-white w-full max-w-md rounded-2xl shadow-2xl relative" :class="openModal ? 'is-open' : ''">
+                  <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-gradient-to-r from-emerald-600 to-green-500 rounded-t-2xl">
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2.5">
+                      <span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-lg">📊</span>
+                      <span>
+                        Students &amp; Results Link
+                        <span class="block text-xs font-normal text-white/80">Share with parents &amp; students to view programs &amp; results</span>
+                      </span>
+                    </h2>
+                    <button @click="openModal = false" aria-label="Close modal"
+                      class="shrink-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg flex items-center justify-center transition">✕</button>
+                  </div>
+
+                  <div class="p-5 sm:p-6">
+                    <div x-show="hasLink" x-cloak class="space-y-3">
+                      <input type="text" x-model="registerLink" readonly
+                        class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-600">
+                      <div class="flex flex-wrap justify-between gap-2">
+                        <button @click="copyToClipboard()" class="px-3 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition">
+                          Copy Link
+                        </button>
+                        <button @click="shareWhatsApp('qr-results')"
+                          :title="showQR ? 'Share link + QR code' : 'Share link'"
+                          class="px-3 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition inline-flex items-center gap-1.5">
+                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                          <span>WhatsApp</span>
+                        </button>
+                        <button @click="toggleQR('qr-results')"
+                          class="px-3 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition">
+                          QR Code
+                        </button>
+                        <button @click="revokeLink()" class="btn-danger text-sm">
+                          Revoke Link
+                        </button>
+                      </div>
+                      <div x-show="showQR" x-cloak class="flex flex-col items-center gap-1.5 pt-1">
+                        <div id="qr-results" class="p-2 bg-white border border-gray-200 rounded-xl"></div>
+                        <p class="text-xs text-gray-400">Scan to open the link</p>
+                        <button @click="shareQRWhatsApp('qr-results', $event)"
+                          class="px-3 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition inline-flex items-center gap-1.5 text-sm">
+                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                          <span>Share QR on WhatsApp</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div x-show="!hasLink" x-cloak class="text-center">
+                      <p class="text-gray-600 mb-4">No active Students &amp; Results link found.</p>
+                      <button @click="generateLink($event)" class="px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition">
+                        Generate Link
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 divide-x divide-y sm:divide-y-0 divide-gray-100">
+        <div class="px-6 py-4">
+          <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Total Students</p>
+          <p class="text-2xl font-extrabold text-indigo-700">{{ total_students }}</p>
+        </div>
+        <div class="px-6 py-4">
+          <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Total Programs</p>
+          <p class="text-2xl font-extrabold text-indigo-700">{{ total_programs }}</p>
+        </div>
+        <div class="px-6 py-4">
+          <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Fest</p>
+          <p class="text-lg font-extrabold text-indigo-700 truncate">{{ meelad_fest_name|default:"—" }}</p>
+        </div>
+      </div>
+
+      <!-- Program Link Modal (binds to the outer programLinkModal() scope) -->
+      <div x-show="openModal" x-transition.opacity x-cloak
+        class="modal-shell fixed inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 z-[250]">
+        <div class="modal-content max-h-[92vh] overflow-y-auto bg-white w-full max-w-md rounded-2xl shadow-2xl relative" :class="openModal ? 'is-open' : ''">
+          <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-2xl">
+            <h2 class="text-lg font-bold text-white flex items-center gap-2.5">
+              <span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-lg">🔗</span>
+              Program Registration Link
+            </h2>
+            <button @click="openModal = false" aria-label="Close modal"
+              class="shrink-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg flex items-center justify-center transition">✕</button>
+          </div>
+
+          <div class="p-5 sm:p-6">
+            <div x-show="hasLink" x-cloak class="space-y-3">
+              <input type="text" x-model="registerLink" readonly
+                class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-600">
+              <div class="flex flex-wrap justify-between gap-2">
+                <button @click="copyToClipboard()" class="px-3 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition">
+                  Copy Link
+                </button>
+                <button @click="shareWhatsApp('qr-reg')"
+                  :title="showQR ? 'Share link + QR code' : 'Share link'"
+                  class="px-3 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition inline-flex items-center gap-1.5">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                  <span>WhatsApp</span>
+                </button>
+                <button @click="toggleQR('qr-reg')"
+                  class="px-3 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition">
+                  QR Code
+                </button>
+                <button @click="revokeLink()" class="btn-danger text-sm">
+                  Revoke Link
+                </button>
+              </div>
+              <div x-show="showQR" x-cloak class="flex flex-col items-center gap-1.5 pt-1">
+                <div id="qr-reg" class="p-2 bg-white border border-gray-200 rounded-xl"></div>
+                <p class="text-xs text-gray-400">Scan to open the link</p>
+                <button @click="shareQRWhatsApp('qr-reg', $event)"
+                  class="px-3 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition inline-flex items-center gap-1.5 text-sm">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                  <span>Share QR on WhatsApp</span>
+                </button>
+              </div>
+            </div>
+
+            <div x-show="!hasLink" x-cloak class="text-center">
+              <p class="text-gray-600 mb-4">No active registration link found.</p>
+              <button @click="generateLink($event)" class="btn-primary">
+                Generate Link
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gender Tabs (only when the fest runs both sections) -->
+    {% if is_both_sections %}
+    <div class="relative w-full max-w-md mx-auto mb-6 sm:mb-8 bg-gray-200 rounded-lg overflow-hidden">
+      <div class="flex">
+        <button onclick="goToGender(0)" id="boysTab"
+          class="gender-tab active flex-1 py-3 sm:py-4 text-base sm:text-lg font-semibold text-center relative z-10 transition-colors duration-300">
+          Boys
+        </button>
+        <button onclick="goToGender(1)" id="girlsTab"
+          class="gender-tab flex-1 py-3 sm:py-4 text-base sm:text-lg font-semibold text-center relative z-10 transition-colors duration-300">
+          Girls
+        </button>
+      </div>
+      <div id="genderSlider"
+        class="absolute top-0 left-0 h-full w-1/2 bg-indigo-600 rounded-lg transition-transform duration-300"></div>
+    </div>
+    {% endif %}
+
+    {% if errors %}
+    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+      <p>{{ errors }}</p>
+    </div>
+    {% endif %}
+
+    {% if not is_girls_only %}
+    <!-- Boys Section (not rendered on a girls-only fest) -->
+    <div id="boysSection" class="bg-white rounded-2xl shadow-xl overflow-hidden mb-6">
+      {% if not is_both_sections %}
+      <!-- Single-section fest: the only visible section keeps its label -->
+      <div class="px-4 sm:px-6 pt-6 pb-1">
+        <h2 class="text-xl sm:text-2xl font-extrabold text-indigo-700">👦 Boys Section</h2>
+      </div>
+      {% endif %}
+      <!-- Inner Tabs (Students/Programs) -->
+      <div class="px-4 sm:px-6 pt-6 pb-2">
+        <div class="relative flex justify-center">
+          {% if category.name|lower != 'general' %}
+          <div class="flex relative bg-gray-200 rounded-lg overflow-hidden w-full max-w-xs sm:max-w-sm">
+            <div id="boysTabSlider"
+              class="tab-slider absolute top-0 left-0 w-1/2 h-full bg-white shadow-sm rounded-lg transition-transform duration-300">
+            </div>
+            <button onclick="goToSlide(0,0)"
+              class="relative z-10 w-1/2 py-3 text-sm sm:text-base text-center font-semibold text-indigo-700">
+              Students
+            </button>
+            <button onclick="goToSlide(1,0)"
+              class="relative z-10 w-1/2 py-3 text-sm sm:text-base text-center font-semibold text-indigo-700">
+              Programs
+            </button>
+          </div>
+          {% else %}
+          <div class="flex relative bg-gray-200 rounded-lg overflow-hidden w-full max-w-[10rem]">
+            <div class="absolute top-0 left-0 w-full h-full bg-white shadow-sm rounded-lg"></div>
+            <button onclick="goToSlide(0,0)"
+              class="relative z-10 w-full py-3 text-sm sm:text-base text-center font-semibold text-indigo-700">
+              Programs
+            </button>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="overflow-hidden border-t border-gray-100">
+        <div id="boysSliderWrapper" class="slider-wrapper">
+
+          <!-- Students Section -->
+          {% if category.name|lower != 'general' %}
+          <div class="slider-section p-4 sm:p-6">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
+              <h2 class="text-lg sm:text-xl font-bold text-indigo-700 flex items-center gap-2"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg> Students</h2>
+              <button onclick="toggleModal('studentModal')"
+                class="px-3 sm:px-4 py-2 text-sm sm:text-base bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition font-medium">
+                + Add Student
+              </button>
+            </div>
+            <div data-ajax-list="boys" data-pager data-pager-items="ul > li">
+
+            <ul class="space-y-2">
+            {% for student in boys %}
+            <li class="relative">
+              {% if forloop.counter == 1 and student.total_point %}
+              <span
+                class="absolute -top-1 -left-1 bg-yellow-500 text-white text-xs px-2 py-0.8 rounded-tr-lg rounded-bl-lg shadow">
+                ⭐
+              </span>
+              {% endif %}
+
+              <div class="flex items-center gap-3">
+                <button onclick="toggleModal('modal-{{ student.id }}')"
+                  class="flex-1 p-4 text-left bg-gray-50 border border-gray-100 rounded-xl hover:bg-indigo-50 hover:border-indigo-200 flex justify-between items-center gap-3 transition shadow-sm">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <span class="shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></span>
+                    <div class="min-w-0">
+                      <span class="font-semibold text-gray-800 block truncate">{{ student.full_name }}</span>
+                      <span class="text-xs text-gray-400">Code: {{ student.code_number|default:"-" }}</span>
+                    </div>
+                  </div>
+                  <span class="shrink-0 text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full">{{ student.total_point|floatformat:0 }} pts</span>
+                </button>
+
+                <div class="flex flex-col items-center gap-1">
+                  <a href="{% url 'student_profile' student.id %}"
+                    class="p-2 text-slate-500 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition"
+                    title="View profile">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </a>
+                  <button type="button" onclick="openEditModal(this)"
+                    class="p-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition"
+                    title="Edit student"
+                    data-student-id="{{ student.id }}"
+                    data-name="{{ student.full_name }}"
+                    data-code="{{ student.code_number }}"
+                    data-team="{{ student.team_id }}"
+                    data-gender="{{ student.gender }}"
+                    data-edit-url="{% url 'edit_student' student.id %}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+
+                  <form method="post" action="{% url 'delete_student' student.id %}" data-confirm="Delete this student?" data-ajax-form data-refresh-all>
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete student">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Student Programs Modal -->
+              <div id="modal-{{ student.id }}"
+                class="modal-shell hidden fixed inset-0 items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 z-[250]">
+                <div class="modal-content max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl w-full max-w-md relative">
+                  <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600">
+                    <h3 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                      <span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></span>
+                      Add Programs for {{ student.full_name }}
+                    </h3>
+                    <button onclick="closePanel('modal-{{ student.id }}')" aria-label="Close modal"
+                      class="shrink-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg flex items-center justify-center transition">✕</button>
+                  </div>
+                  <div class="p-5 sm:p-6">
+
+                    <!-- Already Selected Programs -->
+                    {% if student.program_set.all %}
+                    <div class="mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                      <h4 class="text-sm font-semibold text-indigo-700 mb-2">Already Selected:</h4>
+                      <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                        {% for prog in student.program_set.all %}
+                        <li>{{ prog.title }}</li>
+                        {% endfor %}
+                      </ul>
+                    </div>
+                    {% endif %}
+
+                    <!-- Add Programs Form -->
+                    <form method="post" action="{% url 'add_student_program' student.id %}" data-ajax-form data-modal-close data-refresh-all>
+                      {% csrf_token %}
+                      <label class="block mb-2 text-sm text-gray-700 font-medium">Select Programs:</label>
+                      <select name="programs" multiple class="form-input h-40">
+                        {% for program in boys_programs %}
+                        <option value="{{ program.id }}" {% if program in student.program_set.all %}selected{% endif %}>
+                          {{ program.title }}
+                        </option>
+                        {% endfor %}
+                      </select>
+                      <p class="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+                        <span><strong>Tip:</strong> Hold <kbd class="px-1 py-0.5 bg-white border border-amber-300 rounded text-[10px] font-mono">Ctrl</kbd> (or <kbd class="px-1 py-0.5 bg-white border border-amber-300 rounded text-[10px] font-mono">⌘</kbd>) to add new programs without removing already selected ones. Only the programs selected at save time will be kept.</span>
+                      </p>
+
+                      <div class="mt-4 flex justify-end gap-2">
+                        <button type="button" onclick="closePanel('modal-{{ student.id }}')"
+                          class="btn-secondary">Cancel</button>
+                        <button type="submit"
+                          class="btn-primary">Save</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </li>
+            {% empty %}
+            {% include '_empty_state.html' with icon='🎓' title='No students in this category' message='Add students to this category to start registering them for programs.' %}
+            {% endfor %}
+          </ul>
+            </div><!-- /data-ajax-list:boys -->
+
+        </div>
+        {% endif %}
+
+
+          <!-- Programs Section -->
+          <div class="slider-section p-4 sm:p-6">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
+              <h2 class="text-lg sm:text-xl font-bold text-indigo-700 flex items-center gap-2"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/></svg> Programs</h2>
+              <button onclick="toggleModal('programModal', 'male')"
+                class="px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition font-medium text-sm sm:text-base">
+                + Add Program
+              </button>
+            </div>
+
+            <h3 class="text-base font-semibold text-gray-700 uppercase tracking-wide mb-3">Stage</h3>
+            <ul data-ajax-list="boys-stage-programs" class="space-y-2 mb-6">
+              {% for program in boys_stage_programs %}
+              <li data-program-id="{{ program.id }}" class="p-4 bg-gray-50 border border-gray-100 rounded-xl shadow-sm hover:shadow transition">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></span>
+                      {% if category.name|lower == 'general' %}
+                      <button onclick="openProgramModal({{ program.id }})"
+                        class="text-left font-semibold text-indigo-700 hover:text-indigo-900 transition">
+                        {{ program.title }}
+                      </button>
+                      {% else %}
+                      <strong class="text-gray-800 font-semibold">{{ program.title }}</strong>
+                      {% endif %}
+                    </div>
+                    {% if program.description %}
+                    <p class="text-sm text-gray-500 mt-1.5 ml-4">{{ program.description }}</p>
+                    {% endif %}
+                  </div>
+                  <form method="post" action="{% url 'delete_program' program.id %}" data-confirm="Delete this program?" class="shrink-0" data-ajax-form data-refresh-all>
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete program">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </form>
+                </div>
+              </li>
+{% endfor %}
+            </ul>
+
+            <h3 class="text-base font-semibold text-gray-700 uppercase tracking-wide mb-3">Non Stage</h3>
+            <ul data-ajax-list="boys-nonstage-programs" class="space-y-2">
+              {% for program in boys_non_stage_programs %}
+              <li data-program-id="{{ program.id }}" class="p-4 bg-gray-50 border border-gray-100 rounded-xl shadow-sm hover:shadow transition">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></span>
+                      <strong class="text-gray-800 font-semibold">{{ program.title }}</strong>
+                    </div>
+                    {% if program.description %}
+                    <p class="text-sm text-gray-500 mt-1.5 ml-4">{{ program.description }}</p>
+                    {% endif %}
+                  </div>
+                  <form method="post" action="{% url 'delete_program' program.id %}" data-confirm="Delete this program?" class="shrink-0" data-ajax-form data-refresh-all>
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete program">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </form>
+                </div>
+              </li>
+              {% empty %}
+              <li class="text-gray-400 italic py-2">No non-stage programs yet.</li>
+              {% endfor %}
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+
+
+    {% endif %}
+
+    {% if not is_boys_only %}
+    <!-- Girls Section (not rendered on a boys-only fest; hidden only in both-mode) -->
+    <div id="girlsSection" class="{% if is_both_sections %}hidden {% endif %}bg-white rounded-2xl shadow-xl overflow-hidden mb-6">
+      {% if not is_both_sections %}
+      <!-- Single-section fest: the only visible section keeps its label -->
+      <div class="px-4 sm:px-6 pt-6 pb-1">
+        <h2 class="text-xl sm:text-2xl font-extrabold text-indigo-700">🧕 Girls Section</h2>
+      </div>
+      {% endif %}
+      <!-- Inner Tabs (Students/Programs) -->
+      <div class="px-4 sm:px-6 pt-6 pb-2">
+        <div class="relative flex justify-center">
+          {% if category.name|lower != 'general' %}
+          <div class="flex relative bg-gray-200 rounded-lg overflow-hidden w-full max-w-xs sm:max-w-sm">
+            <div id="girlsTabSlider"
+              class="tab-slider absolute top-0 left-0 w-1/2 h-full bg-white shadow-sm rounded-lg transition-transform duration-300">
+            </div>
+            <button onclick="goToSlide(0,1)"
+              class="relative z-10 w-1/2 py-3 text-sm sm:text-base text-center font-semibold text-indigo-700">
+              Students
+            </button>
+            <button onclick="goToSlide(1,1)"
+              class="relative z-10 w-1/2 py-3 text-sm sm:text-base text-center font-semibold text-indigo-700">
+              Programs
+            </button>
+          </div>
+          {% else %}
+          <div class="flex relative bg-gray-200 rounded-lg overflow-hidden w-full max-w-[10rem]">
+            <div class="absolute top-0 left-0 w-full h-full bg-white shadow-sm rounded-lg"></div>
+            <button onclick="goToSlide(0,1)"
+              class="relative z-10 w-full py-3 text-sm sm:text-base text-center font-semibold text-indigo-700">
+              Programs
+            </button>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="overflow-hidden border-t border-gray-100">
+        <div id="girlsSliderWrapper" class="slider-wrapper">
+
+          <!-- Students Section -->
+          {% if category.name|lower != 'general' %}
+          <div class="slider-section p-4 sm:p-6">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
+              <h2 class="text-lg sm:text-xl font-bold text-indigo-700 flex items-center gap-2"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg> Students</h2>
+              <button onclick="toggleModal('studentModal')"
+                class="px-3 sm:px-4 py-2 text-sm sm:text-base bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition font-medium">
+                + Add Student
+              </button>
+            </div>
+            <div data-ajax-list="girls" data-pager data-pager-items="ul > li">
+
+            <ul class="space-y-2">
+            {% for student in girls %}
+            <li class="relative">
+              {% if forloop.counter == 1 and student.total_point %}
+              <span
+                class="absolute -top-1 -left-1 bg-yellow-500 text-white text-xs px-2 py-0.8 rounded-tr-lg rounded-bl-lg shadow">
+                ⭐
+              </span>
+              {% endif %}
+
+              <div class="flex items-center gap-2">
+                <button onclick="toggleModal('modal-{{ student.id }}')"
+                  class="flex-1 p-3 text-left bg-gray-50 border border-gray-100 rounded-xl hover:bg-indigo-50 hover:border-indigo-200 flex justify-between items-center gap-3 transition shadow-sm">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <span class="shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 text-white flex items-center justify-center shadow"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></span>
+                    <div class="min-w-0">
+                      <span class="font-semibold text-gray-800 block truncate">{{ student.full_name }}</span>
+                      <span class="text-xs text-gray-400">Code: {{ student.code_number|default:"-" }}</span>
+                    </div>
+                  </div>
+                  <span class="shrink-0 text-xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-1 rounded-full">{{ student.total_point|floatformat:0 }} pts</span>
+                </button>
+
+                <div class="flex items-center gap-1">
+                  <a href="{% url 'student_profile' student.id %}"
+                    class="p-2 text-slate-500 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition"
+                    title="View profile">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </a>
+                  <button type="button" onclick="openEditModal(this)"
+                    class="p-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition"
+                    title="Edit student"
+                    data-student-id="{{ student.id }}"
+                    data-name="{{ student.full_name }}"
+                    data-code="{{ student.code_number }}"
+                    data-team="{{ student.team_id }}"
+                    data-gender="{{ student.gender }}"
+                    data-edit-url="{% url 'edit_student' student.id %}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+
+                  <form method="post" action="{% url 'delete_student' student.id %}" data-confirm="Delete this student?" data-ajax-form data-refresh-all>
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete student">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </form>
+                </div>
+              </div>
+              <!-- Student Programs Modal -->
+              <div id="modal-{{ student.id }}"
+                class="modal-shell hidden fixed inset-0 items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 z-[250]">
+                <div class="modal-content max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl w-full max-w-md relative">
+                  <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600">
+                    <h3 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                      <span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></span>
+                      Add Programs for {{ student.full_name }}
+                    </h3>
+                    <button onclick="closePanel('modal-{{ student.id }}')" aria-label="Close modal"
+                      class="shrink-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg flex items-center justify-center transition">✕</button>
+                  </div>
+                  <div class="p-5 sm:p-6">
+
+                    <!-- Already Selected Programs -->
+                    {% if student.program_set.all %}
+                    <div class="mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                      <h4 class="text-sm font-semibold text-indigo-700 mb-2">Already Selected:</h4>
+                      <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                        {% for prog in student.program_set.all %}
+                        <li>{{ prog.title }}</li>
+                        {% endfor %}
+                      </ul>
+                    </div>
+                    {% endif %}
+
+                    <!-- Add Programs Form -->
+                    <form method="post" action="{% url 'add_student_program' student.id %}" data-ajax-form data-modal-close data-refresh-all>
+                      {% csrf_token %}
+                      <label class="block mb-2 text-sm text-gray-700 font-medium">Select Programs:</label>
+                      <select name="programs" multiple class="form-input h-40">
+                        {% for program in girls_programs %}
+                        <option value="{{ program.id }}" {% if program in student.program_set.all %}selected{% endif %}>
+                          {{ program.title }}
+                        </option>
+                        {% endfor %}
+                      </select>
+                      <p class="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+                        <span><strong>Tip:</strong> Hold <kbd class="px-1 py-0.5 bg-white border border-amber-300 rounded text-[10px] font-mono">Ctrl</kbd> (or <kbd class="px-1 py-0.5 bg-white border border-amber-300 rounded text-[10px] font-mono">⌘</kbd>) to add new programs without removing already selected ones. Only the programs selected at save time will be kept.</span>
+                      </p>
+
+                      <div class="mt-4 flex justify-end gap-2">
+                        <button type="button" onclick="closePanel('modal-{{ student.id }}')"
+                          class="btn-secondary">Cancel</button>
+                        <button type="submit"
+                          class="btn-primary">Save</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </li>
+            {% empty %}
+            {% include '_empty_state.html' with icon='🎓' title='No students in this category' message='Add students to this category to start registering them for programs.' %}
+            {% endfor %}
+          </ul>
+            </div><!-- /data-ajax-list:girls -->
+
+        </div>
+        {% endif %}
+
+          <!-- Programs Section -->
+          <div class="slider-section p-4 sm:p-6">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
+              <h2 class="text-lg sm:text-xl font-bold text-indigo-700 flex items-center gap-2"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/></svg> Programs</h2>
+              <button onclick="toggleModal('programModal', 'female')"
+                class="px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition font-medium text-sm sm:text-base">
+                + Add Program
+              </button>
+            </div>
+
+            <h3 class="text-base font-semibold text-gray-700 uppercase tracking-wide mb-3">Stage</h3>
+            <ul data-ajax-list="girls-stage-programs" class="space-y-2 mb-6">
+              {% for program in girls_stage_programs %}
+              <li data-program-id="{{ program.id }}" class="p-4 bg-gray-50 border border-gray-100 rounded-xl shadow-sm hover:shadow transition">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                      <strong class="text-gray-800 font-semibold">{{ program.title }}</strong>
+                    </div>
+                    {% if program.description %}
+                    <p class="text-sm text-gray-500 mt-1.5 ml-4">{{ program.description }}</p>
+                    {% endif %}
+                  </div>
+                  <form method="post" action="{% url 'delete_program' program.id %}" data-confirm="Delete this program?" class="shrink-0" data-ajax-form data-refresh-all>
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete program">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </form>
+                </div>
+              </li>
+{% endfor %}
+            </ul>
+
+            <h3 class="text-base font-semibold text-gray-700 uppercase tracking-wide mb-3">Non Stage</h3>
+            <ul data-ajax-list="girls-nonstage-programs" class="space-y-2">
+              {% for program in girls_non_stage_programs %}
+              <li data-program-id="{{ program.id }}" class="p-4 bg-gray-50 border border-gray-100 rounded-xl shadow-sm hover:shadow transition">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></span>
+                      <strong class="text-gray-800 font-semibold">{{ program.title }}</strong>
+                    </div>
+                    {% if program.description %}
+                    <p class="text-sm text-gray-500 mt-1.5 ml-4">{{ program.description }}</p>
+                    {% endif %}
+                  </div>
+                  <form method="post" action="{% url 'delete_program' program.id %}" data-confirm="Delete this program?" class="shrink-0" data-ajax-form data-refresh-all>
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete program">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </form>
+                </div>
+              </li>
+              {% empty %}
+              <li class="text-gray-400 italic py-2">No non-stage programs yet.</li>
+              {% endfor %}
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Add Student Modal -->
+<!-- Add Student Modal -->
+    <div id="studentModal" class="modal-shell hidden fixed inset-0 items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 z-[250]">
+      <div class="modal-content max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl w-full max-w-md relative">
+        <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600">
+          <h3 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+            <span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></span>
+            <span>
+              Add Student
+              <span class="block text-xs font-normal text-white/80">Team: {{ team_name }} · Category: {{ category.name }}</span>
+            </span>
+          </h3>
+          <button onclick="closePanel('studentModal')" aria-label="Close modal"
+            class="shrink-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg flex items-center justify-center transition">✕</button>
+        </div>
+        <div class="p-5 sm:p-6">
+          <form method="post" action="{% url 'category_detail' category.id %}?team={{ team_id }}" class="space-y-4" data-ajax-form data-modal-close data-refresh-all>
+            {% csrf_token %}
+            {# dispatch key for the view (AJAX FormData drops submit-button names) #}
+            <input type="hidden" name="student_form" value="1">
+            {% if is_boys_only %}<input type="hidden" name="gender" value="male">{% elif is_girls_only %}<input type="hidden" name="gender" value="female">{% endif %}
+            {{ student_form.as_p }}
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" onclick="closePanel('studentModal')"
+                class="btn-secondary">Cancel</button>
+              <button type="submit" name="student_form"
+                class="btn-primary">Add</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Student Modal -->
+    <div id="editStudentModal" class="modal-shell hidden fixed inset-0 items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 z-[250]">
+      <div class="modal-content max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl w-full max-w-md relative">
+        <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600">
+          <h3 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+            <span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-lg">✏️</span>
+            Edit Student
+          </h3>
+          <button onclick="closePanel('editStudentModal')" aria-label="Close modal"
+            class="shrink-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg flex items-center justify-center transition">✕</button>
+        </div>
+        <div class="p-5 sm:p-6">
+          <form method="post" id="editStudentForm" action="" class="space-y-4" data-ajax-form data-modal-close data-refresh-all>
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <div>
+              <label for="editStudentName" class="block mb-1 text-sm font-medium text-gray-700">Full Name</label>
+              <input type="text" name="full_name" id="editStudentName"
+                class="form-input" required>
+            </div>
+            <div>
+              <label for="editStudentGender" class="block mb-1 text-sm font-medium text-gray-700">Gender</label>
+              <select name="gender" id="editStudentGender"
+                class="form-input" required>
+                <option value="">-- Select Gender --</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </div>
+            <div>
+              <label for="editStudentCode" class="block mb-1 text-sm font-medium text-gray-700">Code Number</label>
+              <input type="number" inputmode="numeric" name="code_number" id="editStudentCode"
+                class="form-input">
+            </div>
+            <div>
+              <label for="editStudentTeam" class="block mb-1 text-sm font-medium text-gray-700">Team</label>
+              <select name="team" id="editStudentTeam"
+                class="form-input" required>
+                <option value="">-- Select Team --</option>
+                {% for t in teams %}
+                <option value="{{ t.id }}">{{ t.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" onclick="closePanel('editStudentModal')"
+                class="btn-secondary">Cancel</button>
+              <button type="submit" name="edit_student_form"
+                class="btn-primary">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+        <!-- Add Program Modal -->
+    <div id="programModal" class="modal-shell hidden fixed inset-0 items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 z-[250]">
+      <div class="modal-content max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl w-full max-w-md relative">
+        <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600">
+          <h3 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+            <!-- <span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-lg"></span> -->
+            Add Program
+          </h3>
+          <button onclick="closePanel('programModal')" aria-label="Close modal"
+            class="shrink-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg flex items-center justify-center transition">✕</button>
+        </div>
+        <div class="p-5 sm:p-6">
+          <form method="post" class="space-y-4" data-ajax-form data-modal-close data-refresh-all>
+            {% csrf_token %}
+            {# dispatch key for the view (AJAX FormData drops submit-button names) #}
+            <input type="hidden" name="program_form" value="1">
+            <input type="hidden" name="gender" id="programGender" value="">
+            {{ program_form.as_p }}
+            <div class="mt-4 flex justify-end gap-2 pt-2">
+              <button type="button" onclick="closePanel('programModal')"
+                class="btn-secondary">Cancel</button>
+              <button type="submit" name="program_form"
+                class="btn-primary">Add</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Program Participants Modal -->
+    <div id="program-modal" class="modal-shell hidden fixed inset-0 items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 z-[250]">
+      <div class="modal-content max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl w-full max-w-lg relative">
+        <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600">
+          <h3 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5" id="modal-title">
+            <span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-lg">👥</span>
+            Add Participants
+          </h3>
+          <button onclick="closePanel('program-modal')" aria-label="Close modal"
+            class="shrink-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg flex items-center justify-center transition">✕</button>
+        </div>
+        <div class="p-5 sm:p-6">
+          <div id="already-selected" class="mb-4 hidden p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+            <h4 class="text-sm font-semibold text-indigo-700 mb-2">Already Selected:</h4>
+            <ul id="selected-list" class="list-disc list-inside text-sm text-gray-700 space-y-1"></ul>
+          </div>
+
+          <form id="program-form" data-no-loader>
+            {% csrf_token %}
+            <label class="block mb-2 text-gray-700 font-medium">Select Participants:</label>
+            <select name="participants" id="participants-select" multiple
+              class="form-input h-40"></select>
+
+                        <div class="mt-4 flex justify-end gap-2 pt-2">
+              <button type="button" onclick="closePanel('program-modal')"
+                class="btn-secondary">Cancel</button>
+              <button type="submit"
+                class="btn-primary">Save</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+
+
+  <script>
+    {% comment %}
+    function copyFormLink() {
+      const formUrl = "{{ form_url }}";
+      navigator.clipboard.writeText(formUrl).then(() => { showToast("Form URL copied to clipboard!", "success"); })
+        .catch(() => { showToast("Failed to copy URL.", "error"); });
+    } {% endcomment %}
+
+
+  </script>
+
+
+
+  <script>
+    function openProgramModal(programId) {
+      // Open modal (openPanel adds `flex` so the panel stays centered)
+      openPanel("program-modal");
+
+      // Fetch program details via AJAX
+      fetch(`/program/${programId}/participant-data/`)  // <-- Django view URL
+        .then(res => res.json())
+        .then(data => {
+          // Set modal title
+          document.getElementById("modal-title").innerText = `Add Participants for ${data.title}`;
+
+          // Already selected participants
+          const selectedList = document.getElementById("selected-list");
+          selectedList.innerHTML = "";
+          if (data.participants && data.participants.length > 0) {
+            document.getElementById("already-selected").classList.remove("hidden");
+            data.participants.forEach(p => {
+              selectedList.innerHTML += `<li>${p.full_name} (${p.code_number})</li>`;
+            });
+          } else {
+            document.getElementById("already-selected").classList.add("hidden");
+          }
+
+          // Populate dropdown with ALL students (not pre-select)
+          const select = document.getElementById("participants-select");
+          select.innerHTML = "";
+          if (data.students && data.students.length > 0) {
+            data.students.forEach(stu => {
+              select.innerHTML += `<option value="${stu.id}">${stu.full_name} (${stu.code_number})</option>`;
+            });
+          }
+
+          // Update form submit
+          const form = document.getElementById("program-form");
+          form.onsubmit = function (e) {
+            e.preventDefault();
+            const btn = form.querySelector('button[type="submit"]');
+            window.MeeladLoader && MeeladLoader.button(btn);
+            saveParticipants(programId, new FormData(form), btn);
+          }
+        });
+    }
+
+    function saveParticipants(programId, formData, btn) {
+      fetch(`/program/${programId}/participants/save/`, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": formData.get("csrfmiddlewaretoken"),
+        },
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          window.MeeladLoader && MeeladLoader.restoreButton(btn);
+          showToast(data.message || "Participants updated!", "success");
+          closeModal();
+        })
+        .catch(err => {
+          console.error(err);
+          window.MeeladLoader && MeeladLoader.restoreButton(btn);
+          showToast("Failed to update participants.", "error");
+        });
+    }
+
+    function closeModal() {
+      closePanel("program-modal");
+    }
+  </script>
+
+
+
+
+
+
+{% endblock %}

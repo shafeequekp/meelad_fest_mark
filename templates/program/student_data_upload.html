@@ -1,0 +1,271 @@
+{% extends 'program/base.html' %}
+{% load static %}
+
+{% block title %}Bulk Upload — {{ meelad_fest_name|default:"Meelad Fest" }}{% endblock %}
+
+{% block page_title_bar %}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .upload-tab.active { background: linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; border-color:transparent; box-shadow:0 10px 22px -8px rgba(79,70,229,.55); }
+    .drop-zone.dragover { border-color:#6366f1; background:#eef2ff; }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+
+    <!-- Hero -->
+    <div class="bg-gradient-to-r from-indigo-600 via-indigo-600 to-purple-600 rounded-2xl shadow-lg p-6 sm:p-8 text-white mb-6">
+      <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold">Bulk Upload</h1>
+          <p class="text-indigo-100 text-sm mt-1">{{ meelad_fest_name }} — add students and programs in one go with an Excel sheet.</p>
+        </div>
+        <div class="flex gap-3">
+          <div class="bg-white/10 rounded-xl px-4 py-3 text-center min-w-[92px]">
+            <p class="text-2xl font-extrabold">{{ total_students }}</p>
+            <p class="text-[11px] uppercase tracking-wide text-indigo-100">Students</p>
+          </div>
+          <div class="bg-white/10 rounded-xl px-4 py-3 text-center min-w-[92px]">
+            <p class="text-2xl font-extrabold">{{ total_programs }}</p>
+            <p class="text-[11px] uppercase tracking-wide text-indigo-100">Programs</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if needs_setup %}
+    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6 flex items-start gap-3">
+      <span class="text-2xl">⚠️</span>
+      <div>
+        <p class="font-bold text-amber-800">Setup required</p>
+        <p class="text-sm text-amber-700">Add at least one <a href="{% url 'teams' %}" class="underline font-semibold">team</a> and one <a href="{% url 'categories' %}" class="underline font-semibold">category</a> before uploading.</p>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Tabs -->
+    <div class="grid grid-cols-2 gap-3 mb-6" role="tablist">
+      <button id="tab-students" type="button" onclick="switchTab('students')" role="tab" aria-selected="true"
+        class="upload-tab active flex items-center justify-center gap-2 rounded-2xl border-2 border-indigo-100 bg-white px-4 py-3.5 font-bold text-indigo-700 transition">
+        🎓 Students
+      </button>
+      <button id="tab-programs" type="button" onclick="switchTab('programs')" role="tab" aria-selected="false"
+        class="upload-tab flex items-center justify-center gap-2 rounded-2xl border-2 border-indigo-100 bg-white px-4 py-3.5 font-bold text-indigo-700 transition">
+        🏅 Programs
+      </button>
+    </div>
+
+    <!-- ===== Students panel ===== -->
+    <section id="panel-students" role="tabpanel">
+      <div class="card overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h2 class="text-lg font-bold text-gray-800">Upload Students</h2>
+            <p class="text-sm text-gray-500">Columns: Name, Code Number, Gender, Category, Team</p>
+          </div>
+          <a href="{% url 'download-sample-file' %}" download
+            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-50 text-indigo-700 text-sm font-semibold hover:bg-indigo-100 transition">
+            ⬇ Sample template
+          </a>
+        </div>
+        <div class="p-6 {% if needs_setup %}opacity-50 pointer-events-none{% endif %}">
+          <label id="studentDrop" for="studentFile"
+            class="drop-zone flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-2xl px-6 py-10 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/40 transition">
+            <span class="text-4xl">📄</span>
+            <span id="studentFileName" class="text-sm font-semibold text-gray-700">Click or drag your Excel file here</span>
+            <span class="text-xs text-gray-400">Only .xls and .xlsx files are allowed</span>
+          </label>
+          <input type="file" id="studentFile" accept=".xls,.xlsx" class="hidden" />
+          <div class="flex justify-end mt-5">
+            <button type="button" onclick="uploadFile('students')"
+              class="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-indigo-700 transition shadow">
+              Upload Students
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Programs panel ===== -->
+    <section id="panel-programs" role="tabpanel" class="hidden">
+      <div class="card overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h2 class="text-lg font-bold text-gray-800">Upload Programs</h2>
+            <p class="text-sm text-gray-500">Columns: Title, Type, Section, Category, Non-Stage, Description</p>
+          </div>
+          <a href="{% url 'download-program-sample-file' %}" download
+            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-50 text-indigo-700 text-sm font-semibold hover:bg-indigo-100 transition">
+            ⬇ Sample template
+          </a>
+        </div>
+        <div class="p-6 {% if needs_setup %}opacity-50 pointer-events-none{% endif %}">
+          <div class="mb-4 text-xs text-gray-500 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 leading-relaxed">
+            <b>Type</b>: individual / group / general ·
+            <b>Section</b>: {% if is_boys_only %}boys only{% elif is_girls_only %}girls only{% else %}boys / girls{% endif %} (follows your fest type) ·
+            <b>Category</b>: required for individual &amp; group ·
+            <b>Non-Stage</b>: yes / no (individual only) ·
+            General programs automatically include every team.
+          </div>
+          <label id="programDrop" for="programFile"
+            class="drop-zone flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-2xl px-6 py-10 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/40 transition">
+            <span class="text-4xl">📄</span>
+            <span id="programFileName" class="text-sm font-semibold text-gray-700">Click or drag your Excel file here</span>
+            <span class="text-xs text-gray-400">Only .xls and .xlsx files are allowed</span>
+          </label>
+          <input type="file" id="programFile" accept=".xls,.xlsx" class="hidden" />
+          <div class="flex justify-end mt-5">
+            <button type="button" onclick="uploadFile('programs')"
+              class="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-indigo-700 transition shadow">
+              Upload Programs
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Result modal (shared by both uploads) -->
+  <div id="uploadResultModal"
+    class="modal-shell hidden fixed inset-0 items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 z-50">
+    <div class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-md relative">
+      <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600">
+        <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+          <span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-lg">📤</span>
+          <span id="modalTitle"></span>
+        </h2>
+        <button onclick="closeModal()" aria-label="Close modal"
+          class="shrink-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg flex items-center justify-center transition">✕</button>
+      </div>
+      <div id="modalBody" class="p-5 sm:p-6 text-gray-700"></div>
+      <div class="px-5 sm:px-6 pb-5 flex justify-end">
+        <button onclick="closeModal()"
+          class="btn-primary">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Loader Overlay -->
+  <div id="loader" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+  </div>
+
+
+  <!-- ✅ Header Menu Script -->
+
+
+  <script>
+    const loader = document.getElementById("loader");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+
+    function closeModal() {
+      closePanel("uploadResultModal");
+    }
+
+    function openResult(title, html) {
+      modalTitle.textContent = title;
+      modalBody.innerHTML = html;
+      openPanel("uploadResultModal");
+    }
+
+    // Students / Programs tabs
+    function switchTab(which) {
+      const isStudents = which === "students";
+      document.getElementById("tab-students").classList.toggle("active", isStudents);
+      document.getElementById("tab-programs").classList.toggle("active", !isStudents);
+      document.getElementById("tab-students").setAttribute("aria-selected", isStudents);
+      document.getElementById("tab-programs").setAttribute("aria-selected", !isStudents);
+      document.getElementById("panel-students").classList.toggle("hidden", !isStudents);
+      document.getElementById("panel-programs").classList.toggle("hidden", isStudents);
+    }
+
+    // Drag & drop + chosen-file name display
+    function wireDrop(zoneId, inputId, nameId) {
+      const zone = document.getElementById(zoneId);
+      const input = document.getElementById(inputId);
+      const label = document.getElementById(nameId);
+      if (!zone || !input) return;
+      input.addEventListener("change", () => {
+        label.textContent = input.files.length ? input.files[0].name : "Click or drag your Excel file here";
+      });
+      ["dragenter", "dragover"].forEach((ev) =>
+        zone.addEventListener(ev, (e) => { e.preventDefault(); zone.classList.add("dragover"); }));
+      ["dragleave", "drop"].forEach((ev) =>
+        zone.addEventListener(ev, (e) => { e.preventDefault(); zone.classList.remove("dragover"); }));
+      zone.addEventListener("drop", (e) => {
+        if (e.dataTransfer.files.length) {
+          input.files = e.dataTransfer.files;
+          input.dispatchEvent(new Event("change"));
+        }
+      });
+    }
+    wireDrop("studentDrop", "studentFile", "studentFileName");
+    wireDrop("programDrop", "programFile", "programFileName");
+
+    async function uploadFile(kind) {
+      const input = document.getElementById(kind === "students" ? "studentFile" : "programFile");
+      if (!input.files.length) {
+        showToast("Please choose an Excel file first.", "warning");
+        return;
+      }
+      const url = kind === "students" ? "{% url 'upload-students' %}" : "{% url 'upload-programs' %}";
+      const formData = new FormData();
+      formData.append("file", input.files[0]);
+
+      loader.classList.remove("hidden");
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          body: formData,
+          headers: {
+            "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value
+          }
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+          showToast(data.created + " " + (kind === "students" ? "students" : "programs") + " uploaded successfully.", "success");
+          openResult("✅ Upload Successful", `
+            <p><strong>Created:</strong> ${data.created}</p>
+            <p><strong>Skipped:</strong> ${data.skipped}</p>
+            ${data.errors.length ? `<p class="text-red-600 mt-2 font-semibold">Skipped rows:</p><ul class="list-disc ml-5 text-red-600 text-sm space-y-0.5">${data.errors.map(err => `<li>${err}</li>`).join("")}</ul>` : ""}
+          `);
+          input.value = "";
+          document.getElementById(kind === "students" ? "studentFileName" : "programFileName").textContent = "Click or drag your Excel file here";
+        } else {
+          showToast(data.error || "Upload failed.", "error");
+          openResult("❌ Upload Failed", `<p class="text-red-600">${data.error || "Something went wrong"}</p>`);
+        }
+      } catch (err) {
+        showToast("Upload failed: " + err.message, "error");
+        openResult("❌ Upload Failed", `<p class="text-red-600">Error: ${err.message}</p>`);
+      } finally {
+        loader.classList.add("hidden");
+      }
+    }
+
+    // Setup reminder on page load when teams/categories are missing
+    document.addEventListener("DOMContentLoaded", function () {
+      const needsSetup = "{{ needs_setup|yesno:'true,false' }}" === "true";
+      if (needsSetup) {
+        openResult("⚠️ Setup Required", `<p class="text-red-600">Please add <strong>teams</strong> and <strong>categories</strong> first!</p>`);
+      }
+    });
+  </script>
+
+
+
+
+
+
+
+
+
+
+{% endblock %}

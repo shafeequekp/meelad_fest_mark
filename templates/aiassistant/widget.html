@@ -1,0 +1,333 @@
+{% comment %}
+Floating Meelad AI Assistant widget.
+Included from templates/header.html for authenticated users only.
+
+It talks ONLY to Django (POST /ai/chat/) — Django forwards to the FastAPI AI
+service, so no LLM/API keys ever reach the browser. Write operations are
+proposed first and only executed after an explicit Confirm click.
+{% endcomment %}
+<div id="ai-assistant-root">
+  {% csrf_token %}
+  <button id="ai-fab" type="button" onclick="aiTogglePanel()"
+          aria-label="Open Meelad AI Assistant" title="Meelad AI Assistant">✨</button>
+
+  <div id="ai-panel" class="ai-hidden" role="dialog" aria-label="Meelad AI Assistant">
+    <div class="ai-panel-head">
+      <span class="ai-panel-title">✨ Meelad AI Assistant</span>
+      <span class="ai-head-btns">
+        <button class="ai-close" type="button" onclick="aiToggleHistory(event)" aria-label="Chat history" title="Chat history"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 3"/></svg></button>
+        <button class="ai-close" type="button" onclick="aiNewChat(event)" aria-label="New chat" title="New chat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button class="ai-close" type="button" onclick="aiTogglePanel()" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </span>
+    </div>
+    <div id="ai-history" class="ai-hidden" aria-label="Chat history"></div>
+    <div id="ai-messages" aria-live="polite"></div>
+    <div id="ai-confirm-bar" class="ai-hidden">
+      <button id="ai-confirm-yes" type="button" onclick="aiConfirm(true)">✅ Confirm</button>
+      <button id="ai-confirm-no" type="button" onclick="aiConfirm(false)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px"><path d="M6 18L18 6M6 6l12 12"/></svg> Cancel</button>
+    </div>
+    <form id="ai-input-row" onsubmit="return aiOnSubmit(event)" data-no-loader>
+      <input id="ai-input" type="text" placeholder="Ask about teams, programs, results…"
+             autocomplete="off" aria-label="Message the AI assistant">
+      <button id="ai-send" type="submit" aria-label="Send">➤</button>
+    </form>
+  </div>
+</div>
+
+<style>
+  #ai-assistant-root { font-family: inherit; }
+  #ai-fab {
+    position: fixed; right: 20px; bottom: 20px; z-index: 9998;
+    width: 56px; height: 56px; border-radius: 9999px; border: none; cursor: pointer;
+    background: linear-gradient(135deg, #4f46e5, #9333ea); color: #fff; font-size: 24px;
+    box-shadow: 0 10px 25px rgba(79, 70, 229, .45); transition: transform .15s ease;
+  }
+  #ai-fab:hover { transform: scale(1.07); }
+  #ai-panel {
+    position: fixed; right: 20px; bottom: 88px; z-index: 9999;
+    width: 340px; max-width: calc(100vw - 32px); height: 480px; max-height: 72vh;
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .25);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  #ai-panel.ai-hidden { display: none; }
+  .ai-panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px; color: #fff;
+    background: linear-gradient(135deg, #4f46e5, #9333ea);
+  }
+  .ai-panel-title { font-weight: 700; font-size: 14px; }
+  .ai-close { background: transparent; border: none; color: #fff; font-size: 16px; cursor: pointer; line-height: 1; }
+  .ai-head-btns { display: inline-flex; align-items: center; gap: 4px; }
+  .ai-head-btns .ai-close { padding: 4px; border-radius: 6px; display: inline-flex; }
+  .ai-head-btns .ai-close:hover { background: rgba(255,255,255,.18); }
+  #ai-history { max-height: 180px; overflow-y: auto; background: #eef2ff; border-bottom: 1px solid #e0e7ff; }
+  #ai-history.ai-hidden { display: none; }
+  .ai-hist-item {
+    display: block; width: 100%; text-align: left; border: none; background: transparent;
+    padding: 8px 14px; font-size: 13px; color: #3730a3; cursor: pointer;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    border-bottom: 1px solid #e0e7ff;
+  }
+  .ai-hist-item:hover { background: #e0e7ff; }
+  .ai-hist-empty { padding: 10px 14px; font-size: 12px; color: #6b7280; }
+  #ai-messages {
+    flex: 1; overflow-y: auto; padding: 12px; background: #f8fafc;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .ai-msg {
+    max-width: 85%; padding: 8px 12px; border-radius: 12px;
+    font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word;
+  }
+  .ai-msg.user { align-self: flex-end; background: #4f46e5; color: #fff; border-bottom-right-radius: 4px; }
+  .ai-msg.bot { align-self: flex-start; background: #fff; color: #1f2937; border: 1px solid #e5e7eb; border-bottom-left-radius: 4px; }
+  .ai-msg.error { align-self: stretch; background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; font-size: 12px; }
+  .ai-typing { display: inline-flex; gap: 4px; padding: 4px 2px; }
+  .ai-typing i { width: 6px; height: 6px; border-radius: 50%; background: #9ca3af; display: inline-block; animation: aiBlink 1.2s infinite; }
+  .ai-typing i:nth-child(2) { animation-delay: .2s; }
+  .ai-typing i:nth-child(3) { animation-delay: .4s; }
+  @keyframes aiBlink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+  #ai-confirm-bar { display: flex; gap: 8px; padding: 10px 12px; background: #fefce8; border-top: 1px solid #fde68a; }
+  #ai-confirm-bar.ai-hidden { display: none; }
+  #ai-confirm-bar button {
+    flex: 1; padding: 8px 10px; border-radius: 8px; border: none;
+    cursor: pointer; font-weight: 600; font-size: 13px;
+  }
+  #ai-confirm-yes { background: #16a34a; color: #fff; }
+  #ai-confirm-no { background: #e5e7eb; color: #374151; }
+  #ai-input-row { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid #e5e7eb; background: #fff; }
+  #ai-input {
+    flex: 1; border: 1px solid #d1d5db; border-radius: 10px;
+    padding: 9px 12px; font-size: 13px; outline: none;
+  }
+  #ai-input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, .15); }
+  #ai-send { width: 42px; border: none; border-radius: 10px; background: #4f46e5; color: #fff; cursor: pointer; font-size: 15px; }
+  #ai-send:disabled { opacity: .6; cursor: default; }
+</style>
+
+<script>
+(function () {
+  var convId = null;
+  var busy = false;
+
+  function $(id) { return document.getElementById(id); }
+
+  function csrfToken() {
+    var input = document.querySelector('#ai-assistant-root input[name="csrfmiddlewaretoken"]');
+    if (input && input.value) return input.value;
+    var m = document.cookie.match(/(?:^|; )csrftoken=([^;]*)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+
+  function scrollDown() {
+    var box = $('ai-messages');
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function bubble(text, cls) {
+    var d = document.createElement('div');
+    d.className = 'ai-msg ' + (cls || 'bot');
+    d.textContent = text;
+    $('ai-messages').appendChild(d);
+    scrollDown();
+    return d;
+  }
+
+  function showTyping() {
+    var d = document.createElement('div');
+    d.className = 'ai-msg bot';
+    d.id = 'ai-typing';
+    d.innerHTML = '<span class="ai-typing"><i></i><i></i><i></i></span>';
+    $('ai-messages').appendChild(d);
+    scrollDown();
+  }
+
+  function hideTyping() {
+    var t = $('ai-typing');
+    if (t) t.remove();
+  }
+
+  function setBusy(state) {
+    busy = state;
+    $('ai-send').disabled = state;
+    $('ai-input').disabled = state;
+    if (state) $('ai-confirm-bar').classList.add('ai-hidden');
+  }
+
+  window.aiTogglePanel = function () {
+    var panel = $('ai-panel');
+    panel.classList.toggle('ai-hidden');
+    if (!panel.classList.contains('ai-hidden')) {
+      if (!$('ai-messages').children.length) {
+        bubble("Hi! I'm the Meelad AI Assistant. Try asking:\n• Who is leading?\n• Show Ahmed's programs\n• Is Hall A available at 3 PM?\n• Find scheduling conflicts");
+      }
+      $('ai-input').focus();
+    }
+  };
+
+  function handleData(data) {
+    if (data.conversation_id) convId = data.conversation_id;
+    if (data.requires_confirmation) {
+      $('ai-confirm-bar').classList.remove('ai-hidden');
+    } else {
+      $('ai-confirm-bar').classList.add('ai-hidden');
+    }
+    bubble(data.answer || '(no answer)', 'bot');
+  }
+
+  var WAKE_HINT = /unavailable|timed out|waking/i;
+
+  function send(text, isRetry) {
+    if ((!isRetry && busy) || !text) return;
+    setBusy(true);
+    if (!isRetry) bubble(text, 'user');
+    showTyping();
+    var waking = false;
+    fetch('/ai/chat/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken(),
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({ message: text, conversation_id: convId })
+    })
+      .then(function (resp) {
+        return resp.json().catch(function () {
+          return { error: 'Unexpected response from the server (' + resp.status + ').' };
+        });
+      })
+      .then(function (data) {
+        hideTyping();
+        if (data.error && !isRetry && WAKE_HINT.test(data.error)) {
+          // The AI service is likely asleep (free tier cold start). Wait a
+          // moment and retry once automatically instead of dead-ending.
+          waking = true;
+          bubble('⏳ The AI service is waking up (this happens after inactivity on the free tier). Retrying automatically…', 'bot');
+          showTyping();
+          setTimeout(function () { send(text, true); }, 5000);
+        } else if (data.error) {
+          bubble('⚠️ ' + data.error, 'error');
+        } else {
+          handleData(data);
+        }
+      })
+      .catch(function () {
+        hideTyping();
+        if (!isRetry) {
+          waking = true;
+          bubble('⏳ Connecting to the AI assistant — retrying…', 'bot');
+          showTyping();
+          setTimeout(function () { send(text, true); }, 5000);
+        } else {
+          bubble('⚠️ Could not reach the AI assistant. Please try again.', 'error');
+        }
+      })
+      .then(function () {
+        if (!waking) setBusy(false);
+        scrollDown();
+      });
+  }
+
+  window.aiSend = function () {
+    var input = $('ai-input');
+    var value = (input.value || '').trim();
+    if (!value) return false;
+    input.value = '';
+    send(value);
+    return false;
+  };
+
+  window.aiOnSubmit = function (event) {
+    event.preventDefault();
+    return window.aiSend();
+  };
+
+  window.aiConfirm = function (approved) {
+    $('ai-confirm-bar').classList.add('ai-hidden');
+    send(approved ? 'yes' : 'no');
+  };
+
+  function clearMessages() {
+    $('ai-messages').innerHTML = '';
+  }
+
+  function renderHistoryList(sessions) {
+    var box = $('ai-history');
+    box.innerHTML = '';
+    if (!sessions.length) {
+      var empty = document.createElement('div');
+      empty.className = 'ai-hist-empty';
+      empty.textContent = 'No previous chats yet.';
+      box.appendChild(empty);
+      return;
+    }
+    sessions.forEach(function (s) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ai-hist-item';
+      b.textContent = s.title || 'New chat';
+      b.title = s.title || 'New chat';
+      b.onclick = function () { aiLoadChat(s.conversation_id); };
+      box.appendChild(b);
+    });
+  }
+
+  window.aiToggleHistory = function (event) {
+    if (event) event.stopPropagation();
+    var box = $('ai-history');
+    if (!box.classList.contains('ai-hidden')) {
+      box.classList.add('ai-hidden');
+      return;
+    }
+    box.classList.remove('ai-hidden');
+    box.innerHTML = '<div class="ai-hist-empty">Loading…</div>';
+    fetch('/ai/chat/history/', { credentials: 'same-origin' })
+      .then(function (resp) { return resp.json(); })
+      .then(function (data) { renderHistoryList(data.sessions || []); })
+      .catch(function () {
+        box.innerHTML = '<div class="ai-hist-empty">Could not load history.</div>';
+      });
+  };
+
+  window.aiLoadChat = function (conversationId) {
+    $('ai-history').classList.add('ai-hidden');
+    clearMessages();
+    convId = conversationId;
+    showTyping();
+    fetch('/ai/chat/history/' + encodeURIComponent(conversationId) + '/', { credentials: 'same-origin' })
+      .then(function (resp) { return resp.json(); })
+      .then(function (data) {
+        hideTyping();
+        if (data.error) {
+          bubble('⚠️ ' + data.error, 'error');
+          return;
+        }
+        (data.messages || []).forEach(function (m) {
+          bubble(m.content, m.role === 'user' ? 'user' : 'bot');
+        });
+        if (!(data.messages || []).length) bubble('(empty chat)', 'bot');
+      })
+      .catch(function () {
+        hideTyping();
+        bubble('⚠️ Could not load this chat.', 'error');
+      });
+  };
+
+  window.aiNewChat = function (event) {
+    if (event) event.stopPropagation();
+    $('ai-history').classList.add('ai-hidden');
+    clearMessages();
+    convId = null;
+    bubble("Hi! I'm the Meelad AI Assistant. Try asking:\n• Who is leading?\n• Show Ahmed's programs\n• Is Hall A available at 3 PM?\n• Find scheduling conflicts");
+  };
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+      var panel = $('ai-panel');
+      if (panel && !panel.classList.contains('ai-hidden')) panel.classList.add('ai-hidden');
+    }
+  });
+})();
+</script>

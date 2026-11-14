@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------
+   Global horizontal-overflow guard.
+
+   Off-canvas elements (e.g. the closed #mobile-menu drawer, which is
+   kept in the DOM and moved aside with translate-x-full) and genuinely
+   wide content must never widen the page itself: on mobile the browser
+   then allows panning the layout viewport sideways, which carries the
+   fixed header (and its hamburger) out of view. Wide TABLES keep their
+   own .overflow-x-auto wrappers — they still scroll inside the card;
+   only the page-level scrollbar is suppressed.
+
+   NOTE: html ONLY. Putting overflow-x on <body> as well would force
+   overflow-y to compute to auto, turning body into a scroll container
+   and breaking position: sticky for its descendants. On <html> the
+   value propagates to the viewport with no such side effect.
+   ------------------------------------------------------------------ */
+html {
+  overflow-x: hidden;
+}
+
+/* ------------------------------------------------------------------
+   Design-system component classes (available everywhere; adopted by
+   markup incrementally so the visual audit stays reviewable).
+
+   NOTE: this file is the Tailwind build INPUT and lives outside
+   staticfiles/ on purpose — it must never be published by
+   collectstatic. The compiled output is
+   staticfiles/program/css/app.min.css (rebuild: npm run build:css).
+   ------------------------------------------------------------------ */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5
+           text-sm font-semibold shadow-sm transition select-none
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400
+           disabled:opacity-60 disabled:pointer-events-none;
+  }
+  .btn-primary { @apply btn bg-indigo-600 text-white hover:bg-indigo-700; }
+  .btn-secondary { @apply btn bg-white text-gray-700 border border-gray-200 hover:border-indigo-300 hover:text-indigo-600; }
+  .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700; }
+  .btn-success { @apply btn bg-emerald-600 text-white hover:bg-emerald-700; }
+
+  .card { @apply bg-white rounded-2xl shadow-sm border border-gray-100; }
+
+  .form-label { @apply block text-sm font-semibold text-gray-700 mb-1.5; }
+  .form-input {
+    @apply w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5
+           text-gray-800 placeholder-gray-400 shadow-sm
+           focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100
+           focus:outline-none transition;
+  }
+}

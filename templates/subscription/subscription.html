@@ -1,0 +1,98 @@
+{% load static subscription_tags %}
+
+<!DOCTYPE html>
+<html lang="en" x-data="{ showModal: false }">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meelad Subscription | Digital Fest Platform</title>
+  {% include '_head_meta.html' %}
+  <link rel="stylesheet" href="{% static 'program/css/app.min.css' %}?v=5">
+  <script src="//unpkg.com/alpinejs" defer></script>
+  <style>
+    /* Same popup styling as header.html — this page does not include the header. */
+    .modal-shell { transition: opacity 0.18s ease-in-out; }
+    .modal-shell .modal-content {
+      transform: translateY(12px) scale(0.97);
+      opacity: 0;
+      transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    }
+    .modal-shell .modal-content.is-open {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 to-white min-h-screen flex flex-col items-center justify-center p-6">
+
+  <!-- Subscription section is only rendered when the admin toggle is ON. -->
+  {% if SUBSCRIPTION_ENABLED %}
+  <div class="text-center mb-10">
+    <h1 class="text-4xl font-extrabold text-indigo-700 mb-2">🎉 Meelad: Digital Platform</h1>
+    <p class="text-gray-600 text-lg">Empowering your Fest Management with Smart, Real-time Score Updates</p>
+  </div>
+
+  <!-- Subscription Card -->
+  <div class="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-md text-center border border-indigo-100">
+    <h2 class="text-2xl font-bold text-indigo-600 mb-4">Institution Subscription</h2>
+    <p class="text-gray-700 mb-2">Get full access for <strong>₹299/year</strong></p>
+    <p class="text-gray-500 mb-6 text-sm">(Per Institution)</p>
+
+    <!-- Feature List -->
+    <ul class="text-left text-gray-700 mb-8 space-y-2">
+      <li>✅ Full fest data coverage</li>
+      <li>✅ Real-time score updates by team, category & section</li>
+      <li>✅ Separate boys & girls scoring</li>
+      <li>✅ Live score display</li>
+      <li>✅ Participant self-registration via expiring link</li>
+      <li>✅ Downloadable program & judgement lists</li>
+      <li>✅ Guaranteed data privacy</li>
+      <li>✅ Custom program rule options</li>
+    </ul>
+
+    <!-- Subscribe Button -->
+    <button 
+      @click="showModal = true"
+      class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold transition">
+      Subscribe Now ₹299 / year
+    </button>
+  </div>
+  {% endif %}
+
+  <!-- Modal -->
+  <div x-show="showModal" x-transition.opacity
+    class="modal-shell fixed inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 z-50">
+    <div class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-sm relative" :class="showModal ? 'is-open' : ''">
+      <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-2xl">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2.5">
+          <span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-lg">💳</span>
+          Confirm Subscription
+        </h3>
+        <button @click="showModal = false" aria-label="Close modal"
+          class="shrink-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg flex items-center justify-center transition">✕</button>
+      </div>
+
+      <div class="p-5 sm:p-6">
+        <p class="text-gray-600 text-center mb-6">You are subscribing for 1 year access to Meelad Digital Fest Platform.</p>
+
+        <div class="flex justify-between mb-6">
+          <span class="font-semibold text-gray-700">Subscription Fee</span>
+          <span class="text-indigo-600 font-bold">₹299</span>
+        </div>
+
+        <form action="{% url 'subscription:create_order' %}" method="POST">
+          {% csrf_token %}
+          <button type="submit"
+            class="block w-full bg-indigo-600 text-white py-3 rounded-xl text-center font-semibold hover:bg-indigo-700 transition">
+            Proceed to Payment
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {% include '_submit_loader.html' %}
+{% include '_footer.html' %}
+
+</body>
+</html>

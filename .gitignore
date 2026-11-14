@@ -1,0 +1,31 @@
+*.pyc
+nbproject
+*.db
+.idea/*
+.pyc
+.DS_Store
+*.rdb
+*.json
+*.log
+db.sqlite3
+media/*
+meelad/local.py
+
+# AI assistant
+.env
+meelad-ai/.env
+__pycache__/
+.pytest_cache/
+
+# deployment / local secrets
+meelad/local.py
+/static/
+/media/
+
+# node build tooling (Tailwind CLI — see tailwind.config.js)
+node_modules/
+# package manifests are source of truth for the CSS build
+!package.json
+!package-lock.json
+
+.env.example

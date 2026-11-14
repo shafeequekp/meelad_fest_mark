@@ -1,0 +1,48 @@
+{% if is_both_sections %}
+<!-- Boys / Girls tabs (only when the fest runs both sections) -->
+<div class="relative w-full max-w-md mx-auto mb-6 sm:mb-8 bg-gray-200 rounded-xl overflow-hidden">
+  <div class="flex">
+    <button id="boysTab" onclick="showSection('boys')"
+      class="tab-btn flex-1 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-colors duration-300">Boys</button>
+    <button id="girlsTab" onclick="showSection('girls')"
+      class="tab-btn flex-1 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-colors duration-300">Girls</button>
+  </div>
+  <div id="sliderIndicator"
+    class="absolute top-0 left-0 h-full w-1/2 bg-indigo-600 rounded-xl transition-transform duration-300"></div>
+</div>
+{% endif %}
+
+{% if not is_girls_only %}
+<!-- Boys Section (not rendered on a girls-only fest) -->
+<div id="boysSection" class="section">
+  {% if boys_programs %}
+  <div class="space-y-3">
+    {% for program in boys_programs %}
+    {% include 'program/_general_accordion_item.html' %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card p-10 text-center text-gray-500 mb-8">
+    No general programs in the Boys section yet.
+  </div>
+  {% endif %}
+</div>
+
+{% endif %}
+
+{% if not is_boys_only %}
+<!-- Girls Section (initially hidden only when both sections are active) -->
+<div id="girlsSection" class="section {% if is_both_sections %}hidden{% endif %}">
+  {% if girls_programs %}
+  <div class="space-y-3">
+    {% for program in girls_programs %}
+    {% include 'program/_general_accordion_item.html' %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card p-10 text-center text-gray-500 mb-8">
+    No general programs in the Girls section yet.
+  </div>
+  {% endif %}
+</div>
+{% endif %}

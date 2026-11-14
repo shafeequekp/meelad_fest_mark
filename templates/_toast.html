@@ -1,0 +1,53 @@
+{% comment %}
+Standalone toast popups for PUBLIC pages (program registration, parents portal,
+payment...) that do not include header.html — the header is where the shared
+MeeladToast lives. Include this once just before </body> on those pages:
+
+  {% include '_toast.html' %}
+
+then call showToast("Copied!", "success") or MeeladToast(...) from any script.
+
+It is guarded, so including it is harmless even on pages that already render
+the header (window.MeeladToast already exists there).
+{% endcomment %}
+<div id="toast-container"
+     class="fixed top-4 right-4 z-[300] flex flex-col items-end gap-2 pointer-events-none"
+     role="status" aria-live="polite"></div>
+<script>
+(function () {
+  if (window.MeeladToast) return; // header.html already provides it
+  window.MeeladToast = function (message, type) {
+    type = type || "info";
+    var styles = {
+      success: { bg: "bg-emerald-600", icon: "✓" },
+      error: { bg: "bg-red-600", icon: "✕" },
+      warning: { bg: "bg-amber-500", icon: "⚠" },
+      info: { bg: "bg-indigo-600", icon: "ℹ" }
+    };
+    var s = styles[type] || styles.info;
+    var container = document.getElementById("toast-container");
+    if (!container) return;
+    var toast = document.createElement("div");
+    toast.className =
+      "toast pointer-events-auto flex items-start gap-2.5 max-w-xs w-full sm:w-auto " +
+      "px-4 py-3 rounded-xl shadow-2xl text-white text-sm font-medium " + s.bg +
+      " transition-all duration-300 translate-x-4 opacity-0";
+    toast.setAttribute("role", "status");
+    toast.innerHTML =
+      '<span class="shrink-0 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">' +
+      s.icon + '</span><span class="leading-snug toast-msg"></span>';
+    toast.querySelector(".toast-msg").textContent = message;
+    container.appendChild(toast);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        toast.classList.remove("translate-x-4", "opacity-0");
+      });
+    });
+    setTimeout(function () {
+      toast.classList.add("translate-x-4", "opacity-0");
+      setTimeout(function () { toast.remove(); }, 350);
+    }, 4200);
+  };
+  window.showToast = window.MeeladToast;
+})();
+</script>

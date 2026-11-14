@@ -1,0 +1,238 @@
+{% load custom_filters %}
+<div class="card overflow-hidden"
+        data-program-id="{{ program.id }}">
+
+        <!-- Program Header (clickable accordion toggle) -->
+        <div class="flex items-center justify-between p-4 sm:p-5 cursor-pointer select-none group"
+          onclick="toggleProgram({{ program.id }})" id="program-header-{{ program.id }}">
+          <div class="flex items-center gap-3 min-w-0">
+            <!-- Animated chevron -->
+            <svg id="chevron-{{ program.id }}"
+              class="w-5 h-5 text-indigo-400 transition-transform duration-200 flex-shrink-0" fill="none"
+              stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+            <div class="min-w-0">
+              <h3 class="text-base sm:text-lg font-bold text-indigo-700 truncate group-hover:text-indigo-800">
+                {{program.title }}</h3>
+              {% if program.description %}
+              <p class="text-xs text-gray-500 truncate mt-0.5">{{ program.description }}</p>
+              {% endif %}
+            </div>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0 ml-3">
+            <span
+              class="hidden sm:inline-block text-xs font-semibold px-2 py-0.5 rounded-full
+              {% if program.is_result_published %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-500{% endif %}">
+              {% if program.is_result_published %}✅ Published{% else %}Draft{% endif %}
+            </span>
+            <span
+              class="text-xs text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full font-semibold">
+              {{ program.general_teams.count }} team{% if program.general_teams.count != 1 %}s{% endif %}
+            </span>
+            <!-- Program delete (same SVG trash icon as the category detail student rows) -->
+            {% if program.participants.count > 0 or program.general_results %}
+            <button type="button" disabled
+              class="w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 text-gray-300 cursor-not-allowed"
+              title="Delete disabled — teams and/or results have already been added">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+            {% else %}
+            <form method="post" action="{% url 'delete_program' program.id %}"
+              data-confirm="Delete this program?">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button type="submit" onclick="event.stopPropagation()"
+                class="w-7 h-7 flex items-center justify-center rounded-full bg-white text-red-500 border border-red-200 shadow-sm hover:bg-red-50 hover:text-red-600 transition"
+                title="Delete program">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Expanded Program Body -->
+        <div id="program-body-{{ program.id }}" class="hidden border-t border-gray-100">
+          <div class="p-4 sm:p-5 space-y-4">
+
+            <!-- Action bar -->
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <p class="text-sm font-semibold text-gray-600">🎯 Participating Teams</p>
+              <div class="flex gap-2">
+                {% if program.general_results %}
+                <!-- Result already set → cannot add more teams -->
+                <button type="button" disabled
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-gray-400 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed"
+                  title="Cannot add team — a result has already been set for this program">
+                  ➕ Add Team
+                </button>
+                {% else %}
+                <button type="button" onclick="addTeamCard({{ program.id }}, '{{ program.section }}')"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg shadow-sm hover:bg-emerald-100 transition">
+                  ➕ Add Team
+                </button>
+                {% endif %}
+                {% if program.general_teams.count == 0 or program.is_result_published %}
+                <!-- Disabled: no teams added yet, or the result is already published -->
+                <button type="button" disabled
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-gray-400 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed"
+                  title="{% if program.is_result_published %}Result is already published — unpublish it first before changing the result{% else %}Add a team first before setting the result{% endif %}">
+                  🏆 Set Result
+                </button>
+                {% else %}
+                <button type="button" onclick="openResultModal({{ program.id }})"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg shadow-sm hover:bg-indigo-100 transition">
+                  🏆 Set Result
+                </button>
+                {% endif %}
+                {% if not program.general_results %}
+                <!-- No result added yet → publishing not allowed -->
+                <button type="button" disabled
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-gray-400 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed"
+                  title="Add a result first (Set Result) before publishing">
+                  📤 Publish
+                </button>
+                {% elif program.is_result_published %}
+                <button type="button" onclick="publishResult({{ program.id }}, this)"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-gray-700 bg-gray-100 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-200 transition"
+                  title="Unpublish this result">
+                  📪 Unpublish
+                </button>
+                {% else %}
+                <button type="button" onclick="publishResult({{ program.id }}, this)"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg shadow-sm hover:bg-blue-100 transition"
+                  title="Publish this result">
+                  📤 Publish
+                </button>
+                {% endif %}
+                <!-- Download result poster (only once the result is published) -->
+                {% if program.general_results and program.is_result_published %}
+                <a href="{% url 'download_results_poster_image' program.id program.poster_section %}"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 transition"
+                  title="Download Result Poster">
+                  🖼 Poster
+                </a>
+                <a href="{% url 'download_results_poster_image' program.id program.poster_section %}?force=1"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-amber-700 bg-amber-100 border border-amber-200 rounded-lg hover:bg-amber-200 transition"
+                  title="Force re-render and download a fresh poster (bypasses cache)">
+                  ↻ Force
+                </a>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Result summary bar -->
+            {% if program.general_results %}
+            <div class="flex flex-wrap gap-2">
+              {% if program.general_results.first %}
+              <span class="px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-semibold">🥇 {{program.general_results.first }}</span>
+              {% endif %}
+              {% if program.general_results.second %}
+              <span class="px-3 py-1 rounded-full bg-gray-200 text-gray-700 text-xs font-semibold">🥈 {{program.general_results.second }}</span>
+              {% endif %}
+              {% if program.general_results.third %}
+              <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">🥉 {{program.general_results.third }}</span>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Team Cards Container -->
+            <div id="team-cards-container-{{ program.id }}" class="space-y-2">
+              {% for team in program.general_teams.all %}
+              {% get_team_participants program team as team_participants %}
+              <!-- Saved Team Card -->
+              <div class="team-card bg-gray-50 rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+                data-team-id="{{ team.id }}" data-program-id="{{ program.id }}">
+                <!-- Team Header row: name + participants shown, toggle to expand edit -->
+                <div class="flex items-start justify-between p-3 cursor-pointer group/card"
+                  onclick="toggleTeamCard(this)">
+                  <div class="flex items-start gap-2 min-w-0">
+                    <svg
+                      class="team-chevron w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0 transition-transform duration-200"
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                    <div class="min-w-0">
+                      <span class="font-bold text-indigo-700 text-sm">{{ team.name }}</span>
+                      <!-- Participants chips visible always -->
+                      <div class="flex flex-wrap gap-1 mt-1">
+                        {% for student in team_participants %}
+                        <span
+                          class="inline-flex items-center text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md font-medium">
+                          👤 {{ student.full_name }}{% if student.code_number %} ({{ student.code_number }}){% endif %}
+                        </span>
+                        {% empty %}
+                        <span class="text-xs text-rose-500 italic font-semibold">No participants selected — expand to
+                          edit</span>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2 ml-2 flex-shrink-0">
+                    <span
+                      class="text-xs text-emerald-700 bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">
+                      {{ team_participants.count }}
+                    </span>
+                    {% if program.general_results %}
+                    <button type="button" disabled
+                      class="w-6 h-6 flex items-center justify-center text-base font-bold rounded-full bg-gray-100 text-gray-300 cursor-not-allowed"
+                      title="Remove disabled — results have already been set for this program">✕</button>
+                    {% else %}
+                    <button type="button"
+                      onclick="event.stopPropagation(); removeTeam({{ program.id }}, {{ team.id }}, '{{ team.name|escapejs }}', this)"
+                      class="text-red-400 hover:text-red-600 w-6 h-6 flex items-center justify-center text-base font-bold rounded-full hover:bg-red-50 transition"
+                      title="Remove team">✕</button>
+                    {% endif %}
+                  </div>
+                </div>
+                <!-- Edit Body (hidden by default) -->
+                <div class="team-card-body hidden border-t border-gray-200 bg-white">
+                  <div class="p-4 space-y-3">
+                    <div>
+                      <label class="block text-xs font-semibold text-gray-600 mb-1">Team</label>
+                      <select disabled
+                        class="team-select w-full border rounded-lg px-3 py-2 bg-gray-100 cursor-not-allowed text-gray-700 text-sm font-semibold">
+                        {% for t in teams %}
+                        <option value="{{ t.id }}" {% if t.id|is_equal_to:team.id %}selected{% endif %}>{{ t.name }}
+                        </option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-gray-600 mb-1">Participants <span
+                          class="text-gray-400 font-normal">(hold Ctrl/Cmd to select multiple)</span></label>
+                      <select multiple data-card-id="{{ team.id }}"
+                        class="participant-select w-full border rounded-lg px-3 py-2 h-44 focus:ring focus:ring-emerald-300 text-sm">
+                        {% get_team_section_students team program.section as section_students %}
+                        {% for student in section_students %}
+                        <option value="{{ student.id }}" {% if student.id in program.participant_ids %}selected{% endif %}>{{ student.full_name }} ({{ student.code_number|default:"No Code" }})</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="flex justify-end">
+                      <button type="button" onclick="saveTeam({{ program.id }}, {{ team.id }}, false, this)"
+                        class="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg shadow hover:bg-emerald-700 transition">
+                        💾 Save Participants
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {% empty %}
+              <p class="text-sm text-gray-400 italic py-2" id="no-teams-msg-{{ program.id }}">No teams added yet. Click
+                "Add Team" to get started.</p>
+              {% endfor %}
+            </div>
+
+          </div>
+        </div>
+      </div>

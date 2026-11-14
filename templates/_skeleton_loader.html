@@ -1,0 +1,222 @@
+{% comment %}
+Reusable full-page skeleton loader — include once per page (the shared footer
+include already brings it in on most pages).
+
+How it works
+------------
+* The skeleton starts HIDDEN, so fast page loads (< 250ms) never show it.
+* A timer reveals it only if the page is still loading after
+  REVEAL_DELAY = 250ms (tunable via data-reveal-ms on the #page-skeleton
+  div, e.g. data-reveal-ms="600"). It covers the rest of the load and fades
+  out on window.load.
+* Clicking an internal link or submitting a same-origin GET form reveals it
+  IMMEDIATELY on the current page — a real navigation is starting and the
+  browser is about to replace this page.
+* Opt a link/form out with data-no-skeleton. Manual control via
+  window.MeeladSkeleton.show() / .hide().
+{% endcomment %}
+<style>
+  #page-skeleton {
+    position: fixed; inset: 0; z-index: 150; display: none;
+    overflow-y: auto; background: #f3f4f6;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  #page-skeleton.sk-active { display: block; }
+  #page-skeleton.sk-leaving { opacity: 0; transition: opacity .25s ease; }
+
+  .sk-shimmer {
+    position: relative; overflow: hidden;
+    background: #e5e7eb; border-radius: 8px;
+  }
+  .sk-shimmer::after {
+    content: ""; position: absolute; inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent);
+    animation: sk-slide 1.4s ease-in-out infinite;
+  }
+  @keyframes sk-slide { 100% { transform: translateX(100%); } }
+
+  .sk-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; padding: 14px 20px;
+    background: linear-gradient(90deg, #4f46e5, #7c3aed);
+  }
+  .sk-nav { display: flex; gap: 10px; }
+  .sk-wrap { max-width: 1200px; margin: 0 auto; padding: 24px 16px 48px; }
+  .sk-stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 14px; margin-top: 20px;
+  }
+  .sk-rows { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+  .sk-pill {
+    position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 8px; z-index: 1;
+    background: #111827; color: #fff; padding: 8px 14px; border-radius: 9999px;
+    font-size: 12px; font-weight: 600; letter-spacing: .02em;
+    box-shadow: 0 10px 25px rgba(0,0,0,.25);
+  }
+  .sk-spinner {
+    width: 14px; height: 14px; border-radius: 9999px;
+    border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+    animation: sk-spin .8s linear infinite;
+  }
+  @keyframes sk-spin { to { transform: rotate(360deg); } }
+</style>
+<noscript><style>#page-skeleton{display:none!important;}</style></noscript>
+<div id="page-skeleton" data-reveal-ms="250" role="status" aria-live="polite" aria-label="Loading page">
+  <!-- Fake header -->
+  <div class="sk-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="sk-shimmer" style="width:40px;height:40px;border-radius:9999px;background:#c7d2fe;"></div>
+      <div class="sk-shimmer" style="width:150px;height:20px;background:#c7d2fe;"></div>
+    </div>
+    <div class="sk-nav">
+      <div class="sk-shimmer" style="width:64px;height:30px;background:#c7d2fe;"></div>
+      <div class="sk-shimmer" style="width:64px;height:30px;background:#c7d2fe;"></div>
+      <div class="sk-shimmer" style="width:64px;height:30px;background:#c7d2fe;"></div>
+    </div>
+  </div>
+
+  <div class="sk-wrap">
+    <!-- Page title -->
+    <div class="sk-shimmer" style="width:180px;height:24px;background:#d1d5db;"></div>
+
+    <!-- Stat cards -->
+    <div class="sk-stats">
+      <div class="sk-shimmer" style="height:104px;border-radius:16px;"></div>
+      <div class="sk-shimmer" style="height:104px;border-radius:16px;"></div>
+      <div class="sk-shimmer" style="height:104px;border-radius:16px;"></div>
+      <div class="sk-shimmer" style="height:104px;border-radius:16px;"></div>
+    </div>
+
+    <!-- Content rows -->
+    <div class="sk-rows">
+      <div class="sk-shimmer" style="height:76px;border-radius:14px;"></div>
+      <div class="sk-shimmer" style="height:76px;border-radius:14px;"></div>
+      <div class="sk-shimmer" style="height:76px;border-radius:14px;"></div>
+      <div class="sk-shimmer" style="height:76px;border-radius:14px;"></div>
+    </div>
+  </div>
+
+  <div class="sk-pill">
+    <span class="sk-spinner"></span> Loading…
+  </div>
+</div>
+<script>
+(function () {
+  'use strict';
+  var el = document.getElementById('page-skeleton');
+  if (!el) return;
+
+  var MIN_SHOW = 250;   // keep a revealed skeleton visible at least this long
+  var REVEAL_DELAY = parseInt(el.getAttribute('data-reveal-ms') || '250', 10);
+  if (isNaN(REVEAL_DELAY) || REVEAL_DELAY < 0) REVEAL_DELAY = 250;
+  var safetyTimer = null;
+  var shown = false;
+  var shownAt = 0;
+
+  function reveal() {
+    shown = true;
+    shownAt = Date.now();
+    el.classList.remove('sk-leaving');
+    el.classList.add('sk-active');
+  }
+
+  // The skeleton ships hidden. Reveal it only when a real load is in
+  // progress — after REVEAL_DELAY ms if window.load hasn't fired yet (slow
+  // initial load), or immediately when internal navigation starts (below).
+  var revealTimer = setTimeout(reveal, REVEAL_DELAY);
+
+  // Reload arm (opt-in via <body data-skeleton-on-reload>): the previous page
+  // stamps sessionStorage on unload; an opted-in page reveals the skeleton
+  // immediately on its next load, so a reload gets the same feedback as a
+  // link-click navigation. Non-opted pages consume and ignore the stamp, so
+  // fast pages elsewhere never flash.
+  try {
+    var armedAt = parseInt(sessionStorage.getItem('sk-armed-at') || '0', 10);
+    sessionStorage.removeItem('sk-armed-at');
+    if (armedAt && Date.now() - armedAt < 15000 &&
+        document.body && document.body.hasAttribute('data-skeleton-on-reload')) {
+      clearTimeout(revealTimer);
+      revealTimer = setTimeout(reveal, 0);
+    }
+  } catch (err) { /* storage blocked — normal reveal path still applies */ }
+  window.addEventListener('pagehide', function () {
+    try { sessionStorage.setItem('sk-armed-at', String(Date.now())); } catch (err) {}
+  });
+
+  function show() {
+    clearTimeout(revealTimer);
+    if (!shown) reveal();
+    clearTimeout(safetyTimer);
+    // Safety net: if the navigation was cancelled (e.g. a JS handler took
+    // over the click), the overlay must not stay forever.
+    safetyTimer = setTimeout(hide, 6000);
+  }
+
+  function hide() {
+    clearTimeout(revealTimer);
+    if (!shown) return; // never revealed → nothing to fade
+    var wait = Math.max(0, MIN_SHOW - (Date.now() - shownAt));
+    var doHide = function () {
+      el.classList.add('sk-leaving');
+      setTimeout(function () {
+        el.classList.remove('sk-active');
+        el.classList.remove('sk-leaving');
+        shown = false;
+      }, 260);
+    };
+    if (wait > 0) { setTimeout(doHide, wait); } else { doHide(); }
+  }
+
+  window.MeeladSkeleton = { show: show, hide: hide };
+
+  function isInternal(url) {
+    try {
+      var u = new URL(url, window.location.href);
+      return (u.protocol === 'http:' || u.protocol === 'https:') && u.host === window.location.host;
+    } catch (err) { return false; }
+  }
+
+  // Internal navigation links — bubble phase + defaultPrevented check so links
+  // that open modals / run AJAX (and call preventDefault) are skipped.
+  document.addEventListener('click', function (e) {
+    if (e.defaultPrevented) return;
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var a = e.target && e.target.closest ? e.target.closest('a') : null;
+    if (!a) return;
+    var href = a.getAttribute('href') || '';
+    if (!href || href === '#' || href.indexOf('javascript:') === 0) return;
+    if (a.target === '_blank' || a.hasAttribute('download') || a.hasAttribute('data-no-skeleton')) return;
+    if (isInternal(a.href)) show();
+  });
+
+  // GET forms (search / filter) that navigate to a new page.
+  document.addEventListener('submit', function (e) {
+    if (e.defaultPrevented) return;
+    var f = e.target;
+    if (!f || f.tagName !== 'FORM') return;
+    if ((f.method || 'get').toLowerCase() === 'post') return; // handled by the submit loader
+    if (f.hasAttribute('data-no-loader') || f.hasAttribute('data-no-skeleton')) return;
+    var action = f.getAttribute('action');
+    if (!action || isInternal(action)) show();
+  });
+
+  // A real navigation is happening — keep the overlay visible until the new
+  // page's own skeleton takes over (its window.load will hide it).
+  window.addEventListener('beforeunload', function () { clearTimeout(safetyTimer); });
+
+  // Back/forward cache: hide immediately when the page is restored.
+  window.addEventListener('pageshow', function (e) { if (e.persisted) hide(); });
+
+  // Hide once the freshly-loaded page is fully ready (no-op if it was never
+  // revealed, i.e. the page loaded within REVEAL_DELAY).
+  if (document.readyState === 'complete') { hide(); }
+  else { window.addEventListener('load', hide); }
+
+  // Last-resort guard: never leave the overlay up longer than 10s.
+  setTimeout(function () {
+    if (shown) hide();
+  }, 10000);
+})();
+</script>

@@ -1,0 +1,97 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Login — Meelad Fest</title>
+  {% include '_head_meta.html' %}
+  <link rel="stylesheet" href="{% static 'program/css/app.min.css' %}?v=5">
+  <style>
+    .float-slow { animation: floaty 5s ease-in-out infinite; }
+    @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+    .shake { animation: shake .4s ease; }
+    @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen flex items-center justify-center p-4">
+
+  <div class="w-full max-w-md">
+    <!-- Card -->
+    <div class="bg-white/90 backdrop-blur rounded-3xl shadow-xl ring-1 ring-black/5 overflow-hidden">
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-8 pt-8 pb-10 text-center text-white relative">
+        <div class="float-slow mx-auto w-20 h-20 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center text-4xl shadow-lg">
+          🎓
+        </div>
+        <h1 class="mt-4 text-2xl font-extrabold tracking-tight">Student Portal</h1>
+        <p class="mt-1 text-indigo-100 text-sm">Login with your fest code to see your programs &amp; results</p>
+      </div>
+
+      <!-- Form -->
+      <div class="p-6 sm:p-8 -mt-6">
+        <div class="rounded-2xl bg-white shadow-lg ring-1 ring-gray-100 p-6 sm:p-7">
+          {% if error %}
+          <div id="loginError" class="shake mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 flex items-start gap-2">
+            <span aria-hidden="true">⚠</span>
+            <span>{{ error }}</span>
+          </div>
+          {% endif %}
+          {% if messages %}
+            {% for message in messages %}
+            <div class="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+
+          <form method="post" class="space-y-4" novalidate>
+            {% csrf_token %}
+
+            <div>
+              <label for="student-code" class="mb-1 block text-sm font-semibold text-gray-700">Student Code</label>
+              <div class="relative">
+                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+                  </svg>
+                </span>
+                <input id="student-code" name="code" type="text" inputmode="numeric" required autocomplete="username"
+                       value="{{ code_value|default:'' }}"
+                       class="w-full rounded-xl border bg-white py-2.5 pl-11 pr-4 text-gray-900 outline-none focus:ring {% if error %}border-rose-400 ring-rose-200{% else %}border-gray-300 ring-indigo-200{% endif %}"
+                       placeholder="e.g. 101" />
+              </div>
+            </div>
+
+            <div>
+              <label for="student-password" class="mb-1 block text-sm font-semibold text-gray-700">Password</label>
+              <div class="relative">
+                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75M3.75 21.75h16.5a1.5 1.5 0 001.5-1.5v-7.5a1.5 1.5 0 00-1.5-1.5H3.75a1.5 1.5 0 00-1.5 1.5v7.5a1.5 1.5 0 001.5 1.5z" />
+                  </svg>
+                </span>
+                <input id="student-password" name="password" type="password" required autocomplete="current-password"
+                       class="w-full rounded-xl border bg-white py-2.5 pl-11 pr-4 text-gray-900 outline-none focus:ring {% if error %}border-rose-400 ring-rose-200{% else %}border-gray-300 ring-indigo-200{% endif %}"
+                       placeholder="Your password" />
+              </div>
+              <p class="mt-1.5 text-xs text-gray-400">Ask your teacher for your code &amp; password.</p>
+            </div>
+
+            <button type="submit"
+                    class="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 font-bold text-white shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 transition">
+              Login to my portal &rarr;
+            </button>
+          </form>
+        </div>
+
+        <p class="mt-6 text-center text-xs text-gray-400">
+          Are you a judge or organiser?
+          <a href="{% url 'login' %}" class="font-semibold text-indigo-600 hover:underline">Go to the main login</a>
+        </p>
+      </div>
+    </div>
+
+    <footer class="mt-8 text-center text-xs text-gray-400">Powered by Team Mahara</footer>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,97 @@
+{% load static %}
+{% load custom_filters %}
+{# Shared program card — used by both Boys & Girls sections of program_list. #}
+<div class="group relative flex flex-col rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-lg transition-all duration-200"
+  data-program-id="{{ program.id }}" data-program-title="{{ program.title|lower }}">
+
+  <!-- Visual banner -->
+  <div class="relative overflow-hidden rounded-t-2xl">
+    <a href="javascript:void(0)" onclick="openModal('{{ program.id }}', '{{ category.id }}')" class="block w-full" title="View participants">
+      {% if program.image %}
+      <img src="{{ program.image.url }}" alt="{{ program.title }}" class="w-full h-32 sm:h-40 object-cover">
+      {% else %}
+      <img src="{% if program.non_stage %}{% static 'program_images/nonstage_placeholder.png' %}{% else %}{% static 'program_images/stage_placeholder.png' %}{% endif %}"
+        alt="{{ program.title }}" class="w-full h-32 sm:h-40 object-cover">
+      {% endif %}
+    </a>
+
+    <!-- Status badges (top-left) -->
+    <div class="absolute top-2 left-2 flex flex-wrap gap-1.5">
+      {% if program.is_result_published %}
+      <span class="inline-flex items-center gap-1 text-[10px] font-semibold bg-emerald-500 text-white px-2 py-0.5 rounded-full shadow-sm"
+        title="Result published">✅ Published</span>
+      {% endif %}
+      {% if program|is_result_added %}
+      <span class="inline-flex items-center text-[10px] font-semibold bg-indigo-500 text-white px-2 py-0.5 rounded-full shadow-sm"
+        title="Result has been added">📋 Result Added</span>
+      {% endif %}
+    </div>
+
+    <!-- Standalone delete (top-right) — disabled once a result is added -->
+    <div class="absolute top-2 right-2 z-20">
+      {% if program|is_result_added %}
+      <button type="button" disabled
+        class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-white text-gray-300 border border-gray-200 shadow-sm cursor-not-allowed"
+        title="Delete disabled — a result has already been added for this program">✕</button>
+      {% else %}
+      <form method="post" action="{% url 'delete_program' program.id %}" data-confirm="Delete this program?">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button type="submit" onclick="event.stopPropagation()"
+          class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-white text-red-500 border border-red-200 shadow-sm hover:bg-red-50 hover:text-red-600 transition"
+          title="Delete program">✕</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <!-- View participants pill (bottom-left) -->
+    <a href="javascript:void(0)" onclick="openModal('{{ program.id }}', '{{ category.id }}')"
+      class="absolute bottom-2 left-2 inline-flex items-center gap-1 bg-black bg-opacity-60 hover:bg-opacity-75 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full transition"
+      title="View participants">👁 View</a>
+  </div>
+
+  <!-- Body -->
+  <div class="p-4 flex flex-col gap-1.5">
+    <h3 class="text-sm sm:text-base font-bold text-gray-900 truncate" title="{{ program.title }}">{{ program.title }}</h3>
+    <p class="text-xs text-gray-500 line-clamp-2">{{ program.description|default:"No description."|truncatechars:80 }}</p>
+
+    <!-- Footer: participants count + actions -->
+    <div class="mt-2 pt-3 border-t border-gray-100 flex items-center justify-between">
+      <span class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+        👥 {% get_participants_count program %} participant{% if program.participants.count != 1 %}s{% endif %}
+      </span>
+
+      <div class="relative">
+        <button type="button" onclick="toggleMenu(event, '{{ program.id }}')"
+          class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 transition"
+          title="Actions" aria-label="Actions" aria-haspopup="true">⋮</button>
+
+        <div id="card-menu-{{ program.id }}"
+          class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50 py-1">
+          <div class="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400 border-b border-gray-100 mb-1">Actions</div>
+          {% if program.is_result_published %}
+          <button type="button" disabled
+            class="flex items-center gap-2 px-4 py-2 text-sm text-gray-400 cursor-not-allowed w-full"
+            title="Add Prizes disabled — the result is already published. Unpublish it first to change prizes.">🏅 Add Prizes</button>
+          {% else %}
+          <a href="javascript:void(0)" onclick="event.stopPropagation(); openPrizeModal('{{ program.id }}')"
+            class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">🏅 Add Prizes</a>
+          {% endif %}
+
+          {% if program|is_result_added %}
+          <button type="button" disabled
+            class="flex items-center gap-2 px-4 py-2 text-sm text-gray-400 cursor-not-allowed w-full"
+            title="Delete disabled — a result has already been added for this program">✕ Delete Program</button>
+          {% else %}
+          <form method="post" action="{% url 'delete_program' program.id %}" data-confirm="Delete this program?">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button type="submit" onclick="event.stopPropagation()"
+              class="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full">✕ Delete Program</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

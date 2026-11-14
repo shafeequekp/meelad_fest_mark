@@ -1,0 +1,44 @@
+{% load static %}
+{% comment %}
+============================================================
+Shared <head> identity & text stack — included by every page
+(program/base.html and the standalone public/auth pages).
+
+Provides: browser-chrome theming (theme-color), favicon +
+PWA manifest, and a self-hosted Noto Sans Malayalam face so
+student / program names render identically on every device
+(no dependence on whatever Malayalam font a phone ships).
+============================================================
+NOTE: multi-line hash-brace comments are NOT comments in
+Django — they print as literal text on the page. Use
+comment/endcomment blocks for anything spanning multiple
+lines.
+============================================================
+{% endcomment %}
+<meta name="theme-color" content="#4f46e5">
+<link rel="manifest" href="{% static 'manifest.webmanifest' %}">
+<link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/icons/favicon-32.png' %}">
+<link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/icons/favicon-16.png' %}">
+<link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/icons/apple-touch-icon.png' %}">
+<link rel="preload" href="{% static 'fonts/noto-sans-malayalam-400.woff2' %}" as="font" type="font/woff2" crossorigin>
+<style>
+  /* Variable font (weights 400-700), Malayalam subset only — Latin text
+     keeps falling through the system stack below. */
+  @font-face {
+    font-family: 'Noto Sans Malayalam';
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url("{% static 'fonts/noto-sans-malayalam-400.woff2' %}") format('woff2');
+    unicode-range: U+0307, U+0323, U+0951-0952, U+0964-0965, U+0D00-0D7F,
+                   U+1CDA, U+1CF2, U+200C-200D, U+20B9, U+25CC, U+A830-A832;
+  }
+  /* Prepend the Malayalam face to the sans stack. `body.font-sans`
+     out-specifies Tailwind's generated `.font-sans` utility regardless
+     of style-tag order (the Play CDN injects its stylesheet last). */
+  body.font-sans,
+  body {
+    font-family: 'Noto Sans Malayalam', ui-sans-serif, system-ui, -apple-system,
+                 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  }
+</style>

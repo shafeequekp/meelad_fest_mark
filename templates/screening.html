@@ -1,0 +1,384 @@
+{% load static %}
+{% load custom_filters %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📺 Screening — {{ meelad_fest_name|default:"Meelad" }}</title>
+  {% include '_head_meta.html' %}
+
+  <!-- Tailwind CSS CDN -->
+  <link rel="stylesheet" href="{% static 'program/css/app.min.css' %}?v=5">
+
+  <style>
+    [x-cloak] { display: none !important; }
+
+    body { background: #0f172a; color: #fff; overflow: hidden; }
+
+    .fade { animation: fadeEffect 1s ease-in-out; }
+    @keyframes fadeEffect {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes finalSlideAnimation {
+      0% { transform: scale(0.5); opacity: 0; }
+      60% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-finalSlide { animation: finalSlideAnimation 2s ease-out forwards; }
+
+    @keyframes fadeUp {
+      0% { opacity: 0; transform: translateY(30px) scale(0.95); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .card-animate { animation: fadeUp 0.8s ease-out forwards; opacity: 0; }
+    .card-animate:nth-child(1) { animation-delay: 0.1s; }
+    .card-animate:nth-child(2) { animation-delay: 0.3s; }
+    .card-animate:nth-child(3) { animation-delay: 0.5s; }
+    .card-animate:nth-child(4) { animation-delay: 0.7s; }
+    .card-animate:nth-child(5) { animation-delay: 0.9s; }
+    .card-animate:nth-child(6) { animation-delay: 1.1s; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in { animation: fadeIn 1s ease-out forwards; }
+
+    /* Full-screen slide layout */
+    .slide { min-height: 100vh; display: flex; align-items: center; }
+  </style>
+</head>
+
+<body class="font-sans">
+
+  <!-- Full-screen slides (no header / no menu) -->
+  <div id="slider" class="relative w-full h-screen overflow-hidden">
+
+    {% if teams and categories %}
+
+    {% for team in teams %}
+    {% if not is_girls_only %}
+    <!-- Boys Section (not rendered on a girls-only fest) -->
+    <div class="slide hidden fade">
+      <div class="p-6 w-full max-w-5xl mx-auto">
+        <div class="text-center mb-8">
+          <h2 class="text-4xl font-extrabold tracking-wide animate-fade-in
+              {% if forloop.counter == 1 %} text-pink-400
+              {% elif forloop.counter == 2 %} text-blue-400
+              {% elif forloop.counter == 3 %} text-yellow-400
+              {% elif forloop.counter == 4 %} text-purple-400
+              {% else %} text-green-400 {% endif %}">
+            {{ team.name }}
+          </h2>
+          <br>
+          <p class="inline-block bg-yellow-200 text-yellow-800 font-semibold px-4 py-1 rounded-lg shadow-md">
+            Section: Boys
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8 mt-8">
+          {% for category in categories %}
+          {% if category.name == 'Super Senior' %}
+          <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-pink-500 to-rose-600 card-animate">
+            <h3 class="text-xl font-bold flex items-center gap-2">👑 Super Senior</h3>
+            <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+              <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
+            </p>
+          </div>
+          {% elif category.name == 'Senior' %}
+          <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-indigo-500 to-blue-600 card-animate">
+            <h3 class="text-xl font-bold flex items-center gap-2">🎓 Senior</h3>
+            <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+              <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
+            </p>
+          </div>
+          {% elif category.name == 'Junior' %}
+          <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-green-500 to-emerald-600 card-animate">
+            <h3 class="text-xl font-bold flex items-center gap-2">🌿 Junior</h3>
+            <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+              <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
+            </p>
+          </div>
+          {% elif category.name == 'Sub Junior' %}
+          <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-yellow-400 to-orange-500 card-animate">
+            <h3 class="text-xl font-bold flex items-center gap-2">🌟 Sub Junior</h3>
+            <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+              <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
+            </p>
+          </div>
+          {% elif category.name == 'Kiddies' %}
+          <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-teal-400 to-cyan-500 card-animate">
+            <h3 class="text-xl font-bold flex items-center gap-2">🧸 Kiddies</h3>
+            <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+              <span class="count-up" data-value="{% get_category_total category 'male' team %}">0</span>
+            </p>
+          </div>
+          {% elif category.name == 'General' %}
+          <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-red-500 to-pink-600 card-animate">
+            <h3 class="text-xl font-bold flex items-center gap-2">🌍 General</h3>
+            <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+              <span class="count-up" data-value="{{ mark.general|floatformat:0 }}">0</span>
+            </p>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+
+        <div class="mt-10 p-8 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-2xl shadow-xl text-center">
+          <h3 class="text-2xl font-bold">Total Points</h3>
+          <p class="text-4xl font-extrabold mt-3">{% get_section_total 'male' team %}</p>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if not is_boys_only %}
+    <!-- Girls Section (not rendered on a boys-only fest) -->
+    <div class="slide hidden fade">
+      <div class="p-6 w-full max-w-5xl mx-auto">
+        <div class="text-center mb-8">
+          <h2 class="text-4xl font-extrabold tracking-wide animate-fade-in
+              {% if forloop.counter == 1 %} text-pink-400
+              {% elif forloop.counter == 2 %} text-blue-400
+              {% elif forloop.counter == 3 %} text-yellow-400
+              {% elif forloop.counter == 4 %} text-purple-400
+              {% else %} text-green-400 {% endif %}">
+            {{ team.name }}
+          </h2>
+          <br>
+          <p class="inline-block bg-yellow-200 text-yellow-800 font-semibold px-4 py-1 rounded-lg shadow-md">
+            Section: Girls
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8 mt-8">
+          {% for category in categories %}
+          {% if category.name == 'Super Senior' %}
+          <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-pink-500 to-rose-600 card-animate">
+            <h3 class="text-xl font-bold flex items-center gap-2">👑 Super Senior</h3>
+            <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+              <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
+            </p>
+          </div>
+          {% elif category.name == 'Senior' %}
+          <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-indigo-500 to-blue-600 card-animate">
+            <h3 class="text-xl font-bold flex items-center gap-2">🎓 Senior</h3>
+            <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+              <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
+            </p>
+          </div>
+          {% elif category.name == 'Junior' %}
+          <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-green-500 to-emerald-600 card-animate">
+            <h3 class="text-xl font-bold flex items-center gap-2">🌿 Junior</h3>
+            <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+              <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
+            </p>
+          </div>
+          {% elif category.name == 'Sub Junior' %}
+          <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-yellow-400 to-orange-500 card-animate">
+            <h3 class="text-xl font-bold flex items-center gap-2">🌟 Sub Junior</h3>
+            <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+              <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
+            </p>
+          </div>
+          {% elif category.name == 'Kiddies' %}
+          <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-teal-400 to-cyan-500 card-animate">
+            <h3 class="text-xl font-bold flex items-center gap-2">🧸 Kiddies</h3>
+            <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+              <span class="count-up" data-value="{% get_category_total category 'female' team %}">0</span>
+            </p>
+          </div>
+          {% elif category.name == 'General' %}
+          <div class="p-6 rounded-2xl shadow-xl text-white bg-gradient-to-r from-red-500 to-pink-600 card-animate">
+            <h3 class="text-xl font-bold flex items-center gap-2">🌍 General</h3>
+            <p class="mt-6 text-5xl font-extrabold drop-shadow-lg">
+              <span class="count-up" data-value="{{ mark.general|floatformat:0 }}">0</span>
+            </p>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+
+        <div class="mt-10 p-8 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-2xl shadow-xl text-center">
+          <h3 class="text-2xl font-bold">Total Points</h3>
+          <p class="text-4xl font-extrabold mt-3">{% get_section_total 'female' team %}</p>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% endfor %}
+
+    <!-- Grand Total Slide -->
+    <div class="slide hidden animate-finalSlide justify-center">
+      <div class="p-8 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-2xl shadow-2xl text-center w-full max-w-6xl">
+        <h3 class="text-3xl font-extrabold mb-8">🏅 Grand Totals</h3>
+        <div class="grid md:grid-cols-2 gap-8">
+          {% for team_data in teams_with_grand_totals %}
+          <div class="p-6 bg-white text-gray-800 rounded-2xl shadow-2xl text-left">
+            <h4 class="text-xl font-bold
+               {% if forloop.counter == 1 %} text-rose-600
+               {% elif forloop.counter == 2 %} text-indigo-600
+               {% else %} text-green-800 {% endif %}">
+              {{ team_data.student__team__name }}
+            </h4>
+            <div class="mt-4 space-y-2 text-sm">
+              <div class="flex justify-between border-b border-gray-100 pb-1">
+                <span class="text-gray-500">📋 Positions Total</span>
+                <span class="font-bold text-gray-700 count" data-target="{{ team_data.pos_total|floatformat:0 }}">0</span>
+              </div>
+              <div class="flex justify-between border-b border-gray-100 pb-1">
+                <span class="text-gray-500">🎯 Grades Total</span>
+                <span class="font-bold text-gray-700 count" data-target="{{ team_data.grade_total|floatformat:0 }}">0</span>
+              </div>
+              <div class="flex justify-between border-b border-gray-100 pb-1">
+                <span class="text-gray-500">👥 Group Programs</span>
+                <span class="font-bold text-gray-700 count" data-target="{{ team_data.group_prgrm_total|floatformat:0 }}">0</span>
+              </div>
+              <div class="flex justify-between border-b-2 border-yellow-300 pb-1">
+                <span class="text-gray-500 font-semibold">🌍 General Programs</span>
+                <span class="font-bold text-amber-600 count" data-target="{{ team_data.general_prgrm_total|floatformat:0 }}">0</span>
+              </div>
+              <div class="flex justify-between pt-2">
+                <span class="text-lg font-bold text-indigo-800">🏆 Grand Total</span>
+                <span class="text-2xl font-extrabold text-pink-600 count" data-target="{{ team_data.grand_total|floatformat:0 }}">0</span>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {% else %}
+
+    <div class="w-full h-full flex flex-col items-center justify-center text-center">
+      <h1 class="text-3xl font-bold text-red-400 mb-4">No teams added!</h1>
+      <p class="text-lg text-gray-400">Please add teams and categories on the admin dashboard.</p>
+      <img src="{% static 'images/no-data.gif' %}" class="mx-auto mt-6 opacity-60" alt="No data">
+    </div>
+
+    {% endif %}
+  </div>
+
+  <!-- Slider Script -->
+  <script>
+    /* ---------- Utility to parse numbers safely ---------- */
+    function parseNumberString(s) {
+      if (!s && s !== 0) return NaN;
+      try { return parseFloat(String(s).replace(/,/g, '').trim()); } catch (e) { return NaN; }
+    }
+
+    /* ---------- Single animate function that handles both data-value and data-target ---------- */
+    function animateNumberElement(el) {
+      const rawTarget = el.getAttribute('data-value') ?? el.getAttribute('data-target') ?? el.getAttribute('data-to');
+      if (rawTarget == null) return;
+      const target = parseNumberString(rawTarget);
+      if (isNaN(target)) return;
+      const duration = parseInt(el.getAttribute('data-duration') || '1200', 10);
+      const startValue = 0;
+      if (el._raf) cancelAnimationFrame(el._raf);
+      const startTime = performance.now();
+      const formatter = new Intl.NumberFormat('en-IN');
+      function tick(now) {
+        const elapsed = now - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - t, 3);
+        const current = Math.round(startValue + (target - startValue) * eased);
+        el.textContent = formatter.format(current);
+        if (t < 1) { el._raf = requestAnimationFrame(tick); }
+        else { el._raf = null; el.textContent = formatter.format(target); }
+      }
+      el.textContent = formatter.format(startValue);
+      el._raf = requestAnimationFrame(tick);
+    }
+
+    /* ---------- Restart card CSS animations (forces reflow) ---------- */
+    function restartCardAnimations(container) {
+      container.querySelectorAll('.card-animate').forEach(el => {
+        el.classList.remove('card-animate');
+        void el.offsetWidth;
+        el.classList.add('card-animate');
+      });
+    }
+
+    /* ---------- Start all counters inside a slide/container ---------- */
+    function startCountersIn(container) {
+      container.querySelectorAll('.count-up, .count').forEach(el => {
+        el.textContent = "0";
+        animateNumberElement(el);
+      });
+    }
+
+    /* ---------- Slider logic ---------- */
+    (function () {
+      const slides = Array.from(document.querySelectorAll('.slide'));
+      if (!slides.length) return;
+
+      let index = 0;
+      let slideTimer = null;
+      let autoEnabled = true;
+      const slideIntervalMs = 5000;
+      const autoRefreshMs = 300000; // 5 minutes
+
+      function showSlide(i) {
+        if (i < 0) i = 0;
+        if (i >= slides.length) i = 0;
+        slides.forEach(slide => slide.classList.add('hidden'));
+        const active = slides[i];
+        active.classList.remove('hidden');
+        restartCardAnimations(active);
+        startCountersIn(active);
+        setupVideoPause(active);
+        index = i;
+      }
+
+      function nextSlide() { if (autoEnabled) showSlide((index + 1) % slides.length); }
+
+      function startAutoSlide() {
+        autoEnabled = true;
+        if (slideTimer) clearInterval(slideTimer);
+        slideTimer = setInterval(nextSlide, slideIntervalMs);
+      }
+
+      function stopAutoSlide() {
+        autoEnabled = false;
+        if (slideTimer) { clearInterval(slideTimer); slideTimer = null; }
+      }
+
+      /* ---------- Auto turn-off screening while a video plays ---------- */
+      function setupVideoPause(container) {
+        container.querySelectorAll('video').forEach(v => {
+          if (v._videoBound) return;
+          v._videoBound = true;
+          v.addEventListener('play', stopAutoSlide);       // pause rotation while playing
+          v.addEventListener('pause', () => { if (!v.ended) startAutoSlide(); });
+          v.addEventListener('ended', startAutoSlide);
+          v.addEventListener('waiting', stopAutoSlide);
+        });
+      }
+
+      showSlide(index);
+      startAutoSlide();
+
+      const sliderWrapper = document.querySelector('#slider') || document.body;
+      sliderWrapper.addEventListener('mouseenter', stopAutoSlide);
+      sliderWrapper.addEventListener('mouseleave', startAutoSlide);
+
+      /* Refresh periodically so the public screen picks up updated marks */
+      setTimeout(() => { window.location.reload(); }, autoRefreshMs);
+
+      window.mySliderShowSlide = showSlide;
+      window.mySliderStartAuto = startAutoSlide;
+      window.mySliderStopAuto = stopAutoSlide;
+    })();
+  </script>
+
+</body>
+
+</html>

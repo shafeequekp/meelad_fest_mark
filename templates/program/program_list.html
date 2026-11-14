@@ -1,0 +1,839 @@
+{% extends 'program/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Programs — {{ meelad_fest_name|default:"Meelad Fest" }}{% endblock %}
+
+{% block page_title_bar %}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .tab-btn {
+      color: #374151;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Highlight shine for the General / Group Programs quick-access buttons */
+    .blink-btn {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(90deg, #eef2ff, #ffffff);
+      border: 2px solid #c7d2fe;
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .blink-btn:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 8px 22px rgba(79, 70, 229, 0.4);
+    }
+
+    /* Sliding light-blue shine that sweeps across the button */
+    .blink-btn::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -60%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(
+        100deg,
+        rgba(147, 197, 253, 0) 0%,
+        rgba(147, 197, 253, 0.75) 50%,
+        rgba(147, 197, 253, 0) 100%
+      );
+      transform: skewX(-20deg);
+      animation: shine-sweep 1.8s ease-in-out infinite;
+    }
+
+    @keyframes shine-sweep {
+      0% {
+        left: -60%;
+      }
+      60%, 100% {
+        left: 110%;
+      }
+    }
+
+    .tab-btn.active {
+      color: #fff;
+    }
+
+    .program-type-heading {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .program-type-heading h3 {
+      font-size: 0.875rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #4338ca;
+      white-space: nowrap;
+    }
+
+    .program-type-heading::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background-color: #e5e7eb;
+    }
+
+    /* ---------- Standard modal styling (shared by all popups) ---------- */
+    #programModal,
+    #prizeModal {
+      transition: opacity 0.18s ease-in-out;
+    }
+
+    /* Panel entrance: subtle rise + scale, driven by .is-open toggled in JS */
+    .modal-content {
+      transform: translateY(12px) scale(0.97);
+      opacity: 0;
+      transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    }
+
+    .modal-content.is-open {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+
+
+
+    <!-- Page header -->
+    <div class="bg-white shadow-sm rounded-2xl mb-6 overflow-hidden">
+      <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-6 sm:px-8">
+        <div class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
+          <div class="w-full sm:w-auto">
+            <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white">
+              🏆 Programs Dashboard
+            </h1>
+            <p class="text-indigo-100 mt-1 text-sm sm:text-base">
+              Manage your programs — {% if meelad_fest_name %}{{ meelad_fest_name }}{% else %}Meelad Fest{% endif %}
+            </p>
+          </div>
+          <div class="flex flex-col gap-2 w-full sm:w-auto sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-2">
+            <a href="{% url 'general_programs' %}"
+              class="blink-btn inline-flex items-center justify-center gap-1.5 text-indigo-700 font-semibold px-4 py-2.5 rounded-xl text-sm w-full sm:w-auto">
+              🏆 General Programs
+            </a>
+            <a href="{% url 'group_programs' %}"
+              class="blink-btn inline-flex items-center justify-center gap-1.5 text-indigo-700 font-semibold px-4 py-2.5 rounded-xl text-sm w-full sm:w-auto">
+              🎭 Group Programs
+            </a>
+            {% if reg_link_active %}
+            <button onclick="copyFormLink()"
+              class="inline-flex items-center justify-center gap-2 bg-white text-indigo-700 font-semibold px-4 py-2.5 rounded-lg shadow hover:bg-indigo-50 transition text-sm w-full sm:w-auto">
+              🔗 Copy Registration Form Link
+            </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick stats -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 divide-x divide-gray-100">
+        <div class="px-6 py-4">
+          <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Total Programs</p>
+          <p class="text-2xl font-extrabold text-indigo-700">{{ total_programs|default:0 }}</p>
+        </div>
+        <div class="px-6 py-4">
+          <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Total Students</p>
+          <p class="text-2xl font-extrabold text-indigo-700">{{ total_students|default:0 }}</p>
+        </div>
+        <div class="hidden sm:block px-6 py-4">
+          <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Categories</p>
+          <p class="text-2xl font-extrabold text-indigo-700">{{ categories|length }}</p>
+        </div>
+      </div>
+
+      <!-- Program search -->
+      <div class="px-6 py-4 border-t border-gray-100">
+        <div class="relative">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path stroke-linecap="round" d="M21 21l-4.35-4.35"></path>
+          </svg>
+          <input id="programSearch" type="text" value=""
+            oninput="filterPrograms(this.value)"
+            placeholder="🔍 Search programs by name…"
+            class="w-full border border-gray-200 rounded-xl pl-10 pr-28 py-2.5 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none"
+            autocomplete="off">
+          <button type="button" onclick="clearProgramSearch()" id="programSearchClear"
+            class="absolute right-2 top-1/2 -translate-y-1/2 hidden text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2.5 py-1 rounded-lg transition">
+            ✕ Clear
+          </button>
+        </div>
+        <p id="programSearchEmpty" class="hidden mt-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          No programs match “<span id="programSearchQuery"></span>”. Try a different search.
+        </p>
+      </div>
+    </div>
+
+    <!-- Flash messages -->
+    {% if messages %}
+    <div class="mb-6 space-y-2">
+      {% for message in messages %}
+      <div class="rounded-lg px-4 py-3 text-sm font-semibold shadow-sm
+        {% if message.tags == 'error' %}bg-red-100 text-red-800 border border-red-200
+        {% elif message.tags == 'success' %}bg-green-100 text-green-800 border border-green-200
+        {% else %}bg-blue-100 text-blue-800 border border-blue-200{% endif %}">
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Add Program (expandable) -->
+    <div class="card p-4 sm:p-6 mb-8">
+      <button type="button" onclick="toggleAddProgram('addProgramSection', this)"
+        class="w-full flex items-center justify-between gap-3 text-left focus:outline-none"
+        aria-expanded="false">
+        <span class="flex items-center gap-2 text-xl font-bold text-indigo-700">
+          <svg class="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+          Add Program
+        </span>
+        <span
+          class="add-chevron inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 transition-transform duration-200">▼</span>
+      </button>
+      <div id="addProgramSection" class="hidden mt-5 border-t border-gray-100 pt-5">
+        <form method="post" action="{% url 'add_program' %}" data-ajax-form
+          data-collapse-target="addProgramSection" class="grid gap-4 sm:grid-cols-2">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'program_list' %}">
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Program Title *</label>
+            <input type="text" name="title" required
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300">
+          </div>
+          <input type="hidden" name="type" value="individual">
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Section *</label>
+            <select name="section" required
+              class="w-full border rounded-lg px-3 py-2 bg-white focus:ring focus:ring-indigo-300">
+              {% if not is_girls_only %}
+              <option value="boys" {% if is_boys_only %}selected{% endif %}>👦 Boys</option>
+              {% endif %}
+              {% if not is_boys_only %}
+              <option value="girls" {% if is_girls_only %}selected{% endif %}>👧 Girls</option>
+              {% endif %}
+            </select>
+          </div>
+          <div id="addProgramCategoryRow">
+            <label class="block text-gray-700 font-semibold mb-1">Category *</label>
+            <select id="addProgramCategory" name="category_id"
+              class="w-full border rounded-lg px-3 py-2 bg-white focus:ring focus:ring-indigo-300">
+              <option value="">-- Select Category --</option>
+              {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
+            </select>
+            <p class="text-xs text-gray-500 mt-1">Required for individual programs.</p>
+          </div>
+          <div id="addProgramNonStageRow">
+            <label class="block text-gray-700 font-semibold mb-1">Non-Stage</label>
+            <div class="flex items-center gap-2 pt-2">
+              <input type="checkbox" id="addProgramNonStage" name="non_stage" value="on"
+                class="w-4 h-4 text-indigo-600 rounded">
+              <label for="addProgramNonStage" class="text-sm text-gray-600 font-medium">Non-stage program (individual only)</label>
+            </div>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Description</label>
+            <input type="text" name="description"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300">
+          </div>
+          <div class="sm:col-span-2 flex justify-end">
+            <button type="submit"
+              class="bg-indigo-600 text-white font-semibold px-5 py-2 rounded-lg shadow hover:bg-indigo-700 transition">
+              Save Program
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div data-ajax-list>
+    <!-- Boys / Girls tabs (only when the fest runs both sections) -->
+    {% if is_both_sections %}
+    <div class="relative w-full max-w-md mx-auto mb-6 sm:mb-8 bg-gray-200 rounded-xl overflow-hidden">
+      <div class="flex">
+        <button id="boysTab" onclick="showSection('boys')"
+          class="tab-btn flex-1 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-colors duration-300">Boys</button>
+        <button id="girlsTab" onclick="showSection('girls')"
+          class="tab-btn flex-1 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-colors duration-300">Girls</button>
+      </div>
+      <div id="sliderIndicator"
+        class="absolute top-0 left-0 h-full w-1/2 bg-indigo-600 rounded-xl transition-transform duration-300"></div>
+    </div>
+    {% endif %}
+
+
+    {% if not is_girls_only %}
+    <!-- Boys Section (not rendered on a girls-only fest) -->
+    <div id="boysSection" class="section">
+
+      {% for category in categories %}
+      {% if category.programs.all|stage or category.programs.all|non_stage %}
+      <div class="card p-4 sm:p-6 mb-8" data-catblock="boys-{{ category.id }}">
+        <h2 class="text-xl sm:text-2xl font-bold text-indigo-700 mb-6 pb-3 border-b border-gray-100">
+          {{ category.name }}
+        </h2>
+
+        {% if category.programs.all|stage %}
+        <div class="mb-8">
+          <div class="program-type-heading">
+            <h3>Stage Programs</h3>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6" data-pager>
+            {% for program in category.programs.all|stage %}
+            {% include 'program/_program_card.html' with program=program category=category %}
+            {% empty %}
+            {% include '_empty_state.html' with icon='🏅' title='No stage programs yet' message='Stage programs added to this category will appear here.' %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if category.programs.all|non_stage %}
+        <div>
+          <div class="program-type-heading">
+            <h3>Non-Stage Programs</h3>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6" data-pager>
+            {% for program in category.programs.all|non_stage %}
+            {% include 'program/_program_card.html' with program=program category=category %}
+            {% empty %}
+            {% include '_empty_state.html' with icon='🎖️' title='No non-stage programs yet' message='Non-stage programs added to this category will appear here.' %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
+      {% endif %}
+      {% endfor %}
+
+      {% if not categories %}
+      <div class="card p-10 text-center text-gray-500">
+        No categories yet.
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if not is_boys_only %}
+    <!-- Girls Section (not rendered on a boys-only fest; hidden only in both-mode) -->
+    <div id="girlsSection" class="section {% if is_both_sections %}hidden{% endif %}">
+      {% for category in categories %}
+      {% if category.programs_for_girls.all|stage or category.programs_for_girls.all|non_stage %}
+      <div class="card p-4 sm:p-6 mb-8" data-catblock="girls-{{ category.id }}">
+        <h2 class="text-xl sm:text-2xl font-bold text-indigo-700 mb-6 pb-3 border-b border-gray-100">
+          {{ category.name }}
+        </h2>
+
+        {% if category.programs_for_girls.all|stage %}
+        <div class="mb-8">
+          <div class="program-type-heading">
+            <h3>Stage Programs</h3>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6" data-pager>
+            {% for program in category.programs_for_girls.all|stage %}
+            {% include 'program/_program_card.html' with program=program category=category %}
+            {% empty %}
+            {% include '_empty_state.html' with icon='🏅' title='No stage programs yet' message='Stage programs added to this category will appear here.' %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if category.programs_for_girls.all|non_stage %}
+        <div>
+          <div class="program-type-heading">
+            <h3>Non-Stage Programs</h3>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6" data-pager>
+            {% for program in category.programs_for_girls.all|non_stage %}
+            {% include 'program/_program_card.html' with program=program category=category %}
+            {% empty %}
+            {% include '_empty_state.html' with icon='🎖️' title='No non-stage programs yet' message='Non-stage programs added to this category will appear here.' %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
+      {% endif %}
+      {% endfor %}
+
+      {% if not categories %}
+      <div class="card p-10 text-center text-gray-500">
+        No categories yet.
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+    </div><!-- /data-ajax-list -->
+
+
+    <!-- Program Details / Participants Modal -->
+    <div id="programModal"
+      class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+      <div class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-3xl relative flex flex-col max-h-[90vh] overflow-hidden">
+
+        <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600">
+          <h2 id="modalTitle"
+            class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+            <span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-lg">👥</span>
+            <span id="modalTitleText">Program Details</span>
+          </h2>
+          <button onclick="closeModal()" aria-label="Close modal"
+            class="shrink-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg flex items-center justify-center transition">✕</button>
+        </div>
+
+        <div id="participantsContainer"
+          class="flex-1 overflow-y-auto p-5 sm:p-6 text-sm sm:text-base"></div>
+
+        <div class="flex flex-wrap items-center justify-end gap-3 px-5 sm:px-6 py-4 bg-gray-50 border-t border-gray-100">
+          <a id="downloadPdfBtn" href="#" target="_blank"
+            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white border border-gray-200 text-indigo-600 hover:bg-indigo-50 font-medium shadow-sm transition">📄 Judges Slip</a>
+          <a id="downloadAllParticipantPdfBtn" href="#" target="_blank"
+            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 font-medium shadow-sm transition">📄 Participants</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Prize / Result Modal -->
+    <div id="prizeModal"
+      class="fixed inset-0 z-[150] hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+      <div class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-3xl relative flex flex-col max-h-[90vh] overflow-hidden">
+
+        <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-gradient-to-r from-emerald-600 to-green-500">
+          <h2 id="prizeModalTitle"
+            class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+            <span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-lg">🏅</span>
+            <span>Add Prizes / Result</span>
+          </h2>
+          <button onclick="closePrizeModal()" aria-label="Close modal"
+            class="shrink-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg flex items-center justify-center transition">✕</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+
+          <div id="prizeWinners" class="hidden">
+            <h3 class="text-xs font-bold uppercase tracking-wide text-emerald-700 mb-2">🏆 Winners</h3>
+            <div id="winnersList" class="space-y-2"></div>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-3">
+            <div>
+              <label class="form-label">🥇 First Prize</label>
+              <select id="firstPrizeSelect" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+                <option value="">-- Select Participant --</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">🥈 Second Prize</label>
+              <select id="secondPrizeSelect" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+                <option value="">-- Select Participant --</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">🥉 Third Prize</label>
+              <select id="thirdPrizeSelect" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+                <option value="">-- Select Participant --</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <button onclick="toggleGrades()"
+              class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium text-sm transition">➕ Add Grades</button>
+            <div id="gradesSection" class="hidden mt-3 grid gap-4 sm:grid-cols-3">
+              <div>
+                <label class="form-label">Grade A</label>
+                <select id="gradeASelect" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+                  <option value="">-- Select Participant --</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Grade B</label>
+                <select id="gradeBSelect" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+                  <option value="">-- Select Participant --</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Grade C</label>
+                <select id="gradeCSelect" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+                  <option value="">-- Select Participant --</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label">Remarks</label>
+            <textarea id="remarksInput" rows="3" placeholder="Enter remarks..."
+              class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"></textarea>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 px-5 sm:px-6 py-4 bg-gray-50 border-t border-gray-100">
+          <button onclick="closePrizeModal()"
+            class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium text-sm transition">Cancel</button>
+          <button onclick="savePrizes()"
+            class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition">💾 Save Result</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+
+    let currentProgramId = null;
+
+    /* -------------------
+       Expandable Add Program form
+    ------------------- */
+    window.toggleAddProgram = function (sectionId, btn) {
+      var sec = document.getElementById(sectionId);
+      if (!sec) return;
+      var willShow = sec.classList.contains("hidden");
+      sec.classList.toggle("hidden");
+      if (btn) {
+        btn.setAttribute("aria-expanded", willShow ? "true" : "false");
+        var chev = btn.querySelector(".add-chevron");
+        if (chev) chev.classList.toggle("rotate-180", willShow);
+      }
+      if (willShow) {
+        var first = sec.querySelector("input:not([type=hidden]), select");
+        if (first) setTimeout(function () { first.focus(); }, 80);
+      }
+    };
+
+    // Highlight the card that was just added (?new_program=<id>).
+    const newPid = new URLSearchParams(window.location.search).get("new_program");
+    if (newPid) {
+      const card = document.querySelector('[data-program-id="' + newPid + '"]');
+      if (card) {
+        card.classList.add("ring-2", "ring-indigo-400");
+        setTimeout(function () {
+          card.scrollIntoView({ block: "center", behavior: "smooth" });
+        }, 150);
+      }
+    }
+
+    /* -------------------
+       Copy Registration Form Link
+    ------------------- */
+    window.copyFormLink = function () {
+      const formUrl = "{{ form_url }}";
+      navigator.clipboard.writeText(formUrl)
+        .then(() => showToast("Registration form link copied!", "success"))
+        .catch((err) => {
+          showToast("Failed to copy link. Try manually!", "error");
+          console.error(err);
+        });
+    };
+
+    /* -------------------
+       Section Tabs
+    ------------------- */
+    function showSection(section) {
+      const boys = document.getElementById("boysSection");
+      const girls = document.getElementById("girlsSection");
+      const boysTab = document.getElementById("boysTab");
+      const girlsTab = document.getElementById("girlsTab");
+      const indicator = document.getElementById("sliderIndicator");
+
+      if (boys) boys.classList.add("hidden");
+      if (girls) girls.classList.add("hidden");
+      const sectionDiv = document.getElementById(section + "Section");
+      if (sectionDiv) sectionDiv.classList.remove("hidden");
+
+      if (boysTab) boysTab.classList.remove("active");
+      if (girlsTab) girlsTab.classList.remove("active");
+
+      if (section === "boys") {
+        if (boysTab) boysTab.classList.add("active");
+        if (indicator) indicator.style.transform = "translateX(0%)";
+      } else {
+        if (girlsTab) girlsTab.classList.add("active");
+        if (indicator) indicator.style.transform = "translateX(100%)";
+      }
+    }
+
+    window.showSection = showSection;
+    // Only drive the slider in both-section mode; single-section fests render
+    // just one panel with no tabs.
+    {% if is_both_sections %}
+    showSection("boys");
+    {% endif %}
+
+    /* -------------------
+       Program Search
+    ------------------- */
+    window.filterPrograms = function (rawQuery) {
+      const query = (rawQuery || "").trim().toLowerCase();
+      const emptyBox = document.getElementById("programSearchEmpty");
+      const queryLabel = document.getElementById("programSearchQuery");
+      const clearBtn = document.getElementById("programSearchClear");
+
+      let anyVisible = false;
+
+      document.querySelectorAll("[data-program-title]").forEach(function (card) {
+        const title = (card.dataset.programTitle || "").toLowerCase();
+        const match = !query || title.includes(query);
+        card.style.display = match ? "" : "none";
+        if (match) anyVisible = true;
+      });
+
+      // Hide whole category blocks that have no visible program cards left.
+      document.querySelectorAll("[data-catblock]").forEach(function (block) {
+        const hasVisible = Array.prototype.some.call(
+          block.querySelectorAll("[data-program-title]"),
+          function (card) { return card.style.display !== "none"; }
+        );
+        block.style.display = hasVisible ? "" : "none";
+      });
+
+      if (clearBtn) clearBtn.classList.toggle("hidden", !query);
+      if (emptyBox) {
+        emptyBox.classList.toggle("hidden", !query || anyVisible);
+        if (queryLabel) queryLabel.textContent = rawQuery.trim();
+      }
+    };
+
+    window.clearProgramSearch = function () {
+      const input = document.getElementById("programSearch");
+      if (input) { input.value = ""; input.focus(); }
+      filterPrograms("");
+    };
+
+
+    /* -------------------
+       Modal Handling
+    ------------------- */
+    /* Modal open/close helpers (standard transition for every popup) */
+    function openPanel(id) {
+      const modal = document.getElementById(id);
+      if (!modal) return;
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      requestAnimationFrame(() => {
+        const content = modal.querySelector(".modal-content");
+        if (content) content.classList.add("is-open");
+      });
+    }
+
+    function closePanel(id) {
+      const modal = document.getElementById(id);
+      if (!modal) return;
+      const content = modal.querySelector(".modal-content");
+      if (content) content.classList.remove("is-open");
+      setTimeout(() => {
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      }, 200);
+    }
+
+    window.openModal = function (programId, categoryId) {
+      const container = document.getElementById("participantsContainer");
+      if (container) container.innerHTML = '<div class="text-center text-gray-500 py-8">Loading…</div>';
+
+      fetch(`/program/${programId}/participant-data/`)
+        .then(res => res.json())
+        .then(data => {
+          const modalTitle = document.getElementById("modalTitleText");
+          if (modalTitle) modalTitle.textContent = data.title || "Program Details";
+
+          if (container) {
+            if (!data.participants || data.participants.length === 0) {
+              container.innerHTML = "<div class='text-center text-gray-500 py-8'>No participants yet.</div>";
+            } else {
+              let table = `
+              <div class="overflow-x-auto rounded-xl border border-gray-200">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                  <thead>
+                    <tr class="bg-indigo-50 text-indigo-700">
+                      <th class="px-3 sm:px-4 py-2.5 text-left font-semibold">#</th>
+                      <th class="px-3 sm:px-4 py-2.5 text-left font-semibold">Code Number</th>
+                      <th class="px-3 sm:px-4 py-2.5 text-left font-semibold">Name</th>
+                      <th class="px-3 sm:px-4 py-2.5 text-left font-semibold">Team</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100">
+              `;
+              data.participants.forEach((p, i) => {
+                table += `
+                <tr class="hover:bg-indigo-50/50 transition">
+                  <td class="px-3 sm:px-4 py-2.5 text-gray-500">${i + 1}</td>
+                  <td class="px-3 sm:px-4 py-2.5 text-gray-600">${p.code_number || "—"}</td>
+                  <td class="px-3 sm:px-4 py-2.5 font-medium text-gray-800">${p.full_name || ""}</td>
+                  <td class="px-3 sm:px-4 py-2.5">${p.team__name
+                    ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-medium">${p.team__name}</span>`
+                    : "—"}</td>
+                </tr>`;
+              });
+              table += "</tbody></table></div>";
+              container.innerHTML = table;
+            }
+          }
+
+          const currentSection = document.getElementById("boysSection")?.classList.contains("hidden") ? "girls" : "boys";
+          const downloadPdfBtn = document.getElementById("downloadPdfBtn");
+          if (downloadPdfBtn) downloadPdfBtn.href = `/program/${programId}/judge-slip/pdf/${categoryId}/`;
+
+          const downloadAllParticipantPdfBtn = document.getElementById("downloadAllParticipantPdfBtn");
+          if (downloadAllParticipantPdfBtn) downloadAllParticipantPdfBtn.href = `/program/download-participants/${programId}/${currentSection}/${categoryId}/`;
+
+          openPanel("programModal");
+          window.currentProgramId = programId;
+        })
+        .catch(err => {
+          console.error(err);
+          showToast("Failed to load participants.", "error");
+        });
+    };
+
+    window.closeModal = function () {
+      closePanel("programModal");
+    };
+
+    /* -------------------
+       Card menu (3-dots) toggle
+    ------------------- */
+    window.toggleMenu = function (event, id) {
+      event.stopPropagation();
+      const menu = document.getElementById(`card-menu-${id}`);
+      if (!menu) return;
+
+      document.querySelectorAll("[id^='card-menu-']").forEach(m => {
+        if (m !== menu) m.classList.add("hidden");
+      });
+
+      menu.classList.toggle("hidden");
+    };
+
+    document.addEventListener("click", () => {
+      document.querySelectorAll("[id^='card-menu-']").forEach(m => m.classList.add("hidden"));
+    });
+
+
+    /* -------------------
+       Prize Modal
+    ------------------- */
+    window.openPrizeModal = function (programId) {
+      currentProgramId = programId;
+
+      fetch(`/program/${programId}/participants/`)
+        .then(res => res.json())
+        .then(data => {
+          const selects = [
+            "firstPrizeSelect",
+            "secondPrizeSelect",
+            "thirdPrizeSelect",
+            "gradeASelect",
+            "gradeBSelect",
+            "gradeCSelect"
+          ];
+
+          selects.forEach(id => {
+            const select = document.getElementById(id);
+            if (!select) return;
+            select.innerHTML = '<option value="">-- Select Participant --</option>';
+            data.participants.forEach(p => {
+              const opt = document.createElement("option");
+              opt.value = p.id;
+              opt.textContent = `${p.code_number || ""} - ${p.full_name || ""}`;
+              select.appendChild(opt);
+            });
+          });
+
+          const winnersDiv = document.getElementById("prizeWinners");
+          const winnersList = document.getElementById("winnersList");
+          if (winnersList) winnersList.innerHTML = "";
+
+          if (data.winners && data.winners.length > 0 && winnersDiv && winnersList) {
+            winnersDiv.classList.remove("hidden");
+
+            data.winners.forEach(w => {
+              const item = document.createElement("div");
+              item.className = "flex items-center gap-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-sm";
+              item.innerHTML = `<span class="shrink-0 w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold">${w.position || "★"}</span>
+                <span class="font-medium text-gray-800">${w.full_name || "Unknown"}</span>
+                <span class="ml-auto text-xs text-gray-500">${w.code_number || ""}${w.team ? ` · ${w.team}` : ""}</span>`;
+              winnersList.appendChild(item);
+            });
+          } else if (winnersDiv) {
+            winnersDiv.classList.add("hidden");
+          }
+
+          openPanel("prizeModal");
+        })
+        .catch(err => {
+          console.error(err);
+          showToast("Failed to load participants.", "error");
+        });
+    };
+
+    window.closePrizeModal = function () {
+      closePanel("prizeModal");
+    };
+
+    window.toggleGrades = function () {
+      const grades = document.getElementById("gradesSection");
+      if (grades) grades.classList.toggle("hidden");
+    };
+
+    window.savePrizes = function () {
+      const normalize = val => val && val.trim() !== "" ? val : null;
+
+      const payload = {
+        first: normalize(document.getElementById("firstPrizeSelect")?.value),
+        second: normalize(document.getElementById("secondPrizeSelect")?.value),
+        third: normalize(document.getElementById("thirdPrizeSelect")?.value),
+        gradeA: normalize(document.getElementById("gradeASelect")?.value),
+        gradeB: normalize(document.getElementById("gradeBSelect")?.value),
+        gradeC: normalize(document.getElementById("gradeCSelect")?.value),
+        remarks: document.getElementById("remarksInput")?.value || "",
+      };
+
+      fetch(`/program/${currentProgramId}/save-prize/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify(payload),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.message === "success") {
+            showToast("Result saved successfully!", "success");
+            closePrizeModal();
+            setTimeout(() => location.reload(), 900); // let the toast show
+          } else {
+            showToast(data.details || "Failed to save prizes.", "error");
+            console.error(data);
+          }
+        })
+        .catch(err => {
+          showToast("Failed to save prizes.", "error");
+          console.error(err);
+        });
+    };
+
+
+  });
+</script>
+{% endblock %}
+

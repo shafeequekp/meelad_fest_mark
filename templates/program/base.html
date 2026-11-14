@@ -1,0 +1,270 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ meelad_fest_name|default:"Meelad Fest" }} — Admin{% endblock %}</title>
+
+  <!-- Identity: theme-color, favicon, PWA manifest, Malayalam font stack -->
+  {% include '_head_meta.html' %}
+
+  <!-- Tailwind CSS -->
+  <link rel="stylesheet" href="{% static 'program/css/app.min.css' %}?v=7">
+
+  <!-- Alpine.js (vendored, pinned 3.14.1 — modals / tabs / toggles) -->
+  <script src="{% static 'program/js/alpine.min.js' %}" defer></script>
+
+  <!-- Custom CSS / Animations -->
+  <style>
+    [x-cloak] {
+      display: none !important;
+    }
+
+    @keyframes fadeEffect {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade {
+      animation: fadeEffect 1s ease-in-out;
+    }
+
+    @keyframes finalSlideAnimation {
+      0% {
+        transform: scale(0.5);
+        opacity: 0;
+      }
+
+      60% {
+        transform: scale(1.1);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .animate-finalSlide {
+      animation: finalSlideAnimation 2s ease-out forwards;
+    }
+
+    @keyframes fadeUp {
+      0% {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .card-animate {
+      animation: fadeUp 0.8s ease-out forwards;
+      opacity: 0;
+    }
+
+    .card-animate:nth-child(1) {
+      animation-delay: 0.1s;
+    }
+
+    .card-animate:nth-child(2) {
+      animation-delay: 0.3s;
+    }
+
+    .card-animate:nth-child(3) {
+      animation-delay: 0.5s;
+    }
+
+    .card-animate:nth-child(4) {
+      animation-delay: 0.7s;
+    }
+
+    .card-animate:nth-child(5) {
+      animation-delay: 0.9s;
+    }
+
+    .card-animate:nth-child(6) {
+      animation-delay: 1.1s;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 1s ease-out forwards;
+    }
+
+    /* ---------- Shared modal-shell animation ----------
+       Used by openPanel()/closePanel() and the Alpine x-show modals across
+       admin pages so every popup opens with the same subtle rise + scale. */
+    .modal-shell {
+      transition: opacity 0.18s ease-in-out;
+    }
+
+    .modal-shell .modal-content {
+      transform: translateY(12px) scale(0.97);
+      opacity: 0;
+      transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    }
+
+    .modal-shell .modal-content.is-open {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+
+    /* ---------- Sticky first column ----------
+       Keeps the first column visible while a wide table scrolls horizontally
+       on small screens. Rows with custom backgrounds can override the default
+       white cell background per page (see result_details). */
+    .sticky-col {
+      position: sticky;
+      left: 0;
+      min-width: 150px;
+      background-color: #ffffff;
+    }
+
+    .sticky-col::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: -12px;
+      bottom: 0;
+      width: 12px;
+      background: linear-gradient(to right, #ffffff, rgba(255, 255, 255, 0));
+      pointer-events: none;
+    }
+
+    thead .sticky-col { z-index: 3; }
+    tbody .sticky-col { z-index: 2; }
+
+    /* Score / count columns stay aligned — no per-digit jitter when
+       marks of varying widths (9.5 vs 88.50) sit in the same column. */
+    table {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Number inputs never zoom the viewport on iOS focus — iOS zooms any
+       focused input whose font-size is under 16px. */
+    input[type="number"] {
+      font-size: 16px;
+    }
+
+    /* ---------- Shared print reset ----------
+       Every page prints with chrome stripped: fixed header, footer,
+       toasts and .no-print elements out; container padding/width reset. */
+    @media print {
+      header, footer, #toast-container, #mobile-menu, .no-print {
+        display: none !important;
+      }
+      /* Open overlays, swipe hints and action buttons never belong on paper. */
+      .modal-shell, .table-swipe-hint, button[type="button"] {
+        display: none !important;
+      }
+      a { color: inherit !important; text-decoration: none !important; }
+      /* Gradient bands print as their solid base colour (backgrounds are
+         usually dropped, which would leave white-on-white text). */
+      .bg-gradient-to-r, .bg-gradient-to-br {
+        background-color: #4f46e5 !important;
+        background-image: none !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      /* Long listings stay readable: repeat table headers on page breaks and
+         never split a row (or a card) across pages. */
+      thead { display: table-header-group; }
+      tr, .card, .bg-white.rounded-2xl { break-inside: avoid; }
+      body { background: #fff !important; }
+      main { padding: 0 !important; max-width: none !important; }
+    }
+
+    /* "Swipe to see more columns" hint shown under horizontally scrollable
+       tables on touch screens. */
+    .table-swipe-hint {
+      display: none;
+    }
+    @media (hover: none) and (pointer: coarse), (pointer: coarse) {
+      .table-swipe-hint { display: block; }
+    }
+
+    /* Selected-team colour wash (categories / category detail). */
+    body.has-team-theme {
+      --team: #6366f1;
+      --team-rgb: 99, 102, 241;
+      --team-dark: #312e81;
+      --team-header: #4f46e5;
+      --team-on-accent: #ffffff;
+      background-color: #f3f4f6;
+      background-image:
+        radial-gradient(1100px 480px at -8% -12%, rgba(var(--team-rgb), 0.32), transparent 58%),
+        radial-gradient(900px 420px at 108% 0%, rgba(var(--team-rgb), 0.22), transparent 52%),
+        linear-gradient(180deg, rgba(var(--team-rgb), 0.16) 0%, #f3f4f6 46%);
+      background-attachment: fixed;
+    }
+    .team-header-band {
+      background: linear-gradient(135deg, var(--team-header) 0%, var(--team-dark) 100%);
+    }
+    .team-chip-active {
+      background: var(--team-header);
+      color: var(--team-on-accent);
+      box-shadow: 0 8px 20px rgba(var(--team-rgb), 0.28);
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body class="{% if has_team_theme %}has-team-theme{% else %}bg-gray-100{% endif %} font-sans"
+  {% if has_team_theme %}style="--team: {{ team_theme_hex }}; --team-rgb: {{ team_theme_rgb }}; --team-dark: {{ team_theme_dark_hex }}; --team-header: {{ team_theme_header_hex }}; --team-on-accent: {{ team_theme_on_accent }};"{% endif %}
+  {% block body_attrs %}{% endblock %}>
+
+  <!-- Header -->
+  {% block header %}{% include 'header.html' with sticky_header='true' %}{% endblock %}
+
+  <!-- Page Title Bar (retired: all pages use the in-content page header;
+       the empty block keeps legacy child overrides harmless) -->
+  {% block page_title_bar %}{% endblock %}
+
+  <!-- Main Content -->
+  <main class="{% block main_classes %}max-w-7xl mx-auto p-4 sm:p-6 pt-24 sm:pt-28 pb-16{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
+
+
+  <!-- JS -->
+
+
+  {% block extra_js %}{% endblock %}
+
+
+
+{% include '_footer.html' %}
+
+<script src="{% static 'program/js/_ajax_forms.js' %}?v=7"></script>
+<script src="{% static 'program/js/_pager.js' %}?v=8"></script>
+
+</body>
+
+</html>

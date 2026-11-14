@@ -1,0 +1,771 @@
+{% extends 'program/base.html' %}
+
+{% load static %}
+{% load custom_filters %}
+
+{% block extra_head %}
+<style>
+  /* ---------- Boys / Girls tab switcher ---------- */
+  .tab-btn {
+    color: #374151;
+    position: relative;
+    z-index: 10;
+  }
+
+  .tab-btn.active {
+    color: #fff;
+  }
+
+  /* Sticky first column — keeps "Program Name" visible while the table
+     scrolls horizontally on small screens. */
+  .sticky-col {
+    position: sticky;
+    left: 0;
+    min-width: 150px;
+    max-width: 190px;
+  }
+
+  thead .sticky-col {
+    z-index: 3;
+  }
+
+  tbody .sticky-col {
+    z-index: 2;
+  }
+
+  /* ---------- Sticky table header + find-box ---------- */
+  /* The scroll region keeps tables compact (75vh) so the thead can stick
+     while the body scrolls; horizontal scroll and the sticky first column
+     keep working inside the same region. */
+  .results-scroll {
+    max-height: 75vh;
+    overflow: auto;
+  }
+
+  .results-scroll thead th {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+  }
+
+  /* First column of the sticky header row: pinned to the region corner. */
+  .results-scroll thead .sticky-col {
+    top: 0;
+  }
+
+  /* Keep header cell backgrounds opaque while rows scroll beneath. */
+  .results-scroll thead th:not(.sticky-col) {
+    background-color: #f8fafc;
+  }
+
+  /* Client-side find box hides non-matching rows without touching the DOM
+     text (so the live-refresh signature stays stable). */
+  tr.result-row-hidden {
+    display: none !important;
+  }
+
+  /* Match the sticky cell background to its row's state. */
+  thead .sticky-col {
+    background-color: #f8fafc;
+  }
+
+  tbody tr:not(.bg-green-50):not(.bg-gray-50) .sticky-col {
+    background-color: #ffffff;
+  }
+
+  tbody tr.bg-green-50 .sticky-col {
+    background-color: #ecfdf5;
+  }
+
+  tbody tr.bg-gray-50 .sticky-col {
+    background-color: #f9fafb;
+  }
+
+  /* ---------- Print (notice-board result sheets) ----------
+     Print the full table without scroll chrome: sticky column and the
+     horizontal scroller flatten out; interactive controls disappear. */
+  @media print {
+    .overflow-x-auto {
+      overflow: visible !important;
+    }
+
+    .results-scroll {
+      max-height: none;
+      overflow: visible !important;
+    }
+
+    .results-scroll thead th {
+      position: static;
+    }
+
+    .sticky-col {
+      position: static;
+      min-width: 0;
+      max-width: none;
+    }
+
+    .sticky-col::after {
+      display: none;
+    }
+
+    .result-toggle,
+    td a {
+      display: none;
+    }
+
+    tr,
+    td,
+    th {
+      break-inside: avoid;
+    }
+
+    tbody tr.bg-gray-50,
+    tbody tr.bg-green-50 {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  }
+
+  tbody tr:hover .sticky-col {
+    background-color: #f3f4f6;
+  }
+
+  /* Soft fade on the sticky cell's right edge. */
+  .sticky-col::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -16px;
+    bottom: 0;
+    width: 16px;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0));
+    pointer-events: none;
+  }
+
+  thead .sticky-col::after {
+    background: linear-gradient(to right, rgba(248, 250, 252, 0.9), rgba(248, 250, 252, 0));
+  }
+
+  tbody tr.bg-green-50 .sticky-col::after {
+    background: linear-gradient(to right, rgba(236, 253, 245, 0.9), rgba(236, 253, 245, 0));
+  }
+
+  tbody tr.bg-gray-50 .sticky-col::after {
+    background: linear-gradient(to right, rgba(249, 250, 251, 0.9), rgba(249, 250, 251, 0));
+  }
+</style>
+{% endblock %}
+
+{% block page_title_bar %}{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+
+  <!-- Page header (same layout as the venues / programs list headers) -->
+  <div class="bg-white shadow-sm rounded-2xl overflow-hidden">
+    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-6 sm:px-8">
+      <div class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div>
+          <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white flex items-center gap-3">
+            <span
+              class="shrink-0 w-11 h-11 rounded-xl bg-white/15 border border-white/25 flex items-center justify-center text-xl">🏆</span>
+            <span>Program Results</span>
+          </h1>
+          <p class="text-indigo-100 mt-1 text-sm sm:text-base">
+            Review, publish and download category-wise results
+            {% if meelad_fest_name %}<span class="font-semibold">· {{ meelad_fest_name }}</span>{% endif %}
+            {% if selected_category %}<span class="font-semibold">· {{ selected_category.name }}</span>{% endif %}
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+          <!-- Live auto-refresh (#9): poll the page in the background and swap in
+               updated result tables so a projector/notice view stays current. -->
+          <button type="button" id="live-refresh-toggle" data-no-skeleton
+            class="no-print inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg border bg-white text-gray-600 border-gray-200 shadow-sm transition duration-150 ease-in-out"
+            aria-pressed="false" title="Keep this page updated automatically — ideal for the announcement screen">
+            <span id="live-dot" class="w-2 h-2 rounded-full bg-gray-300" aria-hidden="true"></span>
+            <span id="live-label">Live: Off</span>
+          </button>
+          <span id="live-updated" class="no-print hidden text-xs font-medium text-indigo-100" aria-live="polite"></span>
+          <a href="{% url 'download_all_results_pdf' %}" download onclick="prepareDownload(this, 'Preparing PDF…')"
+            class="no-print inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-indigo-700 bg-white hover:bg-indigo-50 rounded-lg shadow-sm transition duration-150 ease-in-out"
+            title="Download all category results as a single PDF">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+            </svg>
+            Download All Results (PDF)
+          </a>
+          <a href="{% url 'download_certificates_pdf' %}" download
+            onclick="prepareDownload(this, 'Preparing certificates…')"
+            class="no-print inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-purple-700 bg-white hover:bg-purple-50 rounded-lg shadow-sm transition duration-150 ease-in-out"
+            title="One PDF with a certificate page per winner (Top-3 + grades, published results only)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4M7 8l-4 4m4-4l4 4m-4-4v12a2 2 0 002 2h10a2 2 0 002-2V9M7 8V5a2 2 0 012-2h6a2 2 0 012 2v3">
+              </path>
+            </svg>
+            Certificates (PDF)
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick stats — also a live-refresh target, so the counts stay in step
+         with the tables when Live mode is on. -->
+    <div data-live-section="result-stats" class="grid grid-cols-2 sm:grid-cols-3 divide-x divide-y divide-gray-100">
+      <div class="px-6 py-4" title="Programs listed on this page (respects the category filter)">
+        <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Total Programs</p>
+        <p class="text-2xl font-extrabold text-indigo-700">{{ result_total_programs|default:0 }}</p>
+      </div>
+      <div class="px-6 py-4" title="Results published — visible to students and parents">
+        <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Published</p>
+        <p class="text-2xl font-extrabold text-emerald-600">{{ result_published|default:0 }}</p>
+      </div>
+      <div class="px-6 py-4" title="Programs whose result is not published yet">
+        <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Unpublished</p>
+        <p class="text-2xl font-extrabold text-amber-600">{{ result_unpublished|default:0 }}</p>
+      </div>
+      <div class="px-6 py-4" title="Results entered but still hidden from students and parents">
+        <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Awaiting Publish</p>
+        <p class="text-2xl font-extrabold text-rose-600">{{ result_awaiting|default:0 }}</p>
+      </div>
+      <div class="px-6 py-4" title="Programs with no prize / result entered yet">
+        <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">No Results Yet</p>
+        <p class="text-2xl font-extrabold text-gray-500">{{ result_not_entered|default:0 }}</p>
+      </div>
+      <div class="px-6 py-4">
+        <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Fest</p>
+        <p class="text-lg font-extrabold text-indigo-700 truncate">{{ meelad_fest_name|default:"—" }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info note -->
+  <div class="no-print rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800">
+    General and Group Program results are published on their respective pages.
+  </div>
+
+  <!-- Category filter -->
+  <form method="get" action="{% url 'results' %}"
+    class="no-print bg-white rounded-lg border border-gray-200 shadow-sm px-5 py-4">
+    <label for="category" class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Category
+      Filter</label>
+    <div class="relative">
+      <select id="category" name="category"
+        class="block w-full appearance-none rounded-md border border-gray-300 bg-white py-2.5 pl-4 pr-10 text-sm text-gray-700 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition ease-in-out duration-200"
+        onchange="this.form.submit()">
+        <option value="">All Categories</option>
+        {% for category in categories %}
+        <option value="{{ category.id }}" {% if selected_category|is_equal_to:category %}selected{% endif %}>
+          {{category.name }}</option>
+        {% endfor %}
+      </select>
+      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+        <svg class="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path fill-rule="evenodd"
+            d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.1 1.02l-4.25 4.65a.75.75 0 01-1.1 0l-4.25-4.65a.75.75 0 01.02-1.06z"
+            clip-rule="evenodd" />
+        </svg>
+      </div>
+    </div>
+  </form>
+
+  <!-- Boys / Girls tab switcher (only when both sections are present) -->
+  {% if not is_girls_only and not is_boys_only and programs_for_boys and programs_for_girls %}
+  <div class="relative w-full max-w-md mx-auto mb-6 bg-gray-200 rounded-xl overflow-hidden">
+    <div class="flex">
+      <button id="boysTab" onclick="showResultSection('boys')"
+        class="tab-btn flex-1 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-colors duration-300">
+        Boys</button>
+      <button id="girlsTab" onclick="showResultSection('girls')"
+        class="tab-btn flex-1 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-colors duration-300">
+        Girls</button>
+    </div>
+    <div id="resultSliderIndicator"
+      class="absolute top-0 left-0 h-full w-1/2 bg-indigo-600 rounded-xl transition-transform duration-300"></div>
+  </div>
+  {% endif %}
+
+  <!-- Find a program (client-side filter across both section tables).
+       Lives OUTSIDE every [data-live-section] so the live-refresh
+       signature — and the filter itself — survive background updates. -->
+  <div id="result-find-box" class="mb-6 relative max-w-md">
+    <svg class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none"
+      viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+    </svg>
+    <input id="result-find" type="search" autocomplete="off" placeholder="Find a program…"
+      class="w-full rounded-xl border border-gray-300 bg-white pl-11 pr-10 py-2.5 text-sm text-gray-700 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+    <button id="result-find-clear" type="button" aria-label="Clear search"
+      class="hidden absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 text-xs leading-none flex items-center justify-center transition">✕</button>
+    <p id="result-find-meta" class="mt-1.5 text-xs text-gray-400 hidden"></p>
+  </div>
+
+  <!-- Boys Section (not rendered on a girls-only fest) -->
+  {% if not is_girls_only and programs_for_boys %}
+  <div id="boysSection">
+    <div data-live-section="boys" data-pager data-pager-items="tbody tr">
+      <div class="flex items-center gap-2 mb-4">
+        <span
+          class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-600 text-white text-sm font-bold"
+          aria-hidden="true">B</span>
+        <h2 class="text-lg font-semibold text-gray-800">Boys Section</h2>
+        <span
+          class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-semibold">
+          {{programs_for_boys|length }} program{{ programs_for_boys|length|pluralize }}</span>
+      </div>
+      <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-x-auto results-scroll px-1 sm:px-0">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="px-4 py-3 text-left sticky-col text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Program Name</th>
+              {% if not selected_category %}<th
+                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Category</th>
+              {% endif %}
+              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Participants
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">First Prize
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Second Prize
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Third Prize
+              </th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Published
+              </th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Poster
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            {% for program in programs_for_boys %}
+            <tr
+              class="{% if not program|is_result_added %}bg-gray-50 text-gray-400{% elif program.is_result_published %}bg-green-50{% endif %} hover:bg-gray-50 transition">
+              <td class="px-4 py-3 sticky-col whitespace-normal">{{ program.title }}</td>
+              {% if not selected_category %}<td class="px-4 py-3">{{ program.program_category }}</td>{% endif %}
+              <td class="px-4 py-3">{% get_participants_count program %}</td>
+              <td class="px-4 py-3">{% get_results program 'First' %}</td>
+              <td class="px-4 py-3">{% get_results program 'Second' %}</td>
+              <td class="px-4 py-3">{% get_results program 'Third' %}</td>
+              <td class="px-4 py-3 text-center">
+                <label class="inline-flex items-center">
+                  <input type="checkbox"
+                    class="result-toggle w-4 h-4 rounded border-gray-300 text-indigo-600 cursor-pointer"
+                    data-program-id="{{ program.id }}" 
+                    {% if program.is_result_published %}checked{% endif %} {% if not program|is_result_added %}disabled{% endif %}>
+                  <span class="sr-only">Published</span>
+                </label>
+              </td>
+              <td class="px-4 py-3 text-center">
+                {% if program|is_result_added %}
+                {% if program.is_result_published %}
+                <div class="inline-flex items-center gap-1">
+                  <button type="button" onclick="downloadPoster(this.dataset.url, this)"
+                    data-url="{% url 'download_results_poster_image' program.id 'boys' %}"
+                    class="inline-flex items-center px-2 py-1 text-xs font-semibold text-white bg-indigo-600 rounded hover:bg-indigo-700 transition duration-150 ease-in-out"
+                    title="Download Poster">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    Poster
+                  </button>
+                  <button type="button" onclick="downloadPoster(this.dataset.url, this)"
+                    data-url="{% url 'download_results_poster_image' program.id 'boys' %}?force=1"
+                    class="inline-flex items-center px-2 py-1 text-xs font-semibold text-amber-700 bg-amber-100 border border-amber-200 rounded hover:bg-amber-200 transition duration-150 ease-in-out"
+                    title="Force re-render and download a fresh poster (bypasses cache)">
+                    ↻ Force
+                  </button>
+                </div>
+                {% else %}
+                <span
+                  class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-gray-400 bg-gray-100 border border-gray-200 rounded cursor-not-allowed"
+                  title="Publish the result to enable poster download">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                    </path>
+                  </svg>
+                  Poster
+                </span>
+                {% endif %}
+                {% else %}
+                <span class="text-xs text-gray-400">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr data-pager-ignore>
+              <td colspan="{% if not selected_category %}8{% else %}7{% endif %}"
+                class="px-4 py-3 text-center text-gray-500">No programs available in this section.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /boysSection -->
+  {% endif %}
+
+  <!-- Girls Section (not rendered on a boys-only fest) -->
+  {% if not is_boys_only and programs_for_girls %}
+  <div id="girlsSection" {% if not is_girls_only and not is_boys_only and programs_for_boys %}class="hidden" {% endif%}>
+    <div data-live-section="girls" data-pager data-pager-items="tbody tr">
+      <div class="flex items-center gap-2 mb-4">
+        <span
+          class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-rose-500 text-white text-sm font-bold"
+          aria-hidden="true">G</span>
+        <h2 class="text-lg font-semibold text-gray-800">Girls Section</h2>
+        <span
+          class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-semibold">
+          {{programs_for_girls|length }} program{{ programs_for_girls|length|pluralize }}</span>
+      </div>
+      <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-x-auto results-scroll px-1 sm:px-0">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="px-4 py-3 text-left sticky-col text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Program Name</th>
+              {% if not selected_category %}<th
+                class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Category</th>
+              {% endif %}
+              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Participants
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">First Prize
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Second Prize
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Third Prize
+              </th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Published
+              </th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Poster
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            {% for program in programs_for_girls %}
+            <tr
+              class="{% if not program|is_result_added %}bg-gray-50 text-gray-400{% elif program.is_result_published %}bg-green-50{% endif %} hover:bg-gray-50 transition">
+              <td class="px-4 py-3 sticky-col whitespace-normal">{{ program.title }}</td>
+              {% if not selected_category %}<td class="px-4 py-3">{{ program.program_category }}</td>{% endif %}
+              <td class="px-4 py-3">{% get_participants_count program %}</td>
+              <td class="px-4 py-3">{% get_results program 'First' %}</td>
+              <td class="px-4 py-3">{% get_results program 'Second' %}</td>
+              <td class="px-4 py-3">{% get_results program 'Third' %}</td>
+              <td class="px-4 py-3 text-center">
+                <label class="inline-flex items-center">
+                  <input type="checkbox"
+                    class="result-toggle w-4 h-4 rounded border-gray-300 text-indigo-600 cursor-pointer"
+                    data-program-id="{{ program.id }}" 
+                    {% if program.is_result_published %}checked{% endif %} {% if not program|is_result_added %}disabled{% endif %}>
+                  <span class="sr-only">Published</span>
+                </label>
+              </td>
+              <td class="px-4 py-3 text-center">
+                {% if program|is_result_added %}
+                {% if program.is_result_published %}
+                <div class="inline-flex items-center gap-1">
+                  <button type="button" onclick="downloadPoster(this.dataset.url, this)"
+                    data-url="{% url 'download_results_poster_image' program.id 'girls' %}"
+                    class="inline-flex items-center px-2 py-1 text-xs font-semibold text-white bg-indigo-600 rounded hover:bg-indigo-700 transition duration-150 ease-in-out"
+                    title="Download Poster">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    Poster
+                  </button>
+                  <button type="button" onclick="downloadPoster(this.dataset.url, this)"
+                    data-url="{% url 'download_results_poster_image' program.id 'girls' %}?force=1"
+                    class="inline-flex items-center px-2 py-1 text-xs font-semibold text-amber-700 bg-amber-100 border border-amber-200 rounded hover:bg-amber-200 transition duration-150 ease-in-out"
+                    title="Force re-render and download a fresh poster (bypasses cache)">
+                    ↻ Force
+                  </button>
+                </div>
+                {% else %}
+                <span
+                  class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-gray-400 bg-gray-100 border border-gray-200 rounded cursor-not-allowed"
+                  title="Publish the result to enable poster download">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                    </path>
+                  </svg>
+                  Poster
+                </span>
+                {% endif %}
+                {% else %}
+                <span class="text-xs text-gray-400">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr data-pager-ignore>
+              <td colspan="{% if not selected_category %}8{% else %}7{% endif %}"
+                class="px-4 py-3 text-center text-gray-500">No programs available in this section.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /girlsSection -->
+  {% endif %}
+
+</div>
+
+<script>
+  // ---------- Boys / Girls tab switcher ----------
+  function showResultSection(section) {
+    var boys = document.getElementById('boysSection');
+    var girls = document.getElementById('girlsSection');
+    var boysTab = document.getElementById('boysTab');
+    var girlsTab = document.getElementById('girlsTab');
+    var indicator = document.getElementById('resultSliderIndicator');
+    if (boys) boys.classList.add('hidden');
+    if (girls) girls.classList.add('hidden');
+    var target = document.getElementById(section + 'Section');
+    if (target) target.classList.remove('hidden');
+    if (boysTab) boysTab.classList.remove('active');
+    if (girlsTab) girlsTab.classList.remove('active');
+    if (section === 'boys') {
+      if (boysTab) boysTab.classList.add('active');
+      if (indicator) indicator.style.transform = 'translateX(0%)';
+    } else {
+      if (girlsTab) girlsTab.classList.add('active');
+      if (indicator) indicator.style.transform = 'translateX(100%)';
+    }
+    // Rebuild pagers for the newly visible section so row visibility is correct.
+    if (window.MeeladPager) window.MeeladPager.refresh();
+  }
+  // Auto-activate boys tab on load when both sections are present.
+  (function () {
+    var boysTab = document.getElementById('boysTab');
+    if (boysTab) showResultSection('boys');
+  })();
+
+  // Poster download via fetch: a plain <a> navigation to an attachment made
+  // the skeleton loader think a page load had started (and a failure looked
+  // like nothing happened). Fetching as a blob keeps the page in place,
+  // triggers the browser download, and lets failures surface as a toast.
+  async function downloadPoster(url, btn) {
+    if (btn && btn.dataset.busy) return;
+    if (btn) {
+      btn.dataset.busy = '1';
+      btn.classList.add('opacity-60', 'pointer-events-none');
+    }
+    try {
+      const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      if (!res.ok) {
+        let details = 'Poster download failed.';
+        try {
+          const data = await res.json();
+          if (data && data.details) details = data.details;
+        } catch (e) { /* non-JSON error body — keep the default message */ }
+        showToast(details, 'error');
+        return;
+      }
+      const blob = await res.blob();
+      const disposition = res.headers.get('Content-Disposition') || '';
+      const match = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = match ? match[1] : 'result-poster.jpg';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(link.href), 4000);
+      showToast('Poster downloaded successfully.', 'success');
+    } catch (err) {
+      showToast('Poster download failed. Please try again.', 'error');
+    } finally {
+      if (btn) {
+        delete btn.dataset.busy;
+        btn.classList.remove('opacity-60', 'pointer-events-none');
+      }
+    }
+  }
+  window.downloadPoster = downloadPoster;
+
+  // ---------- Live auto-refresh (#9) ----------
+  // Polls this page every 20s while enabled; when the result tables change on
+  // the server, swaps in the fresh sections without a full reload — so the
+  // announcement screen stays current while judges publish results.
+  (function () {
+    const INTERVAL = 20000;
+    const toggle = document.getElementById('live-refresh-toggle');
+    const dot = document.getElementById('live-dot');
+    const label = document.getElementById('live-label');
+    const updatedEl = document.getElementById('live-updated');
+    if (!toggle || !dot || !label) return;
+
+    let enabled = false;
+    let timer = null;
+    let signature = null;
+    let busy = false;
+    let lastUpdated = null;
+
+    // "Updated just now / 3 min ago" so the projector view shows at a glance
+    // that it is still talking to the server (not frozen on a stale page).
+    function renderUpdated() {
+      if (!updatedEl) return;
+      if (!enabled || !lastUpdated) {
+        updatedEl.classList.add('hidden');
+        return;
+      }
+      const secs = Math.round((Date.now() - lastUpdated) / 1000);
+      updatedEl.textContent = secs < 45
+        ? 'Updated just now'
+        : 'Updated ' + Math.round(secs / 60) + ' min ago';
+      updatedEl.classList.remove('hidden');
+    }
+    setInterval(renderUpdated, 20000);
+
+    const STORE_KEY = 'results-live-refresh';
+    function setOn(on) {
+      enabled = on;
+      toggle.setAttribute('aria-pressed', String(on));
+      label.textContent = on ? 'Live: On' : 'Live: Off';
+      dot.className = 'w-2 h-2 rounded-full ' + (on
+        ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300');
+      /* Swap the full palette (not just add the "on" colours) so the pill can
+         never hold two conflicting Tailwind background/border utilities —
+         Tailwind emits them in a fixed order, not the order they are added. */
+      toggle.classList.toggle('bg-white', !on);
+      toggle.classList.toggle('text-gray-600', !on);
+      toggle.classList.toggle('border-gray-200', !on);
+      toggle.classList.toggle('bg-emerald-50', on);
+      toggle.classList.toggle('text-emerald-700', on);
+      toggle.classList.toggle('border-emerald-300', on);
+      try {
+        if (on) localStorage.setItem(STORE_KEY, '1');
+        else localStorage.removeItem(STORE_KEY);
+      } catch (e) { /* storage blocked — session-only */ }
+      clearTimeout(timer);
+      if (on) {
+        signature = readSignature();
+        lastUpdated = Date.now();
+        timer = setTimeout(poll, INTERVAL);
+      } else {
+        lastUpdated = null;
+      }
+      renderUpdated();
+    }
+
+    function readSignature() {
+      const parts = [];
+      document.querySelectorAll('[data-live-section]').forEach(section => {
+        parts.push(section.textContent.replace(/\s+/g, ' ').trim());
+      });
+      return parts.join('||');
+    }
+
+    function safeToApply() {
+      // Never yank content out from under an open modal/dialog or an
+      // in-flight toggle save.
+      if (document.querySelector('.modal-shell.flex') || document.querySelector('[x-show][x-cloak]')) return false;
+      return true;
+    }
+
+    async function poll() {
+      if (!enabled) return;
+      if (busy) { timer = setTimeout(poll, INTERVAL); return; }
+      if (document.hidden) { timer = setTimeout(poll, INTERVAL); return; }
+      busy = true;
+      try {
+        const res = await fetch(window.location.href, {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          credentials: 'same-origin'
+        });
+        if (!res.ok) throw new Error('bad status');
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const fresh = [...doc.querySelectorAll('[data-live-section]')];
+        if (!fresh.length) throw new Error('no sections');
+        const nextSignature = fresh
+          .map(s => s.textContent.replace(/\s+/g, ' ').trim())
+          .join('||');
+        lastUpdated = Date.now();
+        renderUpdated();
+        if (nextSignature !== signature && safeToApply()) {
+          const current = document.querySelectorAll('[data-live-section]');
+
+          // Preserve pager states before the old DOM nodes are destroyed
+          const pagerStates = Array.from(current).map(c => c.__pagerState);
+
+          fresh.forEach((section, i) => {
+            if (current[i]) current[i].replaceWith(section);
+          });
+          signature = nextSignature;
+
+          // Restore pager states onto the new DOM nodes
+          document.querySelectorAll('[data-live-section]').forEach((c, i) => {
+            if (pagerStates[i]) c.__pagerState = pagerStates[i];
+          });
+
+          showToast('Results updated.', 'success');
+          // Re-apply the active tab so the swapped-in section respects
+          // whichever section the user is currently viewing.
+          if (typeof showResultSection === 'function') {
+            const activeTab = document.getElementById('girlsTab');
+            const girlsActive = activeTab && activeTab.classList.contains('active');
+            showResultSection(girlsActive ? 'girls' : 'boys');
+          } else if (window.MeeladPager) {
+            if (MeeladPager.applyResultFind) MeeladPager.applyResultFind(true); // preserve page
+            else MeeladPager.refresh();
+          }
+        }
+      } catch (err) {
+        // Network hiccups during the fest are expected — keep polling silently.
+      } finally {
+        busy = false;
+        if (enabled) timer = setTimeout(poll, INTERVAL);
+      }
+    }
+
+    toggle.addEventListener('click', () => setOn(!enabled));
+
+    // Restore the previous session's choice (projector pages keep running).
+    try {
+      if (localStorage.getItem(STORE_KEY) === '1') setOn(true);
+    } catch (e) { /* ignore */ }
+  })();
+
+
+  // Result toggle (editable) — delegated so sections swapped in by the live
+  // auto-refresh keep working without rebinding.
+  document.addEventListener('change', async function (evt) {
+    const checkbox = evt.target.closest('.result-toggle');
+    if (!checkbox) return;
+    const programId = checkbox.dataset.programId;
+    const isPublished = checkbox.checked;
+
+    try {
+      const response = await fetch(`/program/${programId}/publish_result/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ is_published: isPublished })
+      });
+
+      if (!response.ok) throw new Error('Failed to update result status');
+      showToast(isPublished ? 'Result published.' : 'Result unpublished.', 'success');
+    } catch (err) {
+      showToast(err.message || 'Failed to update result status.', 'error');
+      checkbox.checked = !isPublished;  // revert on error
+    }
+  });
+
+</script>
+
+{% endblock %}

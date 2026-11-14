@@ -1,0 +1,53 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Payment | Meelad Subscription</title>
+  {% include '_head_meta.html' %}
+  <link rel="stylesheet" href="{% static 'program/css/app.min.css' %}?v=5">
+  <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+
+</head>
+<body class="bg-gradient-to-br from-white to-indigo-50 min-h-screen flex items-center justify-center p-6">
+
+  <div class="bg-white shadow-2xl rounded-2xl p-10 w-full max-w-md text-center border border-indigo-100">
+    <h2 class="text-2xl font-bold text-indigo-700 mb-2">Confirm Your Payment</h2>
+    <p class="text-gray-600 mb-6">Redirecting to Cashfree secure checkout...</p>
+
+    <div class="flex justify-between border-b border-gray-200 pb-4 mb-6">
+      <span class="font-semibold text-gray-700">Amount Payable</span>
+      <span class="text-indigo-600 font-bold text-xl">₹299</span>
+    </div>
+
+    <button id="payBtn"
+            class="w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 transition">
+      Pay ₹299 Securely
+    </button>
+  </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const cashfree = new Cashfree({ mode: "production" });  // sandbox for testing
+  
+      document.getElementById("payBtn").addEventListener("click", () => {
+        const sessionId = "{{ payment_session_id }}";
+        if (!sessionId) {
+          showToast("Payment session ID missing!", "error");
+          return;
+        }
+  
+        cashfree.checkout({
+          paymentSessionId: sessionId,
+          redirectTarget: "_self"
+        });
+      });
+    });
+  </script>
+  
+
+{% include '_footer.html' %}
+
+{% include '_toast.html' %}
+
+</body>
+</html>

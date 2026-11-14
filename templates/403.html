@@ -1,0 +1,24 @@
+{% extends 'program/base.html' %}
+{% block title %}Access denied — Meelad Fest{% endblock %}
+{% block page_title_bar %}{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto text-center py-16">
+  <p class="text-7xl font-black text-indigo-200 select-none">403</p>
+  <h1 class="mt-4 text-2xl font-bold text-gray-800">You don't have access to this page</h1>
+  <p class="mt-2 text-gray-500">
+    Your account isn't permitted to view this page. If you believe this is a
+    mistake, contact your fest coordinator.
+  </p>
+  <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+    <a href="/"
+      class="w-full sm:w-auto px-5 py-3 rounded-xl bg-indigo-600 text-white text-sm font-semibold shadow hover:bg-indigo-700 transition">
+      Go to Dashboard
+    </a>
+    <button type="button" onclick="history.back()"
+      class="no-print w-full sm:w-auto px-5 py-3 rounded-xl bg-white border border-gray-200 text-gray-700 text-sm font-semibold hover:border-indigo-300 hover:text-indigo-600 transition">
+      ← Go back
+    </button>
+  </div>
+</div>
+{% endblock %}

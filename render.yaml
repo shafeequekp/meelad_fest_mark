@@ -1,0 +1,42 @@
+# Render blueprint for the Meelad Django backend.
+# Deploy: Render dashboard -> New -> Blueprint -> point at this repo.
+services:
+  - type: web
+    name: meelad-web
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate --noinput && python manage.py bootstrap_superuser
+    startCommand: gunicorn meelad.wsgi:application --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.10.12"
+      - key: MEELAD_ENV
+        value: production          # force meelad/production.py on the server
+      - key: SECRET_KEY
+        generateValue: true        # Render generates and keeps it secret
+      - key: DEBUG
+        value: "0"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      # --- Neon Postgres (free tier) ---
+      - key: DATABASE_URL
+        sync: false                # paste your Neon pooled connection string
+      # --- Cloudinary media storage (free tier has no persistent disk) ---
+      - key: CLOUDINARY_CLOUD_NAME
+        value: "dr5qb9dob"
+      - key: CLOUDINARY_API_KEY
+        value: "378233248685784"
+      - key: CLOUDINARY_API_SECRET
+        sync: false                # paste the API secret (matches settings.py default)
+      # --- AI assistant service (live Render deployment) ---
+      - key: MEELAD_AI_SERVICE_BASE_URL
+        value: https://meelad-fest-mark-ai.onrender.com
+      - key: MEELAD_AI_SERVICE_TOKEN
+        sync: false                # must equal MEELAD_SERVICE_TOKEN of the AI service
+      - key: MEELAD_AI_CHAT_TIMEOUT
+        value: "110"
+      # --- initial superuser (created by `manage.py bootstrap_superuser`) ---
+      - key: DJANGO_SUPERUSER_EMAIL
+        value: shafeequevesala@gmail.com
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false                # set in the Render dashboard, never commit it

@@ -1,0 +1,339 @@
+{% extends 'program/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Evaluate {{ program.title }} — Meelad Fest{% endblock %}
+
+{% block page_title_bar %}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto pb-8">
+  <div class="flex items-center justify-between gap-3 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2.5">
+        <span class="shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12a3 3 0 0110 0 3 3 0 0110 0zM14 12a3 3 0 0110 0 3 3 0 0110 0z" /></svg>
+        </span>
+        {{ program.title }}
+      </h1>
+      <p class="text-sm text-gray-500 mt-1">
+        Judge: <strong>{{ judge.name }}</strong> · {{ criteria|length }} criteria
+      </p>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="{% url 'judge_portal' %}" class="px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-700 font-semibold hover:border-indigo-300 hover:text-indigo-600 transition">← Back</a>
+      <a href="{% url 'judge_program_rankings' program.id %}"
+        class="px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold shadow hover:bg-indigo-700 transition">View Rankings</a>
+    </div>
+  </div>
+
+  {% if not criteria %}
+  <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm text-amber-800">
+    <strong>No marking criteria set yet.</strong> The coordinator must add criteria (e.g. Content /25) from the Judges page before evaluation can start.
+  </div>
+  {% endif %}
+
+  <div class="grid gap-5">
+    {% for row in rows %}
+    <div class="card p-5" data-contestant-id="{{ row.contestant.id }}" data-evaluated="{% if row.evaluated %}1{% else %}0{% endif %}">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span class="shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-xs font-bold">
+            {% if contestant_kind == 'team' %}{{ row.contestant.name|slice:":1"|upper }}{% else %}{{ row.contestant.full_name|slice:":1"|upper }}{% endif %}
+          </span>
+          <div class="min-w-0">
+            <div class="font-semibold text-gray-800 truncate">
+              {% if contestant_kind == 'team' %}{{ row.contestant.name }}{% else %}{{ row.contestant.full_name }}{% endif %}
+            </div>
+            <div class="text-xs text-gray-400">
+              {% if contestant_kind == 'team' %}{% if row.contestant.leader %}Leader: {{ row.contestant.leader }}{% endif %}{% else %}{{ row.contestant.code_number|default:"—" }}{% if row.contestant.team %} · {{ row.contestant.team.name }}{% endif %}{% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-sm font-bold text-indigo-700">Total: <span class="total-display" data-row-total="0">0.00</span></span>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold {% if row.evaluated %}bg-emerald-50 text-emerald-700{% else %}bg-gray-100 text-gray-500{% endif %}">
+            {{ row.evaluated|yesno:"✓ Saved,Not evaluated" }}
+          </span>
+        </div>
+      </div>
+
+      <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {% for criterion in criteria %}
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">{{ criterion.name }}
+            <span class="text-gray-400">/ {{ criterion.max_marks|floatformat:0 }}</span>
+          </label>
+          <input type="number" min="0" max="{{ criterion.max_marks }}" step="0.5"
+            inputmode="decimal"
+            autocomplete="off"
+            enterkeyhint="next"
+            data-criterion-id="{{ criterion.id }}"
+            data-max-marks="{{ criterion.max_marks }}"
+            value="{{ row.scores|get_item:criterion.id|default:'' }}"
+            placeholder="0"
+            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-base text-gray-900 outline-none ring-indigo-200 focus:ring"
+            oninput="updateRowTotal(this)">
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="mt-3 flex justify-end">
+        <button type="button" onclick="saveContestant({{ row.contestant.id }})"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition">
+          Save {{ contestant_kind }}
+        </button>
+      </div>
+    </div>
+    {% empty %}
+    <div class="bg-white border-2 border-dashed border-gray-200 rounded-2xl p-12 text-center">
+      <p class="text-5xl mb-3">👥</p>
+      <p class="text-gray-500 font-medium text-lg">No contestants registered</p>
+      <p class="text-sm text-gray-400 mt-1">Once students/teams register for {{ program.title }}, they'll appear here for evaluation.</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Sticky summary bar (mobile): judged progress + unsaved count + bulk save -->
+  <div class="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-white/95 backdrop-blur border-t border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      <div>
+        <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Judged</p>
+        <p class="text-sm font-extrabold text-gray-800">
+          <span id="summary-saved">0</span>/{{ rows|length }}
+          <span id="summary-dirty" class="hidden text-amber-600"> · <span id="dirty-count">0</span> unsaved</span>
+        </p>
+      </div>
+      <button id="save-unsaved-btn" type="button" disabled
+        class="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold shadow hover:bg-indigo-700 disabled:opacity-40 disabled:hover:bg-indigo-600 transition">
+        All saved
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  const EVAL = {
+    judgeId: {{ judge.id }},
+    programId: {{ program.id }},
+    kind: '{{ contestant_kind }}'
+  };
+
+  function updateRowTotal(input) {
+    const row = input.closest('[data-contestant-id]');
+    if (!row) return;
+    let total = 0;
+    row.querySelectorAll('[data-criterion-id]').forEach(el => total += parseFloat(el.value || 0));
+    row.querySelectorAll('.total-display').forEach(el => el.textContent = total.toFixed(2));
+  }
+
+  async function saveContestant(contestantId) {
+    const row = document.querySelector('[data-contestant-id="' + contestantId + '"]');
+    if (!row) return;
+    const btn = row.querySelector('button');
+    const oldHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="inline-flex items-center gap-2"><svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"></circle><path fill="currentColor" class="opacity-75" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>Saving…</span>';
+    let bodyStr = null; // captured for the offline queue if the network fails
+    try {
+      const scores = {};
+      row.querySelectorAll('[data-criterion-id]').forEach(el => {
+        const v = parseFloat(el.value || 0);
+        if (v !== 0) scores[el.dataset.criterionId] = v;
+      });
+      const body = new URLSearchParams();
+      body.append('contestant_kind', EVAL.kind);
+      body.append('contestant_id', String(contestantId));
+      Object.entries(scores).forEach(([k, v]) => body.append('score_' + k, String(v)));
+      bodyStr = body.toString();
+      const csrf = document.querySelector('[name="csrfmiddlewaretoken"]');
+      const resp = await fetch('/program/judges/' + EVAL.judgeId + '/program/' + EVAL.programId + '/save/', {
+        method: 'POST',
+        body,
+        credentials: 'same-origin',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': csrf ? csrf.value : (window.CSRF_TOKEN || ''),
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+        }
+      });
+      const data = await resp.json();
+      window.MeeladToast && MeeladToast(data.message || (data.error || 'Saved.'), data.ok !== false ? 'success' : 'error');
+      if (data.ok !== false) {
+        row.querySelectorAll('.total-display').forEach(el => el.textContent = (data.total || '0.00').toString());
+        const chip = row.querySelector('.bg-emerald-50');
+        if (chip) chip.textContent = '✓ Saved';
+        row.dataset.evaluated = '1';
+        baseline[row.dataset.contestantId] = rowState(row);
+        updateSummary();
+      }
+    } catch (e) {
+      if (!navigator.onLine && bodyStr) {
+        // Offline — queue the submission; it replays automatically on reconnect.
+        queueOfflineSave(contestantId, bodyStr, row);
+      } else {
+        window.MeeladToast && MeeladToast('Could not save. Try again.', 'error');
+      }
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = oldHtml;
+    }
+  }
+
+  document.querySelectorAll('[data-criterion-id]').forEach(el => updateRowTotal(el));
+
+  // ---- Unsaved-changes guard + sticky summary counts ----
+  const rowState = (row) =>
+    Array.from(row.querySelectorAll('[data-criterion-id]')).map(el => el.value || '').join('|');
+
+  const baseline = {};
+  document.querySelectorAll('[data-contestant-id]').forEach(row => {
+    baseline[row.dataset.contestantId] = rowState(row);
+  });
+
+  const dirtyRows = () =>
+    Array.from(document.querySelectorAll('[data-contestant-id]'))
+      .filter(row => rowState(row) !== baseline[row.dataset.contestantId]);
+
+  function updateSummary() {
+    const rows = Array.from(document.querySelectorAll('[data-contestant-id]'));
+    const saved = rows.filter(r => r.dataset.evaluated === '1').length;
+    const dirty = dirtyRows().length;
+    const savedEl = document.getElementById('summary-saved');
+    const dirtyWrap = document.getElementById('summary-dirty');
+    const dirtyEl = document.getElementById('dirty-count');
+    const btn = document.getElementById('save-unsaved-btn');
+    if (savedEl) savedEl.textContent = saved;
+    if (dirtyWrap) dirtyWrap.classList.toggle('hidden', dirty === 0);
+    if (dirtyEl) dirtyEl.textContent = dirty;
+    if (btn) {
+      btn.disabled = dirty === 0;
+      btn.textContent = dirty === 0 ? 'All saved' : 'Save unsaved (' + dirty + ')';
+    }
+    return dirty;
+  }
+
+  document.querySelectorAll('[data-criterion-id]').forEach(el => {
+    el.addEventListener('input', updateSummary);
+  });
+
+  // Keyboard-friendly entry: Enter jumps to the next mark field instead of
+  // leaving the page, so a judge can enter a whole program without touching
+  // the mouse. Backspace on an empty field steps back one field.
+  const markFields = () => Array.from(document.querySelectorAll('[data-criterion-id]'));
+  document.querySelectorAll('[data-criterion-id]').forEach(el => {
+    el.addEventListener('keydown', (e) => {
+      const fields = markFields();
+      const index = fields.indexOf(e.target);
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const next = fields[index + 1];
+        if (next) { next.focus(); next.select(); }
+        else {
+          const saveAll = document.getElementById('save-unsaved-btn');
+          if (saveAll) saveAll.focus();
+        }
+      } else if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
+        const prev = fields[index - 1];
+        prev.focus();
+        prev.select();
+      }
+    });
+  });
+
+  // Warn before leaving with unsaved marks (accidental back-swipe / refresh)
+  window.addEventListener('beforeunload', (e) => {
+    if (updateSummary() > 0) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+
+  const saveAllBtn = document.getElementById('save-unsaved-btn');
+  if (saveAllBtn) saveAllBtn.addEventListener('click', async () => {
+    const pending = dirtyRows().map(r => r.dataset.contestantId);
+    for (const id of pending) {
+      await saveContestant(id);
+    }
+  });
+
+  updateSummary();
+
+  // ---- Offline mark queue ----
+  // When a save fails because the device is offline, the exact POST body is
+  // stored in localStorage and replayed automatically when connectivity
+  // returns (or on the next page load). Judges keep working through
+  // dead-signal stretches without losing a single entry.
+  const PENDING_KEY = 'meelad.pendingMarks.v1';
+
+  function readQueue() {
+    try { return JSON.parse(localStorage.getItem(PENDING_KEY)) || []; }
+    catch (e) { return []; }
+  }
+  function writeQueue(q) {
+    try { localStorage.setItem(PENDING_KEY, JSON.stringify(q)); } catch (e) { /* storage unavailable */ }
+  }
+  function queueOfflineSave(contestantId, bodyStr, row) {
+    const q = readQueue();
+    q.push({
+      contestantId: contestantId,
+      body: bodyStr,
+      url: '/program/judges/' + EVAL.judgeId + '/program/' + EVAL.programId + '/save/',
+      at: Date.now()
+    });
+    writeQueue(q);
+    if (row) {
+      const chip = row.querySelector('.bg-emerald-50');
+      if (chip) chip.textContent = '⏳ Offline — will sync';
+    }
+    updateSummary();
+    window.MeeladToast && MeeladToast('You appear to be offline. Marks stored locally — they will sync automatically.', 'warning');
+  }
+
+  async function replayPendingSaves() {
+    const q = readQueue();
+    if (!q.length) return;
+    const csrfEl = document.querySelector('[name="csrfmiddlewaretoken"]');
+    const remaining = [];
+    let synced = 0;
+    for (const item of q) {
+      try {
+        const resp = await fetch(item.url, {
+          method: 'POST',
+          body: new URLSearchParams(item.body),
+          credentials: 'same-origin',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': csrfEl ? csrfEl.value : (window.CSRF_TOKEN || ''),
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+          }
+        });
+        const data = await resp.json();
+        if (data.ok === false) { remaining.push(item); continue; }
+        synced++;
+        const row = document.querySelector('[data-contestant-id="' + item.contestantId + '"]');
+        if (row) {
+          row.dataset.evaluated = '1';
+          if (typeof baseline !== 'undefined' && typeof rowState === 'function') {
+            baseline[row.dataset.contestantId] = rowState(row);
+          }
+          const chip = row.querySelector('.bg-emerald-50');
+          if (chip) chip.textContent = '✓ Saved';
+        }
+      } catch (e) {
+        remaining.push(item); // still offline — try again on the next wake-up
+      }
+    }
+    writeQueue(remaining);
+    updateSummary();
+    if (synced) {
+      window.MeeladToast && MeeladToast(synced + ' offline mark' + (synced > 1 ? 's' : '') + ' synced.', 'success');
+    }
+  }
+
+  window.addEventListener('online', replayPendingSaves);
+  // Replay any queue left over from a previous session too.
+  replayPendingSaves();
+</script>
+{% endblock %}

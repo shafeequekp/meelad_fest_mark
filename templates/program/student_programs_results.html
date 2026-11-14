@@ -1,0 +1,219 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ student.full_name }} — Programs &amp; Results</title>
+  {% include '_head_meta.html' %}
+  <link rel="stylesheet" href="{% static 'program/css/app.min.css' %}?v=5">
+  <style>
+    .result-body { max-height: 0; overflow: hidden; transition: max-height .35s ease, padding .35s ease; }
+    .result-body.open { max-height: 300px; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen p-4 sm:p-8">
+
+  <div class="max-w-3xl mx-auto">
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl shadow-xl p-6 sm:p-8 text-white mb-6">
+      {% if student_logged_in %}
+      <a href="{% url 'student_logout' %}" class="inline-flex items-center gap-1 text-indigo-200 hover:text-white text-sm font-medium transition">
+        🚪 Logout
+      </a>
+      {% else %}
+      <a href="{% url 'parents_portal' code %}" class="inline-flex items-center gap-1 text-indigo-200 hover:text-white text-sm font-medium transition">
+        ← Back to portal
+      </a>
+      {% endif %}
+      <div class="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <p class="text-indigo-200 text-sm">{{ fest_name }} · {{ madrasa.name }}</p>
+          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1">🎓 {{ student.full_name }}</h1>
+          <p class="text-indigo-100 mt-1 text-sm">
+            {{ team.name }}
+            {% if student.category %}· 🗂️ {{ student.category.name }}{% endif %}
+            {% if student.gender == 'male' %}· 👦 Boys{% else %}· 🧕 Girls{% endif %}
+            {% if student.code_number %}· #{{ student.code_number }}{% endif %}
+          </p>
+        </div>
+        <div class="text-center sm:text-right bg-white/10 rounded-2xl px-5 py-3">
+          <div class="text-3xl font-extrabold">{{ results|length }}</div>
+          <div class="text-indigo-200 text-xs font-semibold uppercase tracking-wide">Programs</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Team Scoreboard (overall team scoring state) -->
+    {% if team_leaderboard %}
+    <div class="bg-white rounded-2xl shadow-md p-6 mb-6 border border-gray-100">
+      <div class="flex items-start justify-between gap-4 mb-4 flex-wrap">
+        <div>
+          <h2 class="text-lg font-extrabold text-gray-800">🏆 Team Scoreboard</h2>
+          <p class="text-sm text-gray-500 mt-0.5">Overall team scoring state across all published programs</p>
+        </div>
+        <span class="text-[11px] font-semibold text-gray-400 bg-gray-100 rounded-full px-3 py-1.5 whitespace-nowrap">
+          {{ team_leaderboard|length }} teams
+        </span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[680px]">
+          <thead>
+            <tr class="text-left text-xs text-gray-500 uppercase tracking-wider border-b border-gray-200">
+              <th class="py-2 pr-3">#</th>
+              <th class="py-2 pr-3">Team</th>
+              {% for cat in team_leaderboard.0.category_rows %}
+              <th class="py-2 pr-3 text-center">{{ cat.category.name }}</th>
+              {% endfor %}
+              <th class="py-2 pr-3 text-right">Individual</th>
+              <th class="py-2 pr-3 text-right">Group</th>
+              <th class="py-2 pr-3 text-right">General</th>
+              <th class="py-2 text-right">Grand Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for team_data in team_leaderboard %}
+            <tr class="border-b border-gray-100 hover:bg-indigo-50/50 transition {% if team_data.team.id == team.id %}bg-indigo-50/60{% endif %}">
+              <td class="py-3 pr-3 text-lg">
+                {% if team_data.rank == 1 %}🥇{% elif team_data.rank == 2 %}🥈{% elif team_data.rank == 3 %}🥉{% else %}<span class="text-gray-500 font-semibold">{{ team_data.rank }}</span>{% endif %}
+              </td>
+              <td class="py-3 pr-3 font-bold text-gray-800 whitespace-nowrap">
+                {{ team_data.team.name }}
+                {% if team_data.team.colour %}
+                <span class="inline-block w-2.5 h-2.5 rounded-full ml-1 align-middle"
+                  style="background-color: {{ team_data.team.get_colour_hex }}"></span>
+                {% endif %}
+                {% if team_data.team.id == team.id %}
+                <span class="text-[10px] font-bold text-indigo-600 bg-indigo-100 rounded-full px-2 py-0.5 ml-1">You</span>
+                {% endif %}
+              </td>
+              {% for cat in team_data.category_rows %}
+              <td class="py-3 pr-3 text-center">
+                <div class="font-bold text-gray-700">{{ cat.total|floatformat:"-2" }}</div>
+                <div class="text-[10px] text-gray-400">👦 {{ cat.boys|floatformat:"-2" }} · 🧕 {{ cat.girls|floatformat:"-2" }}</div>
+              </td>
+              {% endfor %}
+              <td class="py-3 pr-3 text-right font-semibold text-gray-700 whitespace-nowrap">{{ team_data.individual_total|floatformat:"-2" }}</td>
+              <td class="py-3 pr-3 text-right font-semibold text-gray-700 whitespace-nowrap">{{ team_data.group_total|floatformat:"-2" }}</td>
+              <td class="py-3 pr-3 text-right font-semibold text-gray-700 whitespace-nowrap">{{ team_data.general_total|floatformat:"-2" }}</td>
+              <td class="py-3 text-right whitespace-nowrap">
+                <span class="inline-block font-extrabold text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg px-3 py-1.5 shadow">
+                  {{ team_data.grand_total|floatformat:"-2" }}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <p class="mt-4 text-[11px] text-gray-400">
+        ℹ️ Points are counted from published results only. Category columns include individual program
+        positions &amp; grades; Group and General columns add points from team-level programs.
+      </p>
+    </div>
+    {% endif %}
+
+
+    <!-- Programs list -->
+    {% if results %}
+    <div class="space-y-4">
+      {% for item in results %}
+      <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100">
+        <div class="p-5 flex items-start justify-between gap-4">
+          <div class="flex items-start gap-3">
+            <div class="w-11 h-11 rounded-xl bg-indigo-100 flex items-center justify-center text-xl shrink-0">📘</div>
+            <div>
+              <h3 class="font-bold text-gray-800">{{ item.program.title }}</h3>
+              {% if item.program.description %}
+              <p class="text-sm text-gray-500 mt-0.5">{{ item.program.description }}</p>
+              {% endif %}
+              {% if item.program.is_general %}
+                <span class="inline-block mt-1 mr-1 text-[11px] font-semibold text-purple-700 bg-purple-100 rounded-full px-2 py-0.5">General</span>
+              {% elif item.program.is_group %}
+                <span class="inline-block mt-1 mr-1 text-[11px] font-semibold text-blue-700 bg-blue-100 rounded-full px-2 py-0.5">Group</span>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if item.published %}
+            <button type="button" data-target="result-{{ forloop.counter }}"
+              class="result-toggle shrink-0 inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-xl shadow transition">
+              🏅 View Result
+            </button>
+          {% else %}
+            <span class="shrink-0 text-xs font-semibold text-gray-400 bg-gray-100 rounded-full px-3 py-1.5">Result not published yet</span>
+          {% endif %}
+        </div>
+
+        {% if item.published %}
+        <div id="result-{{ forloop.counter }}" class="result-body bg-green-50 border-t border-green-100">
+          <div class="p-5">
+            <div class="flex flex-wrap gap-2 items-center">
+              {% if item.prize %}
+                {% if item.prize.position %}
+                <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-bold
+                  {% if item.prize.position.name == 'first' %}bg-yellow-200 text-yellow-800
+                  {% elif item.prize.position.name == 'second' %}bg-gray-200 text-gray-700
+                  {% else %}bg-amber-100 text-amber-800{% endif %}">
+                  🥇 {{ item.prize.position.get_name_display|default:item.prize.position.name }} Prize
+                </span>
+                {% endif %}
+                {% if item.prize.grade %}
+                <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-bold bg-indigo-100 text-indigo-700">
+                  🎖️ {{ item.prize.grade.get_name_display|default:item.prize.grade.name }}
+                </span>
+                {% endif %}
+                {% if item.prize.group_program_position %}
+                <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-bold bg-blue-100 text-blue-700">
+                  👥 {{ item.prize.group_program_position.get_name_display|default:item.prize.group_program_position.name }} (Group)
+                </span>
+                {% endif %}
+                {% if item.prize.general_program_position %}
+                <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-bold bg-purple-100 text-purple-700">
+                  🌟 {{ item.prize.general_program_position.get_name_display|default:item.prize.general_program_position.name }} (General)
+                </span>
+                {% endif %}
+                {% if item.prize.remarks %}
+                <span class="text-sm text-gray-600 italic">“{{ item.prize.remarks }}”</span>
+                {% endif %}
+              {% else %}
+              <span class="text-sm text-gray-600">Participated — result recorded.</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl shadow-md p-10 text-center">
+      <div class="text-5xl mb-3">📭</div>
+      <h3 class="text-lg font-bold text-gray-700">No programs yet</h3>
+      <p class="text-gray-500 text-sm mt-1">{{ student.full_name }} has not been registered for any programs yet.</p>
+    </div>
+    {% endif %}
+
+    <p class="text-center text-xs text-gray-400 mt-8">Powered by Team Mahara</p>
+  </div>
+
+  <script>
+    document.querySelectorAll('.result-toggle').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const target = document.getElementById(this.dataset.target);
+        if (target) {
+          const isOpen = target.classList.contains('open');
+          target.classList.toggle('open');
+          this.textContent = isOpen ? '🏅 View Result' : '🙈 Hide Result';
+        }
+      });
+    });
+  </script>
+{% include '_footer.html' %}
+
+</body>
+</html>
+

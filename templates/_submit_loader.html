@@ -1,0 +1,92 @@
+{% comment %}
+Reusable submit-button loader: prevents accidental double submissions by
+showing a spinner and guarding the form while it is being saved.
+
+- Native (non-AJAX) POST forms are handled automatically by the document
+  level "submit" listener below.
+- Forms that manage their own loading (AJAX submits etc.) should add the
+  data-no-loader attribute to opt out, or call MeeladLoader.form(this) /
+  MeeladLoader.restore(this) manually in their JS.
+
+IMPORTANT: the submit button is visually "disabled" but NOT given the native
+`disabled` attribute. Setting `disabled` on the clicked submit button while
+the submit event is in flight makes browsers drop that button's name=value
+pair from the POST payload, so views that key on the submit button's name
+(e.g. `if "student_form" in request.POST`) would never fire and the form
+would silently "do nothing". We keep the spinner look and guard against
+double-submission with busy flags instead.
+{% endcomment %}
+<script>
+(function () {
+  var SPIN =
+    '<span class="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin align-middle mr-2"></span>';
+  var SPIN_ONLY =
+    '<span class="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>';
+  var LABEL = 'Saving…';
+
+  // Small icon-only buttons (✕ / − / 🗑 etc.) get a compact spinner only.
+  function iconOnly(btn) {
+    return ((btn.textContent || '').trim().length <= 2);
+  }
+
+  function formBtn(form) {
+    return form.querySelector('button[type="submit"], input[type="submit"]');
+  }
+
+  function buttonShow(btn, label) {
+    if (!btn || btn.dataset.mlBusy === '1') return false;
+    var isIcon = iconOnly(btn);
+    var text = label || btn.getAttribute('data-loader-text') || (isIcon ? '' : LABEL);
+    btn.dataset.mlBusy = '1';
+    btn.dataset.mlOrig = btn.innerHTML;
+    // Visual-only disable: aria-disabled + pointer-events-none BUT NOT the
+    // native `disabled` property — a disabled submitter is dropped from the
+    // form data set, which would lose its name=value for the server.
+    btn.classList.add('opacity-60', 'cursor-not-allowed', 'pointer-events-none');
+    btn.setAttribute('aria-disabled', 'true');
+    btn.innerHTML = isIcon ? SPIN_ONLY : SPIN + '<span>' + text + '</span>';
+    return true;
+  }
+
+  function buttonRestore(btn) {
+    if (!btn || btn.dataset.mlBusy !== '1') return;
+    btn.innerHTML = btn.dataset.mlOrig;
+    btn.classList.remove('opacity-60', 'cursor-not-allowed', 'pointer-events-none');
+    btn.removeAttribute('aria-disabled');
+    delete btn.dataset.mlBusy;
+    delete btn.dataset.mlOrig;
+  }
+
+  function formShow(form) {
+    if (form.dataset.mlBusy === '1') return false;
+    form.dataset.mlBusy = '1';
+    return buttonShow(formBtn(form));
+  }
+
+  function formRestore(form) {
+    delete form.dataset.mlBusy;
+    buttonRestore(formBtn(form));
+  }
+
+  window.MeeladLoader = {
+    button: buttonShow,
+    restoreButton: buttonRestore,
+    form: formShow,
+    restore: formRestore,
+  };
+
+  // Automatic handling for plain POST forms. Form-specific JS that calls
+  // preventDefault() (AJAX / validation) already ran at this point, so we
+  // never interfere with existing loaders. A busy form blocks any re-entry
+  // (Enter key, double click) so an operation cannot fire twice.
+  document.addEventListener('submit', function (e) {
+    var form = e.target;
+    if (!form || form.tagName !== 'FORM') return;
+    if (form.hasAttribute('data-no-loader')) return;
+    if ((form.method || 'get').toLowerCase() === 'get') return; // filter/search forms
+    if (e.defaultPrevented) return;
+    if (form.dataset.mlBusy === '1') { e.preventDefault(); return; }
+    formShow(form);
+  });
+})();
+</script>

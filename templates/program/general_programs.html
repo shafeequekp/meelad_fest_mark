@@ -1,0 +1,834 @@
+{% extends 'program/base.html' %}
+
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}General Programs — {{ meelad_fest_name|default:"Meelad Fest" }}{% endblock %}
+
+{% block page_title_bar %}{% endblock %}
+
+{% block body_attrs %}data-skeleton-on-reload{% endblock %}
+
+{% block extra_head %}
+<style>
+    [x-cloak] {
+      display: none !important;
+    }
+
+    #resultModal.flex {
+      animation: fadeIn 0.2s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* Custom checkbox multi-selector */
+    .participant-checkbox-list {
+      max-height: 220px;
+      overflow-y: auto;
+      border: 1px solid #d1d5db;
+      border-radius: 0.5rem;
+      background: #fff;
+    }
+
+    .participant-checkbox-list::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .participant-checkbox-list::-webkit-scrollbar-track {
+      background: #f3f4f6;
+    }
+
+    .participant-checkbox-list::-webkit-scrollbar-thumb {
+      background: #a5b4fc;
+      border-radius: 9999px;
+    }
+
+    .participant-checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .participant-checkbox-item:hover {
+      background: #eff6ff;
+    }
+
+    .participant-checkbox-item input[type=checkbox] {
+      accent-color: #059669;
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .participant-checkbox-item label {
+      cursor: pointer;
+      font-size: 0.82rem;
+      color: #374151;
+      line-height: 1.3;
+    }
+
+    .participant-search {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 6px 12px;
+      font-size: 0.82rem;
+      outline: none;
+      background: #f9fafb;
+      border-radius: 0.5rem 0.5rem 0 0;
+    }
+
+    .participant-select-all-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 12px;
+      background: #f0fdf4;
+      border-bottom: 1px solid #d1fae5;
+      font-size: 0.75rem;
+      color: #065f46;
+      font-weight: 600;
+    }
+
+    .program-type-heading {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .program-type-heading h3 {
+      font-size: 0.875rem; font-weight: 700; letter-spacing: 0.05em;
+      text-transform: uppercase; color: #4338ca; white-space: nowrap;
+    }
+    .program-type-heading::after {
+      content: ""; flex: 1; height: 1px; background-color: #e5e7eb;
+    }
+
+    .tab-btn {
+      color: #374151;
+      position: relative;
+      z-index: 10;
+    }
+
+    .tab-btn.active {
+      color: #fff;
+    }
+  </style>
+  {% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+
+  <!-- Page header -->
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2.5">
+        <span class="shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0"/></svg>
+        </span>
+        General Programs
+      </h1>
+      <p class="text-sm text-gray-500 mt-1">General programs are <strong>team-wise</strong> (not category-wise) — participants are teams and the score goes to the team, not to individual students.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <a href="{% url 'program_list' %}"
+        class="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3.5 py-2 rounded-xl transition">← Back to Programs</a>
+    </div>
+  </div>
+
+    <!-- Add General Program (expandable) -->
+    <div class="card p-4 sm:p-6 mb-8">
+      <button type="button" onclick="toggleAddProgram('addGeneralProgramSection', this)"
+        class="w-full flex items-center justify-between gap-3 text-left focus:outline-none"
+        aria-expanded="false">
+        <span class="flex items-center gap-2 text-xl font-bold text-indigo-700">
+          <svg class="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+          Add General Program
+        </span>
+        <span
+          class="add-chevron inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 transition-transform duration-200">▼</span>
+      </button>
+      <div id="addGeneralProgramSection" class="hidden mt-5 border-t border-gray-100 pt-5">
+        <form method="post" data-ajax-form data-collapse-target="addGeneralProgramSection"
+          class="grid gap-4 sm:grid-cols-2">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add">
+          <input type="hidden" name="next" value="{% url 'general_programs' %}">
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Program Title *</label>
+            <input type="text" name="title" required
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300">
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Description</label>
+            <input type="text" name="description"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300">
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Section *</label>
+            <select name="section" required
+              class="w-full border rounded-lg px-3 py-2 bg-white focus:ring focus:ring-indigo-300">
+              {% if not is_girls_only %}
+              <option value="boys" {% if is_boys_only %}selected{% endif %}>👦 Boys</option>
+              {% endif %}
+              {% if not is_boys_only %}
+              <option value="girls" {% if is_girls_only %}selected{% endif %}>👧 Girls</option>
+              {% endif %}
+            </select>
+            <p class="text-xs text-gray-500 mt-1">General programs are held between teams, irrespective of category.</p>
+          </div>
+          <div class="sm:col-span-2 flex justify-end">
+            <button type="submit"
+              class="bg-indigo-600 text-white font-semibold px-5 py-2 rounded-lg shadow hover:bg-indigo-700 transition">
+              Save General Program
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- List of General Programs -->
+    <div data-ajax-list>
+      {% if general_programs %}
+      {% include 'program/_general_sections.html' %}
+      {% else %}
+      <div class="card p-10 text-center text-gray-500 mb-8">No general programs yet. Add one using the Add General Program button.</div>
+      {% endif %}
+    </div>
+    <!-- Overall Team-wise General Ranking -->
+    {% if general_team_results %}
+    <div class="card p-6">
+      <h2 class="text-xl font-bold text-indigo-700 mb-4">🏆 Overall Team-wise General Ranking</h2>
+      <p class="text-sm text-gray-500 mb-4">Points summed across all published general programs.</p>
+      <div class="overflow-x-auto">
+        <table class="min-w-full bg-white border rounded-lg shadow">
+          <thead class="bg-indigo-600 text-white">
+            <tr>
+              <th class="px-4 py-3 text-left">Rank</th>
+              <th class="px-4 py-3 text-left">Team</th>
+              <th class="px-4 py-3 text-center">Position</th>
+              <th class="px-4 py-3 text-center">Total General Points</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            {% for row in general_team_results %}
+            <tr class="hover:bg-gray-50 transition {% if forloop.counter <= 3 %}bg-green-100{% endif %}">
+              <td class="px-4 py-3">
+                <span class="text-lg font-bold">
+                  {% if row.medal %}{{ row.medal }}{% else %}{{ row.rank }}{% endif %}
+                </span>
+              </td>
+              <td class="px-4 py-3 font-semibold">{{ row.team__name }}</td>
+              <td class="px-4 py-3 text-center">
+                {% if row.position_text %}
+                <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold
+                    {% if row.position_text == 'First' %}bg-yellow-100 text-yellow-800
+                    {% elif row.position_text == 'Second' %}bg-gray-200 text-gray-700
+                    {% elif row.position_text == 'Third' %}bg-amber-100 text-amber-800{% endif %}">
+                  {{ row.position_text }}
+                </span>
+                {% else %}
+                <span class="text-gray-400">—</span>
+                {% endif %}
+              </td>
+              <td class="px-4 py-3 text-center font-bold text-indigo-700">{{ row.total_general|floatformat:0 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+  </div><!-- Result Modal -->
+  <div id="resultModal" class="hidden fixed inset-0 z-[170] items-center justify-center bg-gray-900 bg-opacity-60 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+      <h3 class="text-xl font-bold text-indigo-700 mb-4">Set Result — Team-wise</h3>
+
+      <div class="space-y-4 mb-6">
+        <input type="hidden" id="result-program-id" value="">
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">🥇 First &nbsp;Team</label>
+          <select id="firstTeamSelect" class="w-full border rounded-lg px-3 py-2 bg-white">
+            <option value="">-- Select Team --</option>
+            {% for team in teams %}<option value="{{ team.id }}">{{ team.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">🥈 Second Team</label>
+          <select id="secondTeamSelect" class="w-full border rounded-lg px-3 py-2 bg-white">
+            <option value="">-- Select Team --</option>
+            {% for team in teams %}<option value="{{ team.id }}">{{ team.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">🥉 Third &nbsp;Team</label>
+          <select id="thirdTeamSelect" class="w-full border rounded-lg px-3 py-2 bg-white">
+            <option value="">-- Select Team --</option>
+            {% for team in teams %}<option value="{{ team.id }}">{{ team.name }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3">
+        <button type="button" onclick="closeResultModal()"
+          class="px-5 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow hover:bg-gray-300 transition">
+          Cancel
+        </button>
+        <button type="button" onclick="saveGeneralPrizes(this)"
+          class="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow hover:bg-indigo-700 transition">
+          Save Result
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toasts are handled globally by header.html (MeeladToast, top-right) -->
+
+  <script>
+
+    // Expand/collapse the Add General Program form (used by the header button).
+    window.toggleAddProgram = function (sectionId, btn) {
+      var sec = document.getElementById(sectionId);
+      if (!sec) return;
+      var willShow = sec.classList.contains("hidden");
+      sec.classList.toggle("hidden");
+      if (btn) {
+        btn.setAttribute("aria-expanded", willShow ? "true" : "false");
+        var chev = btn.querySelector(".add-chevron");
+        if (chev) chev.classList.toggle("rotate-180", willShow);
+      }
+      if (willShow) {
+        var first = sec.querySelector("input:not([type=hidden]), select");
+        if (first) setTimeout(function () { first.focus(); }, 80);
+      }
+    };
+
+    // Current team-wise results per program (team ids)
+    const GENERAL_RESULTS = {
+      {% for program in general_programs %}
+        {{ program.id }}: {
+      first: "{{ program.general_results.first.id|default:'' }}",
+        second: "{{ program.general_results.second.id|default:'' }}",
+          third: "{{ program.general_results.third.id|default:'' }}",
+      },
+    {% endfor %}
+    };
+
+    function openResultModal(programId) {
+      document.getElementById("result-program-id").value = programId;
+      const res = GENERAL_RESULTS[programId] || {};
+      document.getElementById("firstTeamSelect").value = res.first || "";
+      document.getElementById("secondTeamSelect").value = res.second || "";
+      document.getElementById("thirdTeamSelect").value = res.third || "";
+      const modal = document.getElementById("resultModal");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+
+    function closeResultModal() {
+      const modal = document.getElementById("resultModal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+
+    function saveGeneralPrizes(btn) {
+      const programId = document.getElementById("result-program-id").value;
+      const norm = v => v && v.trim() !== "" ? v : null;
+      window.MeeladLoader && MeeladLoader.button(btn);
+      fetch(`/program/${programId}/save-general-prize/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({
+          first: norm(document.getElementById("firstTeamSelect").value),
+          second: norm(document.getElementById("secondTeamSelect").value),
+          third: norm(document.getElementById("thirdTeamSelect").value),
+        }),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.message === "success") {
+            showToast("Result saved successfully!", "success");
+            closeResultModal();
+            location.reload();
+          } else {
+            window.MeeladLoader && MeeladLoader.restoreButton(btn);
+            showToast(data.details || "Failed to save result.", "error");
+          }
+        })
+        .catch(() => {
+          window.MeeladLoader && MeeladLoader.restoreButton(btn);
+          showToast("Failed to save result.", "error");
+        });
+    }
+
+    function publishResult(programId, btn) {
+      window.MeeladLoader && MeeladLoader.button(btn);
+      fetch(`/program/${programId}/publish_result/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": "{{ csrf_token }}"
+        },
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.message === "success") { showToast("Publish status updated.", "success"); setTimeout(() => location.reload(), 900); }
+          else {
+            window.MeeladLoader && MeeladLoader.restoreButton(btn);
+            showToast("Failed to update publish status.", "error");
+          }
+        })
+        .catch(() => {
+          window.MeeladLoader && MeeladLoader.restoreButton(btn);
+          showToast("Failed to update publish status.", "error");
+        });
+    }
+
+    document.getElementById("resultModal").addEventListener("click", function (e) {
+      if (e.target === this) closeResultModal();
+    });
+
+    const ALL_TEAMS = [
+      {% for t in teams %}
+    { id: {{ t.id }}, name: "{{ t.name|escapejs }}" },
+    {% endfor %}
+        ];
+
+    window.MeeladSkeleton = window.MeeladSkeleton || {};
+
+    // Escape text before injecting it into generated HTML so team/student
+    // names containing `& < > " '` can never mangle the participant UI.
+    function esc(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+    window.esc = esc;
+
+    // ── State persistence: remember which programs are expanded ──
+    const _STORAGE_KEY = 'gp_expanded_programs';
+
+    function _getExpanded() {
+      try {
+        return JSON.parse(localStorage.getItem(_STORAGE_KEY) || '[]');
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function _setExpanded(ids) {
+      localStorage.setItem(_STORAGE_KEY, JSON.stringify(ids));
+    }
+
+    function _expandProgram(programId) {
+      const body = document.getElementById(`program-body-${programId}`);
+      const chevron = document.getElementById(`chevron-${programId}`);
+      if (body && body.classList.contains('hidden')) body.classList.remove('hidden');
+      if (chevron && !chevron.classList.contains('rotate-180')) chevron.classList.add('rotate-180');
+    }
+
+    // Auto-expand a program specified by URL query parameter, then clean the URL
+    (function autoExpandFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('new_program') || params.get('expand_program');
+      if (id) {
+        _expandProgram(id);
+        // remember it as expanded
+        let expanded = _getExpanded();
+        if (!expanded.includes(id)) expanded.push(id);
+        _setExpanded(expanded);
+        // clean up the URL so it doesn't persist
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    })();
+
+    // Restore persisted expanded state on page load
+    window.addEventListener('DOMContentLoaded', function () {
+      _getExpanded().forEach(function (id) {
+        _expandProgram(id);
+      });
+    });
+
+    function toggleProgram(programId) {
+      const body = document.getElementById(`program-body-${programId}`);
+      const chevron = document.getElementById(`chevron-${programId}`);
+      if (body) {
+        body.classList.toggle('hidden');
+      }
+      if (chevron) {
+        chevron.classList.toggle('rotate-180');
+      }
+      // Persist expanded/collapsed state
+      let expanded = _getExpanded();
+      if (body && !body.classList.contains('hidden')) {
+        if (!expanded.includes(programId)) expanded.push(programId);
+      } else {
+        expanded = expanded.filter(function (id) { return id !== programId; });
+      }
+      _setExpanded(expanded);
+    }
+
+    function toggleTeamCard(headerEl) {
+      const card = headerEl.closest('.team-card');
+      const body = card.querySelector('.team-card-body');
+      const chevron = card.querySelector('.team-chevron');
+      if (body) {
+        body.classList.toggle('hidden');
+      }
+      if (chevron) {
+        chevron.classList.toggle('rotate-180');
+      }
+    }
+
+    function addTeamCard(programId, section) {
+      const container = document.getElementById(`team-cards-container-${programId}`);
+      if (!container) return;
+
+      const noTeamsPlaceholder = container.querySelector('.text-slate-400, .text-gray-400');
+      if (noTeamsPlaceholder) noTeamsPlaceholder.remove();
+
+      const tempCardId = 'new-' + Date.now();
+
+      let teamsOptions = '<option value="">-- Select Team --</option>';
+      if (ALL_TEAMS.length === 0) {
+        teamsOptions = '<option value="" disabled>No teams found</option>';
+      } else {
+        ALL_TEAMS.forEach(t => {
+          teamsOptions += `<option value="${t.id}">${esc(t.name)}</option>`;
+        });
+      }
+
+      const cardHtml = `
+        <div class="team-card bg-white rounded-xl border border-emerald-200 shadow-sm overflow-hidden" data-team-id="" data-temp-id="${tempCardId}" data-program-id="${programId}">
+          <!-- Card Header -->
+          <div class="flex items-center justify-between p-3 bg-emerald-50 border-b border-emerald-100">
+            <div class="flex items-center gap-2">
+              <span class="text-base">🆕</span>
+              <div class="flex flex-col">
+                <span class="team-name-label font-bold text-emerald-800 text-sm">New Participating Team</span>
+                <span class="text-xs text-rose-500 italic font-semibold new-team-status">Select a team and participants below</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="team-participants-label text-xs text-emerald-700 bg-emerald-100 border border-emerald-200 px-2 py-1 rounded-full font-bold">0 selected</span>
+              <button type="button" onclick="this.closest('.team-card').remove();"
+                class="text-red-500 hover:text-red-700 bg-white border border-red-100 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold shadow-sm" title="Cancel">✕</button>
+            </div>
+          </div>
+          <!-- Card Body -->
+          <div class="team-card-body p-4 space-y-4">
+            <!-- Select Team -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Select Team *</label>
+              <select onchange="loadTeamStudentsCheckboxes(this, '${tempCardId}', ${programId}, '${section}')"
+                class="team-select w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-300 font-semibold text-sm bg-white">
+                ${teamsOptions}
+              </select>
+            </div>
+            <!-- Participants Custom Multi-Selector -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Participants <span class="text-gray-400 font-normal text-xs">(Select all that participate)</span></label>
+              <div class="participant-checkbox-wrapper" id="cbw-${tempCardId}">
+                <div class="participant-checkbox-list">
+                  <div class="participant-checkbox-item text-gray-400 italic text-xs py-3 justify-center">Select a team above to load participants</div>
+                </div>
+              </div>
+            </div>
+            <!-- Save Button -->
+            <div class="flex justify-end">
+              <button type="button" onclick="saveTeamFromCheckboxes(${programId}, '${tempCardId}', true, this)"
+                class="px-5 py-2 bg-emerald-600 text-white font-semibold rounded-lg shadow hover:bg-emerald-700 transition text-sm">
+                💾 Save Team
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      container.insertAdjacentHTML('beforeend', cardHtml);
+    }
+
+    function loadTeamStudentsCheckboxes(selectEl, tempCardId, programId, section) {
+      const teamId = selectEl.value;
+      const card = selectEl.closest('.team-card');
+      const nameLabel = card.querySelector('.team-name-label');
+      const statusLabel = card.querySelector('.new-team-status');
+      const countLabel = card.querySelector('.team-participants-label');
+      const wrapper = document.getElementById(`cbw-${tempCardId}`);
+      const list = wrapper.querySelector('.participant-checkbox-list');
+
+      if (teamId) {
+        if (nameLabel) nameLabel.textContent = selectEl.options[selectEl.selectedIndex].text;
+      } else {
+        if (nameLabel) nameLabel.textContent = 'New Participating Team';
+        list.innerHTML = '<div class="participant-checkbox-item text-gray-400 italic text-xs py-3 justify-center">Select a team above to load participants</div>';
+        if (countLabel) countLabel.textContent = '0 selected';
+        return;
+      }
+
+      list.innerHTML = '<div class="participant-checkbox-item text-gray-400 italic text-xs py-3 justify-center">Loading participants...</div>';
+
+      const sectionQuery = section ? `&section=${section}` : '';
+      fetch(`/program/load_team_students/?team_id=${teamId}${sectionQuery}`)
+        .then(res => res.json())
+        .then(students => {
+          if (students.length === 0) {
+            list.innerHTML = '<div class="participant-checkbox-item text-rose-500 italic text-xs py-3 justify-center">No students found in this team</div>';
+            if (statusLabel) statusLabel.textContent = 'No students found';
+            if (countLabel) countLabel.textContent = '0 selected';
+            return;
+          }
+
+          // Build: search bar + select-all + checkboxes
+          const uid = `cb-${tempCardId}`;
+          let html = `
+            <input type="text" placeholder="🔍 Search participant..." class="participant-search" oninput="filterParticipantCheckboxes(this, '${uid}')">
+            <div class="participant-select-all-bar">
+              <input type="checkbox" id="selall-${uid}" onchange="toggleAllParticipants(this, '${uid}')" checked>
+              <label for="selall-${uid}" style="cursor:pointer;font-size:0.78rem;color:#065f46;font-weight:600;">Select All (${students.length})</label>
+              <span class="ml-auto text-emerald-600" id="count-${uid}">${students.length} selected</span>
+            </div>
+          `;
+          students.forEach(s => {
+            const label = esc(s.name);
+            html += `
+              <div class="participant-checkbox-item" data-name="${label.toLowerCase()}" data-cbgroup="${uid}">
+                <input type="checkbox" id="cb-s-${s.id}-${uid}" value="${s.id}" class="participant-cb" data-group="${uid}" checked
+                  onchange="updateParticipantCount('${uid}', ${students.length})">
+                <label for="cb-s-${s.id}-${uid}">${label}</label>
+              </div>
+            `;
+          });
+
+          list.innerHTML = html;
+
+          if (statusLabel) statusLabel.textContent = `${students.length} participants loaded`;
+          if (countLabel) countLabel.textContent = `${students.length} selected`;
+        })
+        .catch(err => {
+          console.error('Error fetching students:', err);
+          list.innerHTML = '<div class="participant-checkbox-item text-red-500 italic text-xs py-3 justify-center">Error loading participants. Please retry.</div>';
+        });
+    }
+
+    function filterParticipantCheckboxes(inputEl, uid) {
+      const q = inputEl.value.toLowerCase();
+      document.querySelectorAll(`[data-cbgroup="${uid}"]`).forEach(item => {
+        item.style.display = item.dataset.name.includes(q) ? '' : 'none';
+      });
+    }
+
+    function toggleAllParticipants(checkboxEl, uid) {
+      const checked = checkboxEl.checked;
+      document.querySelectorAll(`.participant-cb[data-group="${uid}"]`).forEach(cb => {
+        cb.checked = checked;
+      });
+      const total = document.querySelectorAll(`.participant-cb[data-group="${uid}"]`).length;
+      const countEl = document.getElementById(`count-${uid}`);
+      if (countEl) countEl.textContent = checked ? `${total} selected` : '0 selected';
+    }
+
+    function updateParticipantCount(uid, total) {
+      const checked = document.querySelectorAll(`.participant-cb[data-group="${uid}"]:checked`).length;
+      const countEl = document.getElementById(`count-${uid}`);
+      if (countEl) countEl.textContent = `${checked} selected`;
+      const selAllCb = document.getElementById(`selall-${uid}`);
+      if (selAllCb) selAllCb.checked = (checked === total);
+      // update header count
+      const card = countEl ? countEl.closest('.team-card') : null;
+      if (card) {
+        const headerCount = card.querySelector('.team-participants-label');
+        if (headerCount) headerCount.textContent = `${checked} selected`;
+      }
+    }
+
+    function saveTeamFromCheckboxes(programId, identifier, isNew = false, btn) {
+      let card;
+      if (isNew) {
+        card = document.querySelector(`.team-card[data-program-id="${programId}"][data-temp-id="${identifier}"]`);
+      } else {
+        card = document.querySelector(`.team-card[data-program-id="${programId}"][data-team-id="${identifier}"]`);
+      }
+      if (!card) { console.error('Card not found'); return; }
+
+      const teamSelect = card.querySelector('.team-select');
+      const teamId = teamSelect ? teamSelect.value : null;
+      if (!teamId) { showToast('Please select a team.', 'warning'); return; }
+
+      const checkedBoxes = card.querySelectorAll('.participant-cb:checked');
+      const participantIds = Array.from(checkedBoxes).map(cb => cb.value).filter(v => v);
+
+      if (participantIds.length === 0) { showToast('Please select at least one participant.', 'warning'); return; }
+
+      window.MeeladLoader && MeeladLoader.button(btn, 'Saving…');
+
+      const formData = new FormData();
+      formData.append('action', 'save_team');
+      formData.append('program_id', programId);
+      formData.append('team_id', teamId);
+      participantIds.forEach(id => formData.append('participants', id));
+
+      fetch('/program/general-programs/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.message === 'success') {
+            showToast(`Saved team "${data.team}" with ${data.count} participants!`, "success");
+            setTimeout(() => { window.location.href = '/program/general-programs/?expand_program=' + programId; }, 900);
+          } else {
+            window.MeeladLoader && MeeladLoader.restoreButton(btn);
+            showToast(data.details || 'Error saving team.', "error");
+          }
+        })
+        .catch(err => {
+          console.error('Error saving team:', err);
+          window.MeeladLoader && MeeladLoader.restoreButton(btn);
+          showToast('Network or server error occurred.', "error");
+        });
+    }
+
+    // Legacy saveTeam kept for existing saved-team cards
+    function saveTeam(programId, identifier, isNew = false, btn) {
+      let card;
+      if (isNew) {
+        card = document.querySelector(`.team-card[data-program-id="${programId}"][data-temp-id="${identifier}"]`);
+      } else {
+        card = document.querySelector(`.team-card[data-program-id="${programId}"][data-team-id="${identifier}"]`);
+      }
+      if (!card) { console.error('Card not found'); return; }
+
+      const teamSelect = card.querySelector('.team-select');
+      const participantSelect = card.querySelector('.participant-select');
+      const teamId = teamSelect ? teamSelect.value : null;
+      if (!teamId) { showToast('Please select a team.', 'warning'); return; }
+
+      const selectedOptions = participantSelect ? Array.from(participantSelect.selectedOptions).filter(opt => opt.value) : [];
+      const participantIds = selectedOptions.map(opt => opt.value);
+      if (participantIds.length === 0) { showToast('Please select at least one participant.', 'warning'); return; }
+
+      const formData = new FormData();
+      formData.append('action', 'save_team');
+      formData.append('program_id', programId);
+      formData.append('team_id', teamId);
+      participantIds.forEach(id => formData.append('participants', id));
+
+      window.MeeladLoader && MeeladLoader.button(btn, 'Saving…');
+
+      fetch('/program/general-programs/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.message === 'success') {
+            showToast(`Saved team "${data.team}" with ${data.count} participants!`, "success");
+            setTimeout(() => { window.location.href = '/program/general-programs/?expand_program=' + programId; }, 900);
+          } else {
+            window.MeeladLoader && MeeladLoader.restoreButton(btn);
+            showToast(data.details || 'Error saving team.', "error");
+          }
+        })
+        .catch(err => {
+          console.error('Error saving team:', err);
+          window.MeeladLoader && MeeladLoader.restoreButton(btn);
+          showToast('Network or server error occurred.', "error");
+        });
+    }
+
+    function removeTeam(programId, teamId, teamName, btn) {
+      // Block removal once a result (First/Second/Third) has been set for this program
+      const currentResult = GENERAL_RESULTS[programId] || {};
+      if (Object.values(currentResult).some(v => v)) {
+        showToast('Cannot remove team: results have already been set for this program.', 'error');
+        return;
+      }
+
+      window.MeeladConfirm.show(`Are you sure you want to remove team "${teamName}" and all of its participants from this program?`).then(function (ok) {
+        if (!ok) return;
+
+        window.MeeladLoader && MeeladLoader.button(btn);
+
+        const formData = new FormData();
+        formData.append('action', 'remove_team');
+        formData.append('program_id', programId);
+        formData.append('team_id', teamId);
+
+        fetch('/program/general-programs/', {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: formData
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.message === 'success') {
+              showToast(`Removed team ${data.team}!`, "success");
+              setTimeout(() => { window.location.href = '/program/general-programs/?expand_program=' + programId; }, 900);
+            } else {
+              window.MeeladLoader && MeeladLoader.restoreButton(btn);
+              showToast(data.details || 'Error removing team.', "error");
+            }
+          })
+          .catch(err => {
+            console.error('Error removing team:', err);
+            window.MeeladLoader && MeeladLoader.restoreButton(btn);
+            showToast('Network or server error occurred.', "error");
+          });
+      });
+    }
+  </script>
+
+<script>
+  function showSection(section) {
+    const boys = document.getElementById("boysSection");
+    const girls = document.getElementById("girlsSection");
+    const boysTab = document.getElementById("boysTab");
+    const girlsTab = document.getElementById("girlsTab");
+    const indicator = document.getElementById("sliderIndicator");
+    if (boys) boys.classList.add("hidden");
+    if (girls) girls.classList.add("hidden");
+    const sectionDiv = document.getElementById(section + "Section");
+    if (sectionDiv) sectionDiv.classList.remove("hidden");
+    if (boysTab) boysTab.classList.remove("active");
+    if (girlsTab) girlsTab.classList.remove("active");
+    if (section === "boys") {
+      if (boysTab) boysTab.classList.add("active");
+      if (indicator) indicator.style.transform = "translateX(0%)";
+    } else {
+      if (girlsTab) girlsTab.classList.add("active");
+      if (indicator) indicator.style.transform = "translateX(100%)";
+    }
+  }
+  window.showSection = showSection;
+  // Only drive the slider in both-section mode; single-section fests render
+  // just one panel with no tabs (already visible server-side).
+  {% if is_both_sections %}
+  showSection("boys");
+  {% endif %}
+</script>
+
+{% endblock %}

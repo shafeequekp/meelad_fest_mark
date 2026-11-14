@@ -1,0 +1,1622 @@
+{% load static %}
+{% load custom_filters %}
+
+<!-- Header -->
+<header
+    class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 shadow-lg {% if sticky_header %}fixed top-0 w-full z-[140]{% else %}sticky top-0 z-50{% endif %}">
+    <div class="flex items-center justify-between max-w-7xl mx-auto">
+
+        <!-- Title / Logo -->
+        <a href="{% url 'home' %}" class="flex items-center gap-2.5 group min-w-0">
+            {# Fest emblem — the same trophy mark as the index hero section #}
+            <span
+                class="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-white/25 shadow group-hover:scale-105 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0" />
+                </svg>
+            </span>
+            <span
+                class="min-w-0 truncate text-2xl sm:text-3xl font-extrabold tracking-tight group-hover:opacity-90 transition">
+                {% if meelad_fest_name %}{{ meelad_fest_name }}{% else %}Meelad Fest{% endif %}
+            </span>
+        </a>
+
+        <!-- Right: Navigation & User Menu -->
+        {% if request.user.is_authenticated %}
+        <div class="flex items-center space-x-4 shrink-0">
+
+            <!-- Command palette trigger (desktop) -->
+            <button id="palette-btn" type="button" title="Search everything (Ctrl+K)"
+                class="hidden lg:inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 border border-white/25 hover:bg-white/20 transition text-sm font-medium text-white/90">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+                <span class="hidden xl:inline">Search</span>
+                <kbd class="ml-1 px-1.5 py-0.5 rounded bg-white/15 border border-white/25 text-[10px] font-mono">Ctrl K</kbd>
+            </button>
+
+            <!-- Desktop Navigation -->
+            <nav class="hidden lg:flex items-center space-x-1">
+                <a href="{% url 'home' %}"
+                    class="px-3 py-2 rounded-lg hover:bg-white/10 transition font-medium {% if request.resolver_match.url_name == 'home' %}bg-white/20{% endif %}">Home</a>
+                {% if not request.user|is_linked_judge %}
+<a href="{% url 'teams' %}"
+                    class="px-3 py-2 rounded-lg hover:bg-white/10 transition font-medium {% if request.resolver_match.url_name == 'teams' %}bg-white/20{% endif %}">Teams</a>
+                <a href="{% url 'program_list' %}"
+                    class="px-3 py-2 rounded-lg hover:bg-white/10 transition font-medium {% if request.resolver_match.url_name == 'program_list' %}bg-white/20{% endif %}">Programs</a>
+                <a href="{% url 'schedule_dashboard' %}"
+                    class="px-3 py-2 rounded-lg hover:bg-white/10 transition font-medium {% if request.resolver_match.url_name == 'schedule_dashboard' %}bg-white/20{% endif %}">Schedule</a>
+                <a href="{% url 'venue_list' %}"
+                    class="px-3 py-2 rounded-lg hover:bg-white/10 transition font-medium {% if request.resolver_match.url_name == 'venue_list' %}bg-white/20{% endif %}">Venues</a>
+                <a href="{% url 'results' %}"
+                    class="px-3 py-2 rounded-lg hover:bg-white/10 transition font-medium {% if request.resolver_match.url_name == 'results' %}bg-white/20{% endif %}">Results</a>
+                <a href="{% url 'statistics' %}"
+                    class="px-3 py-2 rounded-lg hover:bg-white/10 transition font-medium {% if request.resolver_match.url_name == 'statistics' %}bg-white/20{% endif %}">Statistics</a>
+{% endif %}
+                {% if request.user|is_linked_judge %}
+                <a href="{% url 'judge_portal' %}"
+                    class="px-3 py-2 rounded-lg hover:bg-white/10 transition font-medium {% if request.resolver_match.url_name == 'judge_portal' %}bg-white/20{% endif %}">My Portal</a>
+                {% else %}
+                <a href="{% url 'judges' %}"
+                    class="px-3 py-2 rounded-lg hover:bg-white/10 transition font-medium {% if request.resolver_match.url_name == 'judges' or request.resolver_match.url_name == 'judge_portal' %}bg-white/20{% endif %}">Judges</a>
+                {% endif %}
+                {% if not request.user|is_linked_judge %}
+<a href="{% url 'upload-students' %}"
+                    class="px-3 py-2 rounded-lg hover:bg-white/10 transition font-medium {% if request.resolver_match.url_name == 'upload-students' %}bg-white/20{% endif %}">Upload</a>
+{% endif %}
+            </nav>
+
+            <!-- User Profile Button -->
+            <button id="profile-btn" onclick="openProfile()"
+                class="hidden lg:block w-10 h-10 rounded-full overflow-hidden border-2 border-white/50 shadow-sm hover:border-white hover:shadow-md transition transform hover:scale-105">
+                {% if profile_madrasa.madrasa_profile_pic %}
+                <img src="{{ profile_madrasa.madrasa_profile_pic.url }}" alt="Profile" class="w-full h-full object-cover">
+                {% else %}
+                <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-full h-full object-cover">
+                {% endif %}
+            </button>
+
+            <!-- Mobile Hamburger -->
+            <button id="menu-toggle" class="lg:hidden p-2 rounded-lg hover:bg-white/20 focus:outline-none transition">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+        </div>
+        {% else %}
+        <!-- Login Button if not authenticated -->
+        <a href="{% url 'login' %}"
+            class="px-5 py-2 bg-white text-indigo-600 font-bold rounded-lg shadow hover:bg-gray-100 transition transform hover:-translate-y-0.5">
+            Login
+        </a>
+        {% endif %}
+    </div>
+</header>
+
+<!-- Global toast notifications (shared across all pages) -->
+<div id="toast-container"
+     class="fixed top-4 right-4 z-[300] flex flex-col items-end gap-2 pointer-events-none"
+     role="status" aria-live="polite"></div>
+
+{% if request.user.is_authenticated %}
+<!-- Mobile Sidebar Menu -->
+<div id="mobile-menu"
+    class="hidden fixed top-0 right-0 h-full w-72 bg-white shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out z-[200]">
+    <div class="p-5 flex justify-between items-center border-b bg-gray-50">
+        <h2 class="text-xl font-bold text-gray-800">Menu</h2>
+        <button id="menu-close-btn"
+            class="p-2 text-gray-800 hover:text-red-500 bg-gray-100 hover:bg-red-50 rounded-full transition focus:outline-none z-[201]">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+
+    <div class="p-4 overflow-y-auto h-[calc(100%-64px)]">
+        <!-- Mobile Profile Summary -->
+        <div class="mb-6 p-4 bg-indigo-50 rounded-xl flex items-center space-x-3 cursor-pointer hover:bg-indigo-100 transition"
+            id="profile-btn-mobile" onclick="openProfile()">
+            {% if profile_madrasa.madrasa_profile_pic %}
+            <img src="{{ profile_madrasa.madrasa_profile_pic.url }}" alt="Profile"
+                class="w-12 h-12 rounded-full border-2 border-white shadow-sm">
+            {% else %}
+            <img src="{% static 'images/profile.png' %}" alt="Profile"
+                class="w-12 h-12 rounded-full border-2 border-white shadow-sm">
+            {% endif %}
+            <div>
+                <p class="font-bold text-gray-900">{{ request.user.get_full_name|default:"User" }}</p>
+                <p class="text-xs text-gray-500 truncate">{{ request.user.email }}</p>
+            </div>
+        </div>
+
+        <nav class="space-y-2">
+            <a href="{% url 'home' %}"
+                class="block px-4 py-3 text-gray-700 font-medium rounded-xl hover:bg-gray-100 hover:text-indigo-600 transition flex items-center space-x-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5L12 3l9 7.5M5 9.5V21h14V9.5" />
+                </svg><span>Home</span>
+            </a>
+            {% if not request.user|is_linked_judge %}
+<a href="{% url 'teams' %}"
+                class="block px-4 py-3 text-gray-700 font-medium rounded-xl hover:bg-gray-100 hover:text-indigo-600 transition flex items-center space-x-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5l-1.65-7L20 12l1.95-1-5.3-4.2L12.55 2 8.05 6.8 2 11l1.95 1 3.35 1.8L2 20h5.55l3.35-1.8z" />
+                </svg><span>Teams</span>
+            </a>
+            <a href="{% url 'program_list' %}"
+                class="block px-4 py-3 text-gray-700 font-medium rounded-xl hover:bg-gray-100 hover:text-indigo-600 transition flex items-center space-x-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 7a4 4 0 118 0 4 4 0 01-8 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg><span>Programs</span>
+            </a>
+            <a href="{% url 'schedule_dashboard' %}"
+                class="block px-4 py-3 text-gray-700 font-medium rounded-xl hover:bg-gray-100 hover:text-indigo-600 transition flex items-center space-x-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4m-8 0h8m-8 0a1 1 0 01-1 1v10a1 1 0 001 1h12a1 1 0 001-1V8a1 1 0 00-1-1h-2M5 8h14" />
+                </svg><span>Schedule</span>
+            </a>
+            <a href="{% url 'venue_list' %}"
+                class="block px-4 py-3 text-gray-700 font-medium rounded-xl hover:bg-gray-100 hover:text-indigo-600 transition flex items-center space-x-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25L21 12l-3.75 3.75M15 15l3-3-3-3m0 0L3.75 8.25M15 6L3.75 15" />
+                </svg><span>Venues</span>
+            </a>
+            <a href="{% url 'results' %}"
+                class="block px-4 py-3 text-gray-700 font-medium rounded-xl hover:bg-gray-100 hover:text-indigo-600 transition flex items-center space-x-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 17h2v-2h-2v2zm0-4h2V7h-2v6zm0 8a9 9 0 110-18 9 9 0 010 18z" />
+                </svg><span>Results</span>
+            </a>
+            <a href="{% url 'statistics' %}"
+                class="block px-4 py-3 text-gray-700 font-medium rounded-xl hover:bg-gray-100 hover:text-indigo-600 transition flex items-center space-x-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 20V10M18 20V4M6 20v-4" />
+                </svg><span>Statistics</span>
+            </a>
+{% endif %}
+            {% if request.user|is_linked_judge %}
+            <a href="{% url 'judge_portal' %}"
+                class="block px-4 py-3 text-gray-700 font-medium rounded-xl hover:bg-gray-100 hover:text-indigo-600 transition flex items-center space-x-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 5v10M14 5v10M10 8h4M10 12h4M10 16h4" />
+                </svg><span>My Portal</span>
+            </a>
+            {% else %}
+            <a href="{% url 'judges' %}"
+                class="block px-4 py-3 text-gray-700 font-medium rounded-xl hover:bg-gray-100 hover:text-indigo-600 transition flex items-center space-x-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 5v10M14 5v10M10 8h4M10 12h4M10 16h4" />
+                </svg><span>Judges</span>
+            </a>
+            {% endif %}
+            {% if not request.user|is_linked_judge %}
+<a href="{% url 'upload-students' %}"
+                class="block px-4 py-3 text-gray-700 font-medium rounded-xl hover:bg-gray-100 hover:text-indigo-600 transition flex items-center space-x-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 5V3a4 4 0 018 0v2" />
+                </svg><span>Upload Data</span>
+            </a>
+{% endif %}
+            <a href="{% url 'logout' %}" onclick="return confirmLogout(event, this.href)"
+                class="block px-4 py-3 text-red-600 font-medium rounded-xl hover:bg-red-50 transition flex items-center space-x-3 mt-4 border-t pt-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg><span>Logout</span>
+            </a>
+        </nav>
+    </div>
+</div>
+
+<!-- Overlay -->
+<div id="overlay" class="fixed inset-0 bg-black/50 hidden z-[150] transition-opacity"></div>
+
+<!-- Default Profile Modal (Available on all pages) -->
+<div id="defaultProfileModal"
+    class="hidden fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[210] p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[92vh] overflow-y-auto">
+
+        <!-- Modal Header -->
+        <div
+            class="relative bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 pt-8 pb-7 text-center rounded-t-2xl">
+            <button type="button" onclick="closeProfile()" title="Close"
+                class="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/35 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <div class="relative mx-auto w-24 h-24 rounded-full border-4 border-white/70 shadow-lg overflow-hidden bg-white">
+                {% if profile_madrasa.madrasa_profile_pic %}
+                <img src="{{ profile_madrasa.madrasa_profile_pic.url }}" alt="Profile" class="w-full h-full object-cover">
+                {% else %}
+                <img src="{% static 'images/profile.png' %}" alt="Profile" class="w-full h-full object-cover">
+                {% endif %}
+                {% if not request.user|is_linked_judge %}
+                <!-- Change photo button (camera overlay) -->
+                <button type="button" id="avatar-upload-btn" onclick="document.getElementById('avatarUploadInput').click()"
+                    title="Change madrasa profile photo"
+                    class="absolute bottom-0 right-0 w-9 h-9 flex items-center justify-center rounded-full bg-white/95 shadow-md border-2 border-white hover:bg-indigo-600 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                    </svg>
+                </button>
+                {% endif %}
+            </div>
+            <input type="file" id="avatarUploadInput" accept="image/*" class="hidden"
+                onchange="uploadProfilePic(this)" />
+            <h2 class="mt-3 text-xl font-bold">
+                {% if request.user|is_linked_judge %}{{ request.user.judge_profile.name }}{% else %}{{ request.user.get_full_name|default:request.user.email|default:"User" }}{% endif %}
+            </h2>
+            {% if not request.user|is_linked_judge %}
+            <p class="text-indigo-100 text-sm truncate">{{ request.user.email|default:"—" }}</p>
+            {% endif %}
+            {% if request.user|is_linked_judge %}
+            {% if request.user.judge_profile.expertise %}
+            <span class="inline-block mt-2 text-[11px] font-semibold bg-white/20 rounded-full px-3 py-1">{{ request.user.judge_profile.expertise }}</span>
+            {% endif %}
+            {% if request.user.judge_profile.code %}
+            <span class="inline-block mt-2 text-[11px] font-semibold bg-white/20 rounded-full px-3 py-1">🎫 Code: {{ request.user.judge_profile.code }}</span>
+            {% endif %}
+            {% endif %}
+            {% if request.user.phone_number and not request.user|is_linked_judge %}
+            <span class="inline-block mt-2 text-xs font-semibold bg-white/20 rounded-full px-3 py-1">
+                📞 {{ request.user.country_code|default:"" }} {{ request.user.phone_number }}
+            </span>
+            {% endif %}
+        </div>
+
+{% if not request.user|is_linked_judge %}
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-3 gap-3 px-5 -mt-5 relative z-10">
+            <div class="bg-white rounded-xl shadow-md border border-gray-100 p-3 text-center">
+                <div class="text-2xl font-extrabold text-indigo-700">{{ total_students|default:"—" }}</div>
+                <div class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider">Students</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-md border border-gray-100 p-3 text-center">
+                <div class="text-2xl font-extrabold text-indigo-700">{{ total_programs|default:"—" }}</div>
+                <div class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider">Programs</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-md border border-gray-100 p-3 text-center">
+                <div class="text-2xl font-extrabold text-indigo-700">{{ total_teams|default:"—" }}</div>
+                <div class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider">Teams</div>
+            </div>
+        </div>
+{% endif %}
+
+{% if not request.user|is_linked_judge %}
+        <!-- Account Details -->
+        <div class="p-5 pb-3">
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Account</h3>
+            <div class="space-y-2 text-sm text-gray-700">
+                <p class="flex items-center gap-3">
+                    <span class="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-50">📞</span>
+                    <span><span class="text-gray-500 font-medium">Phone:</span>
+                        {{ request.user.country_code|default:"" }} {{ request.user.phone_number|default:"Not set" }}</span>
+                </p>
+                <p class="flex items-center gap-3">
+                    <span class="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-50">📍</span>
+                    <span><span class="text-gray-500 font-medium">Address:</span>
+                        {{ request.user.permanent_address|default:"Not set" }}</span>
+                </p>
+            </div>
+        </div>
+{% endif %}
+
+        <!-- Madrasa Details (editable) -->
+        <div class="px-5 pb-3">
+            <div class="rounded-xl border border-gray-100 shadow-sm">
+                <div class="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-t-xl border-b border-gray-100">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">🏫 Madrasa</h3>
+                    {% if not request.user|is_linked_judge %}
+                    <button type="button" onclick="toggleMadrasaEdit(true)" title="Edit madrasa details"
+                        class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition inline-flex items-center gap-1">
+                        ✏️ Edit
+                    </button>
+                    {% endif %}
+                </div>
+
+                <!-- Read-only view -->
+                <div id="madrasaReadView" class="p-4 space-y-2 text-sm text-gray-700">
+                    {% if request.user|is_linked_judge %}
+                    <p class="font-bold text-gray-900 text-base">{{ profile_madrasa.name|default:"—" }}</p>
+                    {% else %}
+                    <button type="button" onclick="toggleMadrasaEdit(true)" class="w-full text-left focus:outline-none">
+                        <p class="font-bold text-gray-900 text-base hover:text-indigo-600 transition">
+                            {{ profile_madrasa.name|default:"—" }} <span class="text-indigo-400">✏️</span>
+                        </p>
+                    </button>
+                    {% endif %}
+                    <p><span class="text-gray-500 font-medium">Reg. No:</span> {{ profile_madrasa.reg_number|default:"—" }}</p>
+                    <p><span class="text-gray-500 font-medium">Fest:</span> {{ profile_madrasa.meelad_fest_name|default:"—" }}</p>
+                    <p><span class="text-gray-500 font-medium">Sadr:</span> {{ profile_madrasa.sadr|default:"—" }}</p>
+                    <p><span class="text-gray-500 font-medium">Committee:</span> {{ profile_madrasa.committee_name|default:"—" }}</p>
+                    <p><span class="text-gray-500 font-medium">Convenors:</span>
+                        {{ profile_madrasa.convenor_name_1|default:"—" }}{% if profile_madrasa.convenor_name_2 %}, {{ profile_madrasa.convenor_name_2 }}{% endif %}</p>
+                </div>
+
+                <!-- Edit view -->
+                {% if not request.user|is_linked_judge %}
+                <form id="madrasaEditForm" class="hidden p-4 space-y-3 text-sm" onsubmit="saveMadrasa(event)" data-no-loader>
+                    {% csrf_token %}
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Madrasa Name *</label>
+                        <input type="text" name="name" required value="{{ profile_madrasa.name|default:"" }}"
+                            class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Fest Type</label>
+                        <select name="fest_type" disabled
+                            class="w-full p-2 border rounded-lg bg-gray-100 cursor-not-allowed">
+                            <option value="both" {% if profile_madrasa.fest_type == 'both' or not profile_madrasa.fest_type %}selected{% endif %}>Both Sections</option>
+                            <option value="boys" {% if profile_madrasa.fest_type == 'boys' %}selected{% endif %}>Boys Only</option>
+                            <option value="girls" {% if profile_madrasa.fest_type == 'girls' %}selected{% endif %}>Girls Only</option>
+                        </select>
+                        <input type="hidden" name="fest_type" value="{{ profile_madrasa.fest_type|default:'both' }}">
+                        <p class="text-[11px] text-gray-400 mt-1">Fest type is fixed after signup &amp; initial configuration and cannot be changed. Boys/Girls Only hides the other section on every page.</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">Registration Number</label>
+                            <input type="text" name="reg_number" value="{{ profile_madrasa.reg_number|default:"" }}"
+                                class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">Meelad Fest Name</label>
+                            <input type="text" name="meelad_fest_name" value="{{ profile_madrasa.meelad_fest_name|default:"" }}"
+                                class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">Sadr</label>
+                            <input type="text" name="sadr" value="{{ profile_madrasa.sadr|default:"" }}"
+                                class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">Committee Name</label>
+                            <input type="text" name="committee_name" value="{{ profile_madrasa.committee_name|default:"" }}"
+                                class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">Convenor 1</label>
+                            <input type="text" name="convenor_name_1" value="{{ profile_madrasa.convenor_name_1|default:"" }}"
+                                class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">Convenor 2</label>
+                            <input type="text" name="convenor_name_2" value="{{ profile_madrasa.convenor_name_2|default:"" }}"
+                                class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Fest Logo</label>
+                        {% if profile_madrasa.fest_logo %}
+                        <img src="{{ profile_madrasa.fest_logo.url }}" alt="Fest Logo"
+                            class="h-16 w-auto object-contain mb-2 rounded border border-gray-200">
+                        {% endif %}
+                        <input type="file" name="fest_logo" accept="image/*"
+                            class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Sadr Signature</label>
+                        {% if profile_madrasa.sadr_signature %}
+                        <img src="{{ profile_madrasa.sadr_signature.url }}" alt="Sadr Signature"
+                            class="h-16 w-auto object-contain mb-2 rounded border border-gray-200">
+                        {% endif %}
+                        <input type="file" name="sadr_signature" accept="image/*"
+                            class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-300">
+                    </div>
+
+                    <div id="madrasaEditErrors"
+                        class="hidden text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2"></div>
+
+                    <div class="flex justify-end gap-2 pt-1">
+                        <button type="button" onclick="toggleMadrasaEdit(false)"
+                            class="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                            class="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">
+                            💾 Save
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+{% if not request.user|is_linked_judge %}
+        <!-- Fest Rules document (feeds the AI assistant's rules knowledge base) -->
+        <div class="px-5 pb-3">
+            <div class="rounded-xl border border-gray-100 shadow-sm">
+                <div class="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-t-xl border-b border-gray-100">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">📜 Fest Rules</h3>
+                    <span class="text-[9px] text-gray-400 font-semibold uppercase tracking-wider">AI rules source</span>
+                </div>
+                <div id="festRulesCard" class="p-4 space-y-2 text-sm"
+                    data-has-rules="{% if profile_madrasa.fest_rules %}true{% else %}false{% endif %}">
+                    {% csrf_token %}
+                    <!-- Empty state -->
+                    <div id="rulesEmptyState" class="{% if profile_madrasa.fest_rules %}hidden{% endif %}">
+                        <p class="text-xs text-gray-500 leading-snug">Upload your fest rules &amp; regulations PDF — the AI assistant will then answer questions from <span class="font-semibold">your</span> rules.</p>
+                    </div>
+                    <!-- Current document -->
+                    <div id="rulesDocState" class="{% if not profile_madrasa.fest_rules %}hidden{% endif %}">
+                        <a id="rulesFileLink"
+                            href="{% if profile_madrasa.fest_rules %}{{ profile_madrasa.fest_rules.url }}{% endif %}"
+                            target="_blank" rel="noopener"
+                            class="flex items-center gap-2 font-semibold text-indigo-700 hover:text-indigo-900 break-all">
+                            📄 <span id="rulesFileName">{{ profile_madrasa.fest_rules.name|default:""|cut:"fest_rules/" }}</span>
+                        </a>
+                        <p id="rulesMeta" class="text-[11px] text-gray-400">
+                            {% if profile_madrasa.fest_rules_updated_at %}Uploaded {{ profile_madrasa.fest_rules_updated_at|date:"d M Y H:i" }}{% endif %}
+                        </p>
+                    </div>
+                    <input type="file" id="festRulesInput" accept="application/pdf,.pdf" class="hidden"
+                        onchange="uploadFestRules(this)">
+                    <div class="flex items-center gap-2 pt-1">
+                        <button type="button" id="rulesUploadBtn"
+                            onclick="document.getElementById('festRulesInput').click()"
+                            class="px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">
+                            ⬆️ {% if profile_madrasa.fest_rules %}Replace PDF{% else %}Upload PDF{% endif %}
+                        </button>
+                        <button type="button" id="rulesRemoveBtn" onclick="removeFestRules(this)"
+                            class="px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-lg transition {% if not profile_madrasa.fest_rules %}hidden{% endif %}">
+                            🗑 Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+{% endif %}
+
+        <!-- Mark Configuration (only on pages that expose the values, e.g. home) -->
+        {% if home_page and not request.user|is_linked_judge %}
+        <div class="mx-4 mt-4 mb-3 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50/50 via-white to-purple-50/30 shadow-sm">
+            <div class="flex items-center justify-between px-4 py-3 bg-indigo-600 rounded-t-2xl text-white">
+                <span class="flex items-center gap-2 text-sm font-semibold">
+                    <span class="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center text-sm">⚙️</span>
+                    Mark Configuration
+                    <span class="text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/20 text-white">Read only</span>
+                </span>
+                <span class="text-xs opacity-90">{{ profile_madrasa.meelad_fest_name|default:'Fest' }}</span>
+            </div>
+            <div class="p-4 space-y-2.5 text-sm text-gray-700">
+                {% for label, first_val, second_val, third_val in mark_rows %}
+                <div class="flex items-center justify-between gap-2">
+                    <span class="font-medium text-gray-600 min-w-[92px]">{{ label }}</span>
+                    <div class="flex items-center gap-1.5 text-xs font-semibold">
+                        <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 px-2 py-0.5">🥇 {{ first_val|default:"—" }}</span>
+                        <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 text-gray-600 px-2 py-0.5">🥈 {{ second_val|default:"—" }}</span>
+                        <span class="inline-flex items-center gap-1 rounded-full bg-orange-50 text-orange-700 px-2 py-0.5">🥉 {{ third_val|default:"—" }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if a_grade %}
+                <div class="flex items-center justify-between gap-2">
+                    <span class="font-medium text-gray-600 min-w-[92px]">Grades</span>
+                    <div class="flex items-center gap-1.5 text-xs font-semibold">
+                        <span class="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5">A: {{ a_grade }}</span>
+                        <span class="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5">B: {{ b_grade }}</span>
+                        <span class="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5">C: {{ c_grade }}</span>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="flex items-center justify-between gap-2 border-t border-gray-200 pt-2">
+                    <span class="font-medium text-gray-600 min-w-[92px]">🎭 Max Programs</span>
+                    <span class="inline-flex items-center rounded-lg bg-indigo-50 text-indigo-700 px-2.5 py-0.5 text-xs font-semibold">Per participant: {{ rule.max_program_per_head|default:"—" }}</span>
+                </div>
+                <p class="mt-1 text-[11px] leading-snug text-gray-500">Count includes individual &amp; group programs only — general programs are excluded.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Footer Actions -->
+        <div class="p-5 pt-0 flex justify-center gap-3">
+            <a href="{% url 'logout' %}" onclick="return confirmLogout(event, this.href)"
+                class="flex-1 text-center px-5 py-2.5 bg-red-500 text-white font-semibold rounded-xl shadow hover:bg-red-600 transition flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Logout
+            </a>
+            <button type="button" onclick="closeProfile()"
+                class="flex-1 px-5 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl shadow hover:bg-indigo-700 transition flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Close
+            </button>
+        </div>
+
+    </div>
+</div>
+
+{% endif %}
+
+<!-- Header Logic (Mobile Menu & Profile Modal) -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const menuToggle = document.getElementById("menu-toggle");
+        const menuClose = document.getElementById("menu-close-btn");
+        const mobileMenu = document.getElementById("mobile-menu");
+        const overlay = document.getElementById("overlay");
+
+        function toggleMenu(show) {
+            if (show) {
+                if (mobileMenu) {
+                    // The drawer starts display:none (so it can never widen
+                    // the page while parked off-canvas). Reveal it first,
+                    // then let the browser paint one frame before removing
+                    // the translate class so the slide-in still animates.
+                    mobileMenu.classList.remove("hidden");
+                    requestAnimationFrame(function () {
+                        requestAnimationFrame(function () {
+                            mobileMenu.classList.remove("translate-x-full");
+                        });
+                    });
+                }
+                if (overlay) overlay.classList.remove("hidden");
+                document.body.classList.add("overflow-hidden");
+            } else {
+                if (mobileMenu) {
+                    mobileMenu.classList.add("translate-x-full");
+                    // Park it back on display:none once the slide-out
+                    // transition has finished (guarded so a quick
+                    // re-open cancels the hide).
+                    setTimeout(function () {
+                        if (mobileMenu.classList.contains("translate-x-full")) {
+                            mobileMenu.classList.add("hidden");
+                        }
+                    }, 320);
+                }
+                if (overlay) overlay.classList.add("hidden");
+                document.body.classList.remove("overflow-hidden");
+            }
+        }
+
+        if (menuToggle) menuToggle.addEventListener("click", () => toggleMenu(true));
+        if (menuClose) menuClose.addEventListener("click", () => toggleMenu(false));
+        if (overlay) overlay.addEventListener("click", () => toggleMenu(false));
+
+        // Close the drawer the moment a menu link is clicked so the page
+        // transition (skeleton loader / new page) is fully visible instead of
+        // the drawer hovering above it until the next page arrives.
+        if (mobileMenu) {
+            mobileMenu.querySelectorAll("a[href]").forEach(function (link) {
+                link.addEventListener("click", function () { toggleMenu(false); });
+            });
+        }
+
+        // Expose toggleMenu globally
+        window.toggleMobileMenu = toggleMenu;
+
+    });
+
+    // Global Functions — Standard Profile Modal
+    window.openProfile = function () {
+        const defaultModal = document.getElementById("defaultProfileModal");
+        if (defaultModal) {
+            defaultModal.classList.remove("hidden");
+            if (window.toggleMobileMenu) window.toggleMobileMenu(false);
+        } else {
+            console.error("No profile modal found!");
+        }
+    };
+
+    window.closeProfile = function () {
+        const defaultModal = document.getElementById("defaultProfileModal");
+        if (defaultModal) defaultModal.classList.add("hidden");
+    };
+
+    // Toggle madrasa read <-> edit inside the profile modal
+    window.toggleMadrasaEdit = function (show) {
+        const readView = document.getElementById("madrasaReadView");
+        const editForm = document.getElementById("madrasaEditForm");
+        const errorsBox = document.getElementById("madrasaEditErrors");
+        if (!readView || !editForm) return;
+
+        if (show) {
+            readView.classList.add("hidden");
+            editForm.classList.remove("hidden");
+            if (errorsBox) errorsBox.classList.add("hidden");
+        } else {
+            editForm.classList.add("hidden");
+            readView.classList.remove("hidden");
+        }
+    };
+
+    // Save madrasa details via AJAX so the modal stays open on validation errors
+    window.saveMadrasa = function (event) {
+        event.preventDefault();
+
+        const form = document.getElementById("madrasaEditForm");
+        const errorsBox = document.getElementById("madrasaEditErrors");
+        const token = form.querySelector('[name="csrfmiddlewaretoken"]');
+        const csrfToken = token ? token.value : "";
+
+        if (errorsBox) {
+            errorsBox.classList.add("hidden");
+            errorsBox.textContent = "";
+        }
+
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Saving…";
+        }
+
+        fetch("{% url 'update_madrasa' %}", {
+            method: "POST",
+            body: new FormData(form),
+            headers: {
+                "X-CSRFToken": csrfToken,
+            },
+        })
+            .then((res) => res.json().catch(() => ({ success: false, errors: { __all__: ["Unexpected server error."] } })))
+            .then((data) => {
+                if (data.success) {
+                    window.location.reload();
+                    return;
+                }
+                if (errorsBox && data.errors) {
+                    const messages = [];
+                    Object.entries(data.errors).forEach(([field, errs]) => {
+                        const label = field.startsWith("__all__") ? "" : field.replace(/_/g, " ");
+                        errs.forEach((err) => {
+                            messages.push(label ? `${label[0].toUpperCase() + label.slice(1)}: ${err}` : err);
+                        });
+                    });
+                    errorsBox.textContent = messages.join("\n");
+                    errorsBox.classList.remove("hidden");
+                }
+            })
+            .catch((err) => {
+                console.error("Failed to save madrasa:", err);
+                if (errorsBox) {
+                    errorsBox.textContent = "Failed to save madrasa, please try again.";
+                    errorsBox.classList.remove("hidden");
+                }
+            })
+                        .finally(() => {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "💾 Save";
+                }
+            });
+    };
+
+    // ---- Fest rules document (AI knowledge base source) ----
+    function applyRulesState(rules) {
+        const card = document.getElementById("festRulesCard");
+        if (!card || !rules) return;
+        const has = !!rules.has_rules;
+        card.dataset.hasRules = has ? "true" : "false";
+        document.getElementById("rulesEmptyState").classList.toggle("hidden", has);
+        document.getElementById("rulesDocState").classList.toggle("hidden", !has);
+        document.getElementById("rulesRemoveBtn").classList.toggle("hidden", !has);
+        const uploadBtn = document.getElementById("rulesUploadBtn");
+        if (uploadBtn) uploadBtn.textContent = has ? "⬆️ Replace PDF" : "⬆️ Upload PDF";
+        if (has) {
+            document.getElementById("rulesFileLink").href = rules.file_url || "#";
+            document.getElementById("rulesFileName").textContent = rules.file_name || "fest-rules.pdf";
+            let meta = "";
+            if (rules.updated_at) {
+                const d = new Date(rules.updated_at);
+                meta = "Uploaded " + d.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })
+                    + " " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+            }
+            if (rules.chars) {
+                meta += (meta ? " · " : "") + rules.chars.toLocaleString() + " characters indexed for the AI";
+            }
+            document.getElementById("rulesMeta").textContent = meta.trim();
+        }
+    }
+
+    window.uploadFestRules = function (input) {
+        const file = input.files && input.files[0];
+        input.value = ""; // allow re-selecting the same file later
+        if (!file) return;
+        if (!/\.pdf$/i.test(file.name)) {
+            window.MeeladToast && MeeladToast("Please choose a PDF file.", "error");
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            window.MeeladToast && MeeladToast("The PDF is too large (10 MB maximum).", "error");
+            return;
+        }
+        const btn = document.getElementById("rulesUploadBtn");
+        window.MeeladLoader && MeeladLoader.button(btn);
+
+        const card = document.getElementById("festRulesCard");
+        const csrfInput = card ? card.querySelector('[name="csrfmiddlewaretoken"]') : null;
+        const fd = new FormData();
+        fd.append("fest_rules", file);
+
+        fetch("{% url 'upload_fest_rules' %}", {
+            method: "POST",
+            headers: { "X-CSRFToken": csrfInput ? csrfInput.value : "" },
+            body: fd,
+        })
+            .then((res) => res.json().catch(() => ({ success: false, errors: { __all__: ["Unexpected server error."] } })))
+            .then((data) => {
+                if (data.success) {
+                    applyRulesState(data.rules);
+                    window.MeeladToast && MeeladToast(data.message || "Fest rules uploaded.", "success");
+                } else {
+                    const first = data.errors && (data.errors.__all__ || Object.values(data.errors)[0]);
+                    window.MeeladToast && MeeladToast((first && first[0]) || "Upload failed.", "error");
+                }
+            })
+            .catch(() => {
+                window.MeeladToast && MeeladToast("Network error while uploading the rules PDF.", "error");
+            })
+            .finally(() => {
+                window.MeeladLoader && MeeladLoader.restoreButton(btn);
+            });
+    };
+
+    window.removeFestRules = function (btn) {
+        const card = document.getElementById("festRulesCard");
+        if (!card) return;
+        const csrfInput = card.querySelector('[name="csrfmiddlewaretoken"]');
+        window.MeeladConfirm.show(
+            "Remove the fest rules document? The AI assistant will no longer answer rules questions from it.",
+            { title: "Remove fest rules", confirmText: "Remove" }
+        ).then(function (ok) {
+            if (!ok) return;
+            window.MeeladLoader && MeeladLoader.button(btn);
+            fetch("{% url 'remove_fest_rules' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": csrfInput ? csrfInput.value : "",
+                },
+            })
+                .then((res) => res.json().catch(() => ({ success: false })))
+                .then((data) => {
+                    if (data.success) {
+                        applyRulesState(data.rules);
+                        window.MeeladToast && MeeladToast(data.message || "Fest rules removed.", "success");
+                    } else {
+                        window.MeeladToast && MeeladToast("Could not remove the document.", "error");
+                    }
+                })
+                .catch(() => {
+                    window.MeeladToast && MeeladToast("Network error while removing the document.", "error");
+                })
+                .finally(() => {
+                    window.MeeladLoader && MeeladLoader.restoreButton(btn);
+                });
+        });
+    };
+
+    // Upload a new madrasa profile photo straight from the avatar button.
+    // Pure AJAX: swaps every avatar <img> on the page in place — no reload.
+    window.uploadProfilePic = function (input) {
+        const file = input.files && input.files[0];
+        if (!file) return;
+
+        const btn = document.getElementById("avatar-upload-btn");
+        const original = btn ? btn.innerHTML : "";
+        if (btn) {
+            btn.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>';
+            btn.disabled = true;
+        }
+
+        const form = new FormData();
+        form.append("profile_pic", file);
+
+        fetch("{% url 'upload_madrasa_profile_pic' %}", {
+            method: "POST",
+            body: form,
+            headers: { "X-CSRFToken": getCookie("csrftoken") },
+        })
+            .then((res) => res.json().catch(() => ({ success: false, errors: { __all__: ["Unexpected server error."] } })))
+            .then((data) => {
+                if (data.success && data.profile_pic_url) {
+                    // Cache-bust and swap every avatar on the page in place
+                    // (header button, mobile drawer, profile modal).
+                    const fresh = data.profile_pic_url + "?t=" + Date.now();
+                    document.querySelectorAll('img[alt="Profile"]').forEach((img) => { img.src = fresh; });
+                    showToast("Profile photo updated.", "success");
+                } else {
+                    const msg = (data.errors && (data.errors.__all__ || []).join(" ")) || "Upload failed.";
+                    showToast(msg, "error");
+                }
+            })
+            .catch((err) => {
+                console.error("Failed to upload profile photo:", err);
+                showToast("Failed to upload profile photo, please try again.", "error");
+            })
+            .finally(() => {
+                if (btn) {
+                    btn.innerHTML = original;
+                    btn.disabled = false;
+                }
+                input.value = ""; // allow re-selecting the same file later
+            });
+    };
+
+    // Small helper — read a cookie by name (for CSRF token)
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(";").shift();
+    }
+</script>
+
+{% include '_submit_loader.html' %}
+
+{% if request.user.is_authenticated %}
+{% include 'aiassistant/widget.html' %}
+
+<!-- ============ Standard modal styling & behavior (shared by every popup) ============ -->
+<style>
+  /* Backdrop fade — applied to every popup shell */
+  .modal-shell { transition: opacity 0.18s ease-in-out; }
+  /* Panel entrance: subtle rise + scale, driven by .is-open toggled in JS */
+  .modal-shell .modal-content {
+    transform: translateY(12px) scale(0.97);
+    opacity: 0;
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+  }
+  .modal-shell .modal-content.is-open {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+</style>
+<script>
+  /* Universal modal animation: any element with .modal-shell animates its
+     .modal-content whenever the shell's `hidden` class toggles — pages do
+     not need per-modal JS for the transition. */
+  (function () {
+    function syncShell(modal) {
+      const content = modal.querySelector(".modal-content");
+      if (!content) return;
+      if (modal.classList.contains("hidden")) {
+        content.classList.remove("is-open");
+      } else {
+        requestAnimationFrame(() => content.classList.add("is-open"));
+      }
+    }
+    function bindShell(modal) {
+      if (modal.dataset.mlShellBound === "1") return;
+      modal.dataset.mlShellBound = "1";
+      new MutationObserver(function () { syncShell(modal); })
+        .observe(modal, { attributes: true, attributeFilter: ["class"] });
+      syncShell(modal);
+    }
+    function bindAll(root) {
+      (root || document).querySelectorAll(".modal-shell").forEach(bindShell);
+    }
+    const bodyObserver = new MutationObserver(function (muts) {
+      muts.forEach(function (m) {
+        if (!m.addedNodes) return;
+        m.addedNodes.forEach(function (n) {
+          if (n.nodeType !== 1) return;
+          if (n.classList && n.classList.contains("modal-shell")) bindShell(n);
+          if (n.querySelectorAll) bindAll(n);
+        });
+      });
+    });
+    function start() {
+      bindAll();
+      bodyObserver.observe(document.body, { childList: true, subtree: true });
+    }
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", start);
+    } else { start(); }
+  })();
+
+  /* Shared open/close helpers — same API as the program-list page. */
+  window.openPanel = window.openPanel || function (id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    // Teleport the shell to <body> before showing it so `position: fixed`
+    // always centers on the viewport. When the modal is nested inside a
+    // transformed container (e.g. the category page's .slider-wrapper, whose
+    // translateX() becomes the containing block for fixed descendants), the
+    // modal would otherwise open centered on that container instead of the
+    // screen.
+    if (modal.parentElement !== document.body) {
+      document.body.appendChild(modal);
+    }
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+    requestAnimationFrame(() => {
+      const content = modal.querySelector(".modal-content");
+      if (content) content.classList.add("is-open");
+    });
+  };
+  window.closePanel = window.closePanel || function (id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    const content = modal.querySelector(".modal-content");
+    if (content) content.classList.remove("is-open");
+    setTimeout(() => {
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }, 200);
+  };
+
+  /* ---- Modal accessibility: Esc to close, Tab focus trap, focus restore --
+     Works with every open modal pattern in the app (plain .modal-shell via
+     openPanel/closePanel and Alpine x-show shells) because it only reacts to
+     real DOM state and prefers the modal's own close button. */
+  (function () {
+    const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    function openShells() {
+      return Array.from(document.querySelectorAll(".modal-shell"))
+        .filter((el) => {
+          if (el.classList.contains("hidden")) return false;
+          return el.offsetParent !== null || getComputedStyle(el).display !== "none";
+        });
+    }
+
+    function closeModal(shell) {
+      // Prefer the modal's own close control — that keeps Alpine state
+      // (x-show flags) and page-local close logic in sync.
+      const closeBtn = shell.querySelector('[aria-label="Close modal"]');
+      if (closeBtn) { closeBtn.click(); return; }
+      if (shell.id && typeof window.closePanel === "function") {
+        window.closePanel(shell.id);
+        return;
+      }
+      const content = shell.querySelector(".modal-content");
+      if (content) content.classList.remove("is-open");
+      shell.classList.add("hidden");
+      shell.classList.remove("flex");
+      shell.style.display = "none";
+    }
+
+    // Remember the trigger that opened a modal so Esc can hand focus back.
+    // Every opener in the codebase uses an inline onclick with openPanel /
+    // toggleModal / openEdit* — one delegated capture listener covers all.
+    let lastTrigger = null;
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest("[onclick]");
+      if (btn && /openPanel|toggleModal|openEdit|openProfile/.test(btn.getAttribute("onclick") || "")) {
+        lastTrigger = btn;
+      }
+    }, true);
+
+    document.addEventListener("keydown", (e) => {
+      const shells = openShells();
+      if (!shells.length) return;
+      const shell = shells[shells.length - 1]; // topmost / last opened
+
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeModal(shell);
+        // Restore focus to the element that opened the modal.
+        const target = lastTrigger && document.contains(lastTrigger) ? lastTrigger : null;
+        setTimeout(() => { if (target) target.focus(); }, 60);
+      } else if (e.key === "Tab") {
+        // Keep keyboard focus inside the open modal.
+        const focusables = Array.from(shell.querySelectorAll(FOCUSABLE))
+          .filter((el) => el.offsetParent !== null);
+        if (!focusables.length) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && (document.activeElement === first || !shell.contains(document.activeElement))) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && (document.activeElement === last || !shell.contains(document.activeElement))) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    });
+  })();
+
+  /* ---- Download / generate buttons loading state -----------------------
+     Turns any button or download link into a spinner while an operation is in
+     flight, then restores its original label. Usage:
+       onclick="prepareDownload(this, 'Preparing PDF…')"      (download links)
+       prepareDownload(event.currentTarget, 'Generating…')     (JS buttons)  */
+  window.prepareDownload = window.prepareDownload || function (el, label) {
+    if (!el || el.dataset.dlBusy === '1') return false;
+    el.dataset.dlBusy = '1';
+    el.dataset.dlOrig = el.innerHTML;
+    el.classList.add('opacity-60', 'pointer-events-none');
+    el.setAttribute('aria-disabled', 'true');
+    el.innerHTML =
+      '<span class="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin align-middle mr-2"></span>' +
+      (label || 'Loading…');
+    setTimeout(function () {
+      el.dataset.dlBusy = '0';
+      el.innerHTML = el.dataset.dlOrig || el.innerHTML;
+      el.classList.remove('opacity-60', 'pointer-events-none');
+      el.removeAttribute('aria-disabled');
+    }, 8000);
+    return true;
+  };
+  window.finishDownload = window.finishDownload || function (el) {
+    if (!el || el.dataset.dlBusy !== '1') return;
+    el.dataset.dlBusy = '0';
+    el.innerHTML = el.dataset.dlOrig || el.innerHTML;
+    el.classList.remove('opacity-60', 'pointer-events-none');
+    el.removeAttribute('aria-disabled');
+  };
+
+  /* ---- Global toast notifications (replaces native alert() popups) ----
+     Optional third argument: { label, url } renders an action button
+     (used by the Undo-delete flow: POSTs the restore endpoint on click). */
+  window.MeeladToast = window.MeeladToast || function (message, type, opts) {
+    type = type || "info";
+    opts = opts || {};
+    const styles = {
+      success: { bg: "bg-emerald-600", icon: "✓" },
+      error:   { bg: "bg-red-600",    icon: "✕" },
+      warning: { bg: "bg-amber-500",  icon: "⚠" },
+      info:    { bg: "bg-indigo-600", icon: "ℹ" },
+    };
+    const s = styles[type] || styles.info;
+    const container = document.getElementById("toast-container");
+    if (!container) return;
+    const toast = document.createElement("div");
+    toast.className =
+      "toast pointer-events-auto flex items-start gap-2.5 max-w-xs w-full sm:w-auto " +
+      "px-4 py-3 rounded-xl shadow-2xl text-white text-sm font-medium " + s.bg +
+      " transition-all duration-300 translate-x-4 opacity-0";
+    toast.setAttribute("role", "status");
+    toast.innerHTML =
+      '<span class="shrink-0 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">' +
+      s.icon + '</span><span class="leading-snug toast-msg"></span>';
+    toast.querySelector(".toast-msg").textContent = message;
+    let toastTimer = null;
+    if (opts.label && opts.url) {
+      const action = document.createElement("button");
+      action.type = "button";
+      action.textContent = opts.label;
+      action.className = "shrink-0 ml-1 px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/35 " +
+        "text-xs font-bold uppercase tracking-wide transition";
+      action.addEventListener("click", function () {
+        clearTimeout(toastTimer);
+        const csrf = (document.cookie.match(/(?:^|; )csrftoken=([^;]*)/) || [])[1];
+        fetch(opts.url, {
+          method: "POST",
+          headers: Object.assign(
+            { "X-Requested-With": "XMLHttpRequest" },
+            csrf ? { "X-CSRFToken": decodeURIComponent(csrf) } : {}
+          ),
+          credentials: "same-origin",
+        })
+          .then((r) => r.json())
+          .then((data) => {
+            toast.remove();
+            if (data.ok !== false) {
+              MeeladToast(data.message || "Restored.", "success");
+              /* Re-sync the page with the restored object's state */
+              if (data.redirect) window.location.href = data.redirect;
+            } else {
+              MeeladToast(data.error || "Could not undo.", "error");
+            }
+          })
+          .catch(() => {
+            toast.remove();
+            MeeladToast("Could not undo — check your connection.", "error");
+          });
+      });
+      toast.appendChild(action);
+    }
+    container.appendChild(toast);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      toast.classList.remove("translate-x-4", "opacity-0");
+    }));
+    toastTimer = setTimeout(() => {
+      toast.classList.add("translate-x-4", "opacity-0");
+      setTimeout(() => toast.remove(), 350);
+    }, opts.label && opts.url ? 8000 : 4200);
+  };
+  window.showToast = window.MeeladToast;
+/* ---- Global confirmation dialog (replaces native confirm() popups) ----
+     Usage:
+       MeeladConfirm.show("Delete this student?").then(function (ok) { ... });
+     Or mark any form with data-confirm="message": submission is intercepted,
+     a dialog is shown, and the form submits only after confirmation. */
+  window.MeeladConfirm = window.MeeladConfirm || (function () {
+    let currentResolve = null;
+    let shell = null;
+
+    function ensureShell() {
+      if (shell && shell.parentNode) return;
+      shell = document.createElement("div");
+      shell.className =
+        "confirm-shell fixed inset-0 z-[400] flex items-center justify-center " +
+        "bg-slate-900/60 backdrop-blur-sm p-4";
+      shell.style.opacity = "0";
+      shell.style.transition = "opacity 0.18s ease-in-out";
+      shell.innerHTML =
+        '<div class="confirm-dialog w-full max-w-sm bg-white rounded-2xl shadow-2xl ' +
+        'overflow-hidden transform translate-y-3 scale-95 opacity-0 transition-all duration-200">' +
+        '<div class="flex items-center justify-between gap-3 px-5 py-4 bg-gradient-to-r from-red-600 to-rose-500">' +
+        '<h3 class="text-lg font-bold text-white flex items-center gap-2.5">' +
+        '<span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-lg">⚠️</span>' +
+        '<span class="confirm-title">Are you sure?</span></h3>' +
+        '<button type="button" class="confirm-close shrink-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 ' +
+        'text-white text-lg flex items-center justify-center transition" aria-label="Close">✕</button>' +
+        '</div>' +
+        '<div class="p-5">' +
+        '<p class="confirm-message text-gray-700 text-sm leading-relaxed"></p>' +
+        '<div class="flex justify-end items-center gap-2 mt-5">' +
+        '<button type="button" class="confirm-cancel btn-secondary text-sm font-semibold">Cancel</button>' +
+        '<button type="button" class="confirm-ok btn-danger text-sm font-semibold">Confirm</button>' +
+        '</div></div></div>';
+      document.body.appendChild(shell);
+
+      const dialog = shell.querySelector(".confirm-dialog");
+      const okBtn = shell.querySelector(".confirm-ok");
+      const cancelBtn = shell.querySelector(".confirm-cancel");
+      const closeBtn = shell.querySelector(".confirm-close");
+
+      function resolve(value) {
+        shell.style.opacity = "0";
+        dialog.classList.add("translate-y-3", "scale-95", "opacity-0");
+        setTimeout(() => { if (shell.parentNode) shell.remove(); }, 200);
+        const r = currentResolve;
+        currentResolve = null;
+        if (r) r(value);
+      }
+
+      okBtn.addEventListener("click", () => resolve(true));
+      cancelBtn.addEventListener("click", () => resolve(false));
+      closeBtn.addEventListener("click", () => resolve(false));
+      shell.addEventListener("click", (e) => {
+        if (e.target === shell) resolve(false);
+      });
+      document.addEventListener("keydown", function onKey(e) {
+        if (e.key === "Escape" && currentResolve && shell && shell.parentNode) {
+          resolve(false);
+          document.removeEventListener("keydown", onKey);
+        }
+      });
+      return { dialog, okBtn, cancelBtn, closeBtn };
+    }
+
+    return {
+      show(message, options) {
+        options = options || {};
+        const t = ensureShell();
+        t.dialog.querySelector(".confirm-title").textContent =
+          options.title || "Are you sure?";
+        t.dialog.querySelector(".confirm-message").textContent =
+          message || "Please confirm.";
+        t.okBtn.textContent = options.confirmText || "Confirm";
+        if (options.danger === false) {
+          t.okBtn.className =
+            "confirm-ok btn-primary text-sm font-semibold";
+        } else {
+          t.okBtn.className =
+            "confirm-ok btn-danger text-sm font-semibold";
+        }
+        shell.style.opacity = "1";
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          t.dialog.classList.remove("translate-y-3", "scale-95", "opacity-0");
+        }));
+        return new Promise((resolve) => { currentResolve = resolve; });
+      },
+    };
+  })();
+  window.confirmDialog = window.MeeladConfirm.show.bind(window.MeeladConfirm);
+
+  /* Logout always asks for confirmation before navigating away */
+  window.confirmLogout = window.confirmLogout || function (event, url) {
+    if (event) event.preventDefault();
+    MeeladConfirm.show("Are you sure you want to log out?", {
+      title: "Log out",
+      confirmText: "Log out",
+      danger: false,
+    }).then(function (ok) {
+      if (ok) window.location.href = url;
+    });
+    return false;
+  };
+
+  /* Intercept submits on forms marked with data-confirm="message" */
+  document.addEventListener("submit", function (e) {
+    const form = e.target;
+    if (!(form && form.tagName === "FORM")) return;
+    const message = form.getAttribute("data-confirm");
+    if (!message) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const submitter = e.submitter;
+    MeeladConfirm.show(message).then(function (ok) {
+      if (ok) {
+        /* Deletes/updates tagged data-ajax-form go through the AJAX helper so
+           the list refreshes in place; everything else keeps the classic flow. */
+        if (typeof window.MeeladAjax === 'object' && form.hasAttribute('data-ajax-form')) {
+          window.MeeladAjax.submit(form, submitter);
+        } else {
+          form.submit();
+        }
+      }
+    });
+  }, true);
+</script>
+
+  <script>
+    /* MeeladAjax — turns <form data-ajax-form> submissions into fetch() calls so
+       the page does not reload on every action ("ajax-like" UX).
+       Contract with the server views:
+         • AJAX requests send X-Requested-With: XMLHttpRequest.
+         • Views reply JSON: {ok, message, error, cards_html?, program?}.
+         • cards_html (when present) replaces the contents of the page's
+           [data-ajax-list] container (General/Group/Program-list sections).
+         • Any unexpected non-JSON reply or network error falls back to a native
+           form.submit() so the classic flow is never broken. */
+    (function () {
+      if (window.MeeladAjax) return;
+
+      function closestList(form) {
+        const scope = form.closest('[data-ajax-scope]') || document;
+        return scope.querySelector('[data-ajax-list]');
+      }
+
+      function submitButton(form) {
+        return form.querySelector('button[type="submit"], button:not([type])');
+      }
+
+      function setBusy(btn, busy) {
+        if (!btn) return;
+        if (busy) {
+          btn.dataset.labelHtml = btn.innerHTML;
+          btn.disabled = true;
+          btn.innerHTML = '<span class="inline-flex items-center gap-2">' +
+            '<svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+            '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"></circle>' +
+            '<path fill="currentColor" class="opacity-75" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>' +
+            'Saving…</span>';
+        } else {
+          btn.disabled = false;
+          if (btn.dataset.labelHtml) btn.innerHTML = btn.dataset.labelHtml;
+        }
+      }
+
+      function highlight(list, programId) {
+        if (!programId) return;
+        const card = list.querySelector('[data-program-id="' + programId + '"]');
+        if (!card) return;
+        card.classList.add('ring-2', 'ring-indigo-300', 'ring-offset-2');
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      window.MeeladAjax = {
+        async submit(form, submitter) {
+          /* Serialize BEFORE setBusy(): new FormData(form) silently drops
+             submit buttons, and once setBusy disables the submitter its
+             name/value is lost from native fallbacks too. Views that route
+             several forms to one URL by the button's name (student_form /
+             program_form on category detail) need it in the body. */
+          let body;
+          try {
+            body = new FormData(form, submitter || null);
+          } catch (err) {
+            body = new FormData(form);
+          }
+          const btn = submitter || submitButton(form);
+          setBusy(btn, true);
+          try {
+            const csrfInput = form.querySelector('[name="csrfmiddlewaretoken"]');
+            const resp = await fetch(form.getAttribute('action') || window.location.href, {
+              method: 'POST',
+              body: body,
+              credentials: 'same-origin',
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfInput ? csrfInput.value : (window.CSRF_TOKEN || '')
+              }
+            });
+            const ctype = resp.headers.get('content-type') || '';
+            if (!ctype.includes('application/json')) {
+              if (btn) btn.disabled = false;
+              form.submit(); // endpoint is not JSON-aware → classic behaviour
+              return;
+            }
+            const data = await resp.json();
+            if (resp.ok && data.ok !== false) {
+              const list = closestList(form);
+              const refreshAll = form.hasAttribute('data-refresh-all');
+              const closeModal = form.hasAttribute('data-modal-close');
+              if (data.cards_html && list) {
+                list.innerHTML = data.cards_html;
+                if (typeof window.bindProgramCardActions === 'function') {
+                  window.bindProgramCardActions();
+                }
+                highlight(list, data.program && data.program.id);
+              } else if (data.redirect) {
+                /* No cards payload → soft-refresh the list region(s) from the
+                   redirect URL so the change appears without a full reload.
+                   Falls back to a normal navigation if anything goes wrong. */
+                try {
+                  const r2 = await fetch(data.redirect, {
+                    credentials: 'same-origin',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                  });
+                  const doc = new DOMParser().parseFromString(await r2.text(), 'text/html');
+                  if (refreshAll) {
+                    /* category page: refresh every [data-ajax-list] (boys AND
+                       girls) so added/edited/deleted rows sync in both. */
+                    const freshLists = Array.from(doc.querySelectorAll('[data-ajax-list]'));
+                    const currentLists = Array.from(document.querySelectorAll('[data-ajax-list]'));
+                    let matched = 0;
+                    currentLists.forEach((el) => {
+                      const key = el.getAttribute('data-ajax-list');
+                      const fresh = key
+                        ? freshLists.find((f) => f.getAttribute('data-ajax-list') === key)
+                        : freshLists[0];
+                      if (fresh) {
+                        el.innerHTML = fresh.innerHTML;
+                        if (!key) freshLists.shift();
+                        matched++;
+                      }
+                    });
+                    if (!matched) {
+                      window.location.href = data.redirect;
+                      return;
+                    }
+                    /* openPanel() teleports an open modal to <body>. The student
+                       modals live INSIDE these refreshed lists, so the
+                       teleported copy survives the swap as a duplicate id —
+                       getElementById() would then return the fresh (closed)
+                       copy and the visible modal could never be closed
+                       ("modal stuck open" after assigning programs). Drop
+                       those orphans now that fresh copies exist. */
+                    const refreshedIds = [];
+                    currentLists.forEach((el) => {
+                      el.querySelectorAll('.modal-shell[id]').forEach((m) => refreshedIds.push(m.id));
+                    });
+                    Array.from(document.body.children).forEach((node) => {
+                      if (node.classList &&
+                          node.classList.contains('modal-shell') &&
+                          refreshedIds.indexOf(node.id) !== -1) {
+                        node.remove();
+                      }
+                    });
+                    history.replaceState(null, '', data.redirect);
+                    /* Search the WHOLE page: the new program card lives in the
+                       programs list, which is a different container from the
+                       first [data-ajax-list] on the page. */
+                    highlight(document, data.program && data.program.id);
+                  } else if (list) {
+                    const fresh = doc.querySelector('[data-ajax-list]');
+                    if (fresh) {
+                      list.innerHTML = fresh.innerHTML;
+                      history.replaceState(null, '', data.redirect);
+                      highlight(list, data.program && data.program.id);
+                    } else {
+                      window.location.href = data.redirect;
+                      return;
+                    }
+                  } else {
+                    window.location.href = data.redirect;
+                    return;
+                  }
+                } catch (e2) {
+                  window.location.href = data.redirect;
+                  return;
+                }
+              }
+              const collapseSel = form.getAttribute('data-collapse-target');
+              if (collapseSel) {
+                const sec = document.getElementById(collapseSel);
+                if (sec) sec.classList.add('hidden');
+                const header = sec && sec.parentElement
+                  ? sec.parentElement.querySelector('[data-collapse-target], [aria-expanded]')
+                  : null;
+                if (header) header.setAttribute('aria-expanded', 'false');
+              }
+              if (closeModal) {
+                const shell = form.closest('.modal-shell');
+                if (shell && typeof window.closePanel === 'function') {
+                  window.closePanel(shell.id);
+                } else if (shell) {
+                  shell.classList.add('hidden');
+                  shell.classList.remove('flex');
+                }
+              }
+              form.reset();
+              /* Auto-fill support: the server can hand back the next free
+                 judge code (judge.next_code) so consecutive adds never
+                 collide on a stale prefill. */
+              if (data.judge && data.judge.next_code) {
+                const codeInput = form.querySelector('input[name="code"]');
+                if (codeInput) codeInput.value = data.judge.next_code;
+              }
+              window.MeeladToast && MeeladToast(data.message || 'Saved successfully.', 'success',
+                data.undo_url ? { label: 'Undo', url: data.undo_url } : null);
+            } else {
+              window.MeeladToast && MeeladToast(data.error || 'Something went wrong. Please try again.', 'error');
+            }
+          } catch (err) {
+            if (btn) btn.disabled = false;
+            form.submit(); // network/JS failure → never block the user
+          } finally {
+            setBusy(btn, false);
+          }
+        }
+      };
+
+      document.addEventListener('submit', function (e) {
+        const form = e.target;
+        if (!(form && form.tagName === 'FORM')) return;
+        if (!form.hasAttribute('data-ajax-form')) return;
+        e.preventDefault();
+        window.MeeladAjax.submit(form, e.submitter);
+      }, true);
+    })();
+  </script>
+
+  {% if messages %}
+  <!-- Django messages -> toast bridge: any message flashed by a view
+       (student/program added, updates, guards…) is re-rendered here as the
+       standard top-right toast, so feedback is always visible. -->
+  <div id="django-flash-messages" class="hidden" aria-hidden="true">
+    {% for message in messages %}<span data-tag="{{ message.tags|default:'info' }}">{{ message }}</span>{% endfor %}
+  </div>
+  <script>
+    (function () {
+      const wrap = document.getElementById('django-flash-messages');
+      if (!wrap || typeof window.MeeladToast !== 'function') return;
+      const map = { success: 'success', error: 'error', warning: 'warning', debug: 'info', info: 'info' };
+      wrap.querySelectorAll('span[data-tag]').forEach((el) => {
+        const tags = (el.dataset.tag || 'info').split(' ');
+        let type = 'info';
+        for (const t of tags) { if (map[t]) { type = map[t]; break; } }
+        window.MeeladToast(el.textContent.trim(), type);
+      });
+      wrap.remove();
+    })();
+  </script>
+  {% endif %}
+
+  {% if request.user.is_authenticated %}
+  <!-- ============ Command Palette (Ctrl+K) ============ -->
+  <div id="cmd-palette" class="hidden fixed inset-0 z-[400] bg-slate-900/60 backdrop-blur-sm p-4 pt-[10vh]"
+      role="dialog" aria-modal="true" aria-label="Global search">
+    <div class="max-w-xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
+        <svg class="w-5 h-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+        <input id="palette-input" type="text" autocomplete="off" placeholder="Search students, programs, venues, judges…"
+          class="w-full text-base text-gray-800 outline-none placeholder:text-gray-400">
+        <kbd class="shrink-0 px-1.5 py-0.5 rounded border border-gray-200 bg-gray-50 text-[10px] font-mono text-gray-400">Esc</kbd>
+      </div>
+      <div id="palette-results" class="max-h-[55vh] overflow-y-auto p-2"></div>
+      <div class="px-4 py-2 border-t border-gray-100 bg-gray-50 text-[11px] text-gray-400 flex items-center gap-3">
+        <span><kbd class="font-mono">↑↓</kbd> navigate</span>
+        <span><kbd class="font-mono">Enter</kbd> open</span>
+        <span class="ml-auto">Searches your fest only</span>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const shell = document.getElementById('cmd-palette');
+      const input = document.getElementById('palette-input');
+      const box = document.getElementById('palette-results');
+      const btn = document.getElementById('palette-btn');
+      if (!shell || !input || !box) return;
+
+      const GROUPS = [
+        ['students', '🎓 Students'],
+        ['programs', '🏆 Programs'],
+        ['venues', '📍 Venues'],
+        ['judges', '⚖️ Judges'],
+      ];
+      let items = [];   // flattened, clickable entries
+      let cursor = -1;  // highlighted index
+      let seq = 0;      // token to drop stale responses
+      let lastQ = '';
+
+      function close() {
+        shell.classList.add('hidden');
+        input.value = '';
+        box.innerHTML = '';
+        items = []; cursor = -1; lastQ = '';
+      }
+      function open() {
+        shell.classList.remove('hidden');
+        input.focus();
+      }
+      function toggle() { shell.classList.contains('hidden') ? open() : close(); }
+
+      function el(tag, cls, text) {
+        const n = document.createElement(tag);
+        if (cls) n.className = cls;
+        if (text !== undefined) n.textContent = text;
+        return n;
+      }
+
+      function renderEmpty(q) {
+        box.innerHTML = '';
+        const empty = el('p', 'px-4 py-8 text-center text-sm text-gray-400',
+          q.length < 2 ? 'Type at least 2 characters…' : 'No matches found.');
+        box.appendChild(empty);
+      }
+
+      function highlight(li) {
+        items.forEach((it, i) => {
+          it.el.classList.toggle('bg-indigo-50', i === li);
+          it.el.classList.toggle('ring-1', i === li);
+          it.el.classList.toggle('ring-indigo-200', i === li);
+        });
+        if (items[li]) items[li].el.scrollIntoView({ block: 'nearest' });
+        cursor = li;
+      }
+
+      function render(data) {
+        box.innerHTML = '';
+        items = []; cursor = -1;
+        let any = false;
+        GROUPS.forEach(([key, label]) => {
+          const rows = data[key] || [];
+          if (!rows.length) return;
+          any = true;
+          box.appendChild(el('p', 'px-3 pt-2 pb-1 text-[11px] font-bold uppercase tracking-wider text-gray-400', label));
+          rows.forEach((r) => {
+            const a = el('a', 'flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-indigo-50 cursor-pointer');
+            a.appendChild(el('span', 'font-medium text-gray-800 truncate', r.title || '—'));
+            if (r.meta) a.appendChild(el('span', 'ml-auto shrink-0 text-xs text-gray-400 truncate max-w-[45%]', r.meta));
+            a.href = r.url;
+            a.addEventListener('click', () => close());
+            box.appendChild(a);
+            items.push({ el: a, url: r.url });
+          });
+        });
+        if (!any) return renderEmpty(data.q || '');
+        highlight(0);
+      }
+
+      let debounce = null;
+      function search(q) {
+        lastQ = q;
+        const token = ++seq;
+        fetch('/program/search/?q=' + encodeURIComponent(q), {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          credentials: 'same-origin',
+        })
+          .then((r) => r.ok ? r.json() : null)
+          .then((data) => { if (data && token === seq) render(data); })
+          .catch(() => {});
+      }
+
+      input.addEventListener('input', () => {
+        const q = input.value.trim();
+        clearTimeout(debounce);
+        if (q.length < 2) { box.innerHTML = ''; items = []; return; }
+        debounce = setTimeout(() => search(q), 200);
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown' && items.length) {
+          e.preventDefault(); highlight((cursor + 1) % items.length);
+        } else if (e.key === 'ArrowUp' && items.length) {
+          e.preventDefault(); highlight((cursor - 1 + items.length) % items.length);
+        } else if (e.key === 'Enter' && items[cursor]) {
+          e.preventDefault();
+          window.location.href = items[cursor].url;
+        }
+      });
+
+      shell.addEventListener('mousedown', (e) => { if (e.target === shell) close(); });
+      if (btn) btn.addEventListener('click', toggle);
+
+      document.addEventListener('keydown', (e) => {
+        const k = (e.key || '').toLowerCase();
+        if ((e.ctrlKey || e.metaKey) && k === 'k') {
+          e.preventDefault();
+          toggle();
+        } else if (e.key === 'Escape' && !shell.classList.contains('hidden')) {
+          close();
+        }
+      });
+    })();
+  </script>
+  {% endif %}
+
+{% endif %}

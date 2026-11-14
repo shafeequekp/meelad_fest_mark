@@ -1,0 +1,26 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Successful | Meelad</title>
+  {% include '_head_meta.html' %}
+  <link rel="stylesheet" href="{% static 'program/css/app.min.css' %}?v=5">
+</head>
+<body class="bg-gradient-to-br from-indigo-50 to-white min-h-screen flex items-center justify-center">
+
+  <div class="bg-white shadow-2xl rounded-2xl p-10 text-center max-w-md w-full border border-indigo-100">
+    <div class="text-6xl mb-4">✅</div>
+    <h2 class="text-2xl font-bold text-indigo-700 mb-2">Payment Successful!</h2>
+    <p class="text-gray-600 mb-6">Your subscription for <strong>Meelad: Digital Platform</strong> is now active for 1 year.</p>
+
+    <a href="{% url 'home' %}" class="bg-indigo-600 text-white py-3 px-6 rounded-xl hover:bg-indigo-700 transition">
+      Go to Dashboard
+    </a>
+  </div>
+
+{% include '_footer.html' %}
+
+</body>
+</html>

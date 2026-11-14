@@ -1,0 +1,815 @@
+{% extends 'program/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}{{ meelad_fest_name|default:"Meelad Fest" }} — Dashboard{% endblock %}
+
+{% block page_title_bar %}{% endblock %}
+
+{% block main_classes %}pb-12{% endblock %}
+
+{% block extra_head %}
+
+
+  <style>
+    .fade {
+      animation: fadeEffect 1s ease-in-out;
+    }
+
+    @keyframes fadeEffect {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+
+    @keyframes finalSlideAnimation {
+      0% {
+        transform: scale(0.5);
+        opacity: 0;
+      }
+
+      60% {
+        transform: scale(1.1);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .animate-finalSlide {
+      animation: finalSlideAnimation 2s ease-out forwards;
+    }
+
+
+
+    /* Fade-up animation */
+    @keyframes fadeUp {
+      0% {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .card-animate {
+      animation: fadeUp 0.8s ease-out forwards;
+      opacity: 0;
+    }
+
+    /* Staggered delays */
+    .card-animate:nth-child(1) {
+      animation-delay: 0.1s;
+    }
+
+    .card-animate:nth-child(2) {
+      animation-delay: 0.3s;
+    }
+
+    .card-animate:nth-child(3) {
+      animation-delay: 0.5s;
+    }
+
+    .card-animate:nth-child(4) {
+      animation-delay: 0.7s;
+    }
+
+    .card-animate:nth-child(5) {
+      animation-delay: 0.9s;
+    }
+
+    .card-animate:nth-child(6) {
+      animation-delay: 1.1s;
+    }
+
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 1s ease-out forwards;
+    }
+
+    /* ---- Fest emblem glazing line effect ---- */
+    .fest-emblem {
+      position: relative;
+      display: inline-block;
+      overflow: hidden;
+      border-radius: 9999px;
+    }
+
+    @keyframes emblemGlazeLine {
+      0% {
+        transform: translateX(-100%) rotate(25deg);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      60% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateX(200%) rotate(25deg);
+        opacity: 0;
+      }
+    }
+
+    .fest-emblem__glazeline {
+      position: absolute;
+      top: -20%;
+      left: 0;
+      width: 40%;
+      height: 140%;
+      background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.7) 50%,
+        rgba(255, 255, 255, 0) 100%
+      );
+      pointer-events: none;
+      z-index: 10;
+      animation: emblemGlazeLine 3s ease-in-out infinite;
+    }
+  </style>
+  {% endblock %}
+
+{% block content %}
+
+
+  <!-- Hero Section — full-bleed: the panel starts at the very top of the page
+       (behind the fixed header) so no light background gap shows between the
+       header bar and the hero. The top padding below is the fixed-header
+       clearance. -->
+  <div class="bg-gradient-to-br from-indigo-600 via-purple-700 to-indigo-800 text-white">
+    <div class="max-w-7xl mx-auto px-4 pt-24 sm:pt-28 pb-16 sm:pb-24">
+      <div class="text-center">
+        <!-- Fest Emblem -->
+        <div class="fest-emblem relative inline-flex items-center justify-center mb-6">
+          <div class="absolute w-28 h-28 sm:w-36 sm:h-36 rounded-full border border-white/20"></div>
+          <div class="absolute w-36 h-36 sm:w-44 sm:h-44 rounded-full border-2 border-white/30"></div>
+          <div class="inline-flex items-center justify-center w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-white/5 backdrop-blur border border-white/15">
+            <div class="inline-flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-white/10 backdrop-blur border-2 border-white/25 shadow-2xl">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 sm:w-16 sm:h-16 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0" />
+              </svg>
+            </div>
+          </div>
+          <!-- Glazing line sweep -->
+          <span class="fest-emblem__glazeline" aria-hidden="true"></span>
+        </div>
+        
+        <!-- Fest Name -->
+        <h1 class="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight drop-shadow-xl">
+          {{ meelad_fest_name|default:"Meelad Fest" }}
+        </h1>
+        <p class="mt-4 text-lg sm:text-xl text-indigo-200 max-w-2xl mx-auto font-light">
+          Celebrating excellence through knowledge, skill, and creativity
+        </p>
+        
+        <!-- Quick Action Buttons (owner/admin only — judges & student portal logins skip these) -->
+        {% if not request.user|is_linked_judge and not request.session.student_portal_id %}
+        <div class="mt-8 flex flex-wrap justify-center gap-4">
+          <a href="{% url 'teams' %}"
+            class="inline-flex items-center gap-2.5 px-6 py-3 bg-indigo-500/30 backdrop-blur border border-white/30 text-white font-semibold rounded-xl shadow-lg hover:bg-indigo-500/50 hover:scale-105 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5l-1.65-7L20 12l1.95-1-5.3-4.2L12.55 2 8.05 6.8 2 11l1.95 1 3.35 1.8L2 20h5.55l3.35-1.8z" />
+            </svg>
+            View Teams
+          </a>
+          <button id="generate-screening-link-hero"
+            class="inline-flex items-center gap-2.5 px-6 py-3 bg-indigo-500/30 backdrop-blur border border-white/30 text-white font-semibold rounded-xl shadow-lg hover:bg-indigo-500/50 hover:scale-105 transition"
+            type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+            </svg>
+            Screening Link
+          </button>
+        </div>
+        {% endif %}
+
+        <!-- Fest status badges (owner/admin only) -->
+        {% if not request.user|is_linked_judge and not request.session.student_portal_id %}
+        <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold {% if registration_open %}bg-emerald-500/20 text-emerald-200 border border-emerald-300/40{% else %}bg-amber-500/20 text-amber-200 border border-amber-300/40{% endif %}">
+            <span class="w-2 h-2 rounded-full {% if registration_open %}bg-emerald-400{% else %}bg-amber-400{% endif %}" aria-hidden="true"></span>
+            {% if registration_open %}Registration open{% else %}Registration closed{% endif %}
+          </span>
+          {% if has_published_results %}
+          <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold bg-emerald-500/20 text-emerald-200 border border-emerald-300/40">
+            <span class="w-2 h-2 rounded-full bg-emerald-400" aria-hidden="true"></span>
+            Results published
+          </span>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    <!-- Wave Divider -->
+    <div class="relative h-16 sm:h-24">
+      <svg class="absolute bottom-0 w-full h-16 sm:h-24 text-gray-100" viewBox="0 0 1440 100" fill="currentColor" preserveAspectRatio="none">
+        <path d="M0,40 C360,100 1080,0 1440,60 L1440,100 L0,100 Z"></path>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="max-w-7xl mx-auto px-4 -mt-12 relative z-10">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+            <a href="{% url 'teams' %}" class="block bg-white rounded-2xl shadow-lg p-6 text-center card-animate hover:shadow-xl hover:-translate-y-0.5 transition">
+        <div class="w-12 h-12 mx-auto mb-2 flex items-center justify-center text-indigo-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5l-1.65-7L20 12l1.95-1-5.3-4.2L12.55 2 8.05 6.8 2 11l1.95 1 3.35 1.8L2 20h5.55l3.35-1.8z" />
+          </svg>
+        </div>
+        <div class="text-2xl sm:text-3xl font-extrabold text-indigo-700" data-count-to="{{ teams|length }}">{{ teams|length }}</div>
+        <div class="text-sm text-gray-500 font-medium">Teams</div>
+      </a>
+      <a href="{% url 'upload-students' %}" class="block bg-white rounded-2xl shadow-lg p-6 text-center card-animate hover:shadow-xl hover:-translate-y-0.5 transition">
+        <div class="w-12 h-12 mx-auto mb-2 flex items-center justify-center text-indigo-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        </div>
+        <div class="text-2xl sm:text-3xl font-extrabold text-indigo-700" data-count-to="{{ total_students }}">{{ total_students }}</div>
+        <div class="text-sm text-gray-500 font-medium">Students</div>
+      </a>
+      <a href="{% url 'program_list' %}" class="block bg-white rounded-2xl shadow-lg p-6 text-center card-animate hover:shadow-xl hover:-translate-y-0.5 transition">
+        <div class="w-12 h-12 mx-auto mb-2 flex items-center justify-center text-indigo-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 7a4 4 0 118 0 4 4 0 01-8 0zM12 14a7 7 0 00-7 7h14a7 7 0 007-7v-2a7 7 0 00-14 0v2z" />
+          </svg>
+        </div>
+        <div class="text-2xl sm:text-3xl font-extrabold text-indigo-700" data-count-to="{{ total_programs }}">{{ total_programs }}</div>
+        <div class="text-sm text-gray-500 font-medium">Programs</div>
+      </a>
+      <a href="{% url 'categories' %}" class="block bg-white rounded-2xl shadow-lg p-6 text-center card-animate hover:shadow-xl hover:-translate-y-0.5 transition">
+        <div class="w-12 h-12 mx-auto mb-2 flex items-center justify-center text-indigo-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0l-2-2m2 2l-2 2M5 19V5a2 2 0 012-2h8.586a1 1 0 01.707.293l3.414 3.414A1 1 0 0119 7.414V19a2 2 0 01-2 2H7a2 2 0 01-2-2z" />
+          </svg>
+        </div>
+        <div class="text-2xl sm:text-3xl font-extrabold text-indigo-700" data-count-to="{{ categories|length }}">{{ categories|length }}</div>
+        <div class="text-sm text-gray-500 font-medium">Categories</div>
+      </a>
+    </div>
+  </div>
+
+
+  <!-- Result readiness (owner/admin only). Deliberately shows ONLY counts the
+       Quick Stats tiles above do not already display — Home never repeats a
+       metric (programs/students/teams/categories totals live up there). -->
+  {% if not request.user|is_linked_judge and not request.session.student_portal_id %}
+  <div class="max-w-7xl mx-auto px-4 mt-10">
+    <div class="bg-white rounded-2xl shadow-lg border border-indigo-100 p-5 sm:p-6">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <h2 class="text-lg sm:text-xl font-bold text-gray-800">Result readiness</h2>
+        <a href="{% url 'results' %}" class="text-indigo-600 font-semibold hover:underline text-sm">Manage results &rarr;</a>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        <a href="{% url 'results' %}" data-readiness="published"
+          class="block rounded-xl bg-emerald-50 border border-emerald-100 p-4 text-center hover:shadow transition">
+          <div class="text-2xl font-extrabold text-emerald-700">{{ cc_published }}</div>
+          <div class="text-xs text-gray-500 font-medium mt-0.5">Published</div>
+        </a>
+        <a href="{% url 'results' %}" data-readiness="awaiting"
+          class="block rounded-xl bg-amber-50 border border-amber-100 p-4 text-center hover:shadow transition">
+          <div class="text-2xl font-extrabold text-amber-600">{{ cc_awaiting }}</div>
+          <div class="text-xs text-gray-500 font-medium mt-0.5">Awaiting publish</div>
+        </a>
+        <a href="{% url 'results' %}" data-readiness="not-entered"
+          class="block rounded-xl bg-gray-50 border border-gray-100 p-4 text-center hover:shadow transition">
+          <div class="text-2xl font-extrabold text-gray-600">{{ cc_not_entered }}</div>
+          <div class="text-xs text-gray-500 font-medium mt-0.5">No result yet</div>
+        </a>
+        <a href="{% url 'schedule_dashboard' %}" data-readiness="unscheduled"
+          class="block rounded-xl bg-rose-50 border border-rose-100 p-4 text-center hover:shadow transition">
+          <div class="text-2xl font-extrabold text-rose-600">{{ cc_unscheduled }}</div>
+          <div class="text-xs text-gray-500 font-medium mt-0.5">Unscheduled</div>
+        </a>
+        <a href="{% url 'judges' %}" data-readiness="judges"
+          class="block rounded-xl bg-indigo-50 border border-indigo-100 p-4 text-center hover:shadow transition">
+          <div class="text-2xl font-extrabold text-indigo-700">{{ cc_judges }}</div>
+          <div class="text-xs text-gray-500 font-medium mt-0.5">Active judges</div>
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Quick Navigation Cards (owner/admin only — judges & student portal logins skip these) -->
+  {% if not request.user|is_linked_judge and not request.session.student_portal_id %}
+  <div class="max-w-7xl mx-auto px-4 mt-12 sm:mt-16">
+    <div class="bg-gradient-to-br from-indigo-50 via-sky-50 to-violet-50 border border-indigo-100 rounded-3xl px-5 py-7 sm:px-8 shadow-sm">
+      <h2 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">Quick Access</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            <a href="{% url 'schedule_dashboard' %}" class="group card p-5 text-center hover:shadow-lg hover:-translate-y-1 transition">
+        <div class="w-10 h-10 mx-auto mb-2 flex items-center justify-center text-indigo-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <div class="font-semibold text-gray-700 group-hover:text-indigo-600">Schedule</div>
+      </a>
+      <a href="{% url 'judges' %}" class="group card p-5 text-center hover:shadow-lg hover:-translate-y-1 transition">
+        <div class="w-10 h-10 mx-auto mb-2 flex items-center justify-center text-indigo-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="font-semibold text-gray-700 group-hover:text-indigo-600">Judges</div>
+      </a>
+      <a href="{% url 'results' %}" class="group card p-5 text-center hover:shadow-lg hover:-translate-y-1 transition">
+        <div class="w-10 h-10 mx-auto mb-2 flex items-center justify-center text-indigo-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11 17h2v-2h-2v2zm0-4h2V7h-2v6zm0 8a9 9 0 110-18 9 9 0 010 18z" />
+          </svg>
+        </div>
+        <div class="font-semibold text-gray-700 group-hover:text-indigo-600">Results</div>
+      </a>
+      <a href="{% url 'general_programs' %}" class="group card p-5 text-center hover:shadow-lg hover:-translate-y-1 transition">
+        <div class="w-10 h-10 mx-auto mb-2 flex items-center justify-center text-indigo-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5l2 2 2-2M7 7V3M5 10v10a2 2 0 002 2h10a2 2 0 002-2V10m-11 0h10m-10 0l-2 2m14-2l-2 2" />
+          </svg>
+        </div>
+        <div class="font-semibold text-gray-700 group-hover:text-indigo-600">General</div>
+      </a>
+      <a href="{% url 'venue_list' %}" class="group card p-5 text-center hover:shadow-lg hover:-translate-y-1 transition">
+        <div class="w-10 h-10 mx-auto mb-2 flex items-center justify-center text-indigo-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25L21 12l-3.75 3.75M15 15l3-3-3-3m0 0L3.75 8.25M15 6L3.75 15" />
+          </svg>
+        </div>
+        <div class="font-semibold text-gray-700 group-hover:text-indigo-600">Venues</div>
+      </a>
+      <a href="{% url 'statistics' %}" class="group card p-5 text-center hover:shadow-lg hover:-translate-y-1 transition">
+        <div class="w-10 h-10 mx-auto mb-2 flex items-center justify-center text-indigo-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        </div>
+        <div class="font-semibold text-gray-700 group-hover:text-indigo-600">Statistics</div>
+      </a>
+    </div>
+    </div><!-- /quick-access tinted band -->
+  </div>
+  {% endif %}
+
+  <!-- Team Standings Preview -->
+  {% if teams_with_grand_totals %}
+  <div class="max-w-7xl mx-auto px-4 mt-12 sm:mt-16 mb-12">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-2xl sm:text-3xl font-bold text-gray-800">Team Standings</h2>
+      {% if not request.user|is_linked_judge %}
+      <a href="{% url 'statistics' %}" class="text-indigo-600 font-semibold hover:underline">View All &rarr;</a>
+      {% endif %}
+    </div>
+    <div class="card overflow-hidden">
+      <table class="w-full">
+        <thead>
+          <tr class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm">
+            <th class="px-4 py-3 text-left font-semibold">Rank</th>
+            <th class="px-4 py-3 text-left font-semibold">Team</th>
+            <th class="px-4 py-3 text-right font-semibold">Total Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for team in teams_with_grand_totals|slice:":5" %}
+          <tr class="border-b border-gray-50 hover:bg-indigo-50 transition">
+            <td class="px-4 py-3 text-lg font-bold text-gray-500">
+              {% if forloop.counter == 1 %}&#x1F947;
+              {% elif forloop.counter == 2 %}&#x1F948;
+              {% elif forloop.counter == 3 %}&#x1F949;
+              {% else %}{{ forloop.counter }}{% endif %}
+            </td>
+            <td class="px-4 py-3 font-semibold text-gray-800">{{ team.student__team__name }}</td>
+            <td class="px-4 py-3 text-right font-bold text-indigo-700">{{ team.grand_total|floatformat:1 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+
+<!-- Screening Link Modal -->
+  <div id="screening-link-modal"
+    class="modal-shell hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[160] p-4">
+    <div class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-md relative">
+      <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-2xl">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2.5">
+          <span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-lg">🔗</span>
+          Screening Link
+        </h2>
+        <button id="close-screening-link-modal" type="button" aria-label="Close modal"
+          class="shrink-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg flex items-center justify-center transition">✕</button>
+      </div>
+
+      <div class="p-5 sm:p-6">
+      <p class="text-sm text-gray-600 text-center mb-4">
+        Share this link with the screening device. It opens full screening
+        <strong>without login and without the menu</strong>.
+      </p>
+
+      <div class="flex items-center gap-2 mb-4">
+        <input id="screening-link-url" type="text" readonly
+          class="w-full border rounded-lg px-3 py-2 bg-gray-50 text-gray-700 focus:ring focus:ring-indigo-300"
+          placeholder="Generating link...">
+        <button id="copy-screening-link"
+          class="shrink-0 px-4 py-2 bg-emerald-600 text-white font-semibold rounded-lg shadow hover:bg-emerald-700 transition"
+          type="button">Copy</button>
+      </div>
+
+      <div class="flex justify-center gap-3">
+        <a id="open-screening-link" href="#" target="_blank" rel="noopener"
+          class="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow hover:bg-indigo-700 transition">
+          Open Preview
+        </a>
+      </div>
+      </div>
+    </div>
+  </div>
+
+<!-- Generate Screening Link Script -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const genBtn = document.getElementById("generate-screening-link-hero");
+      if (!genBtn) return;
+
+      const modal = document.getElementById("screening-link-modal");
+      const urlInput = document.getElementById("screening-link-url");
+      const copyBtn = document.getElementById("copy-screening-link");
+      const openLink = document.getElementById("open-screening-link");
+      const closeBtn = document.getElementById("close-screening-link-modal");
+
+      function getCookie(name) {
+        let match = document.cookie.match(new RegExp('(^|;\\s*)' + name + '=([^;]*)'));
+        return match ? decodeURIComponent(match[2]) : '';
+      }
+
+      function generateLink() {
+        genBtn.disabled = true;
+        genBtn.innerHTML = '⏳ Generating...';
+        urlInput.value = 'Generating link...';
+
+        fetch("{% url 'generate_screening_link' %}", {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Content-Type": "application/json",
+          },
+        })
+          .then(res => {
+            if (!res.ok) throw new Error(res.statusText);
+            return res.json();
+          })
+          .then(data => {
+            urlInput.value = data.link;
+            openLink.href = data.link;
+            modal.classList.remove("hidden");
+            showToast("Screening link generated.", "success");
+          })
+          .catch(() => {
+            showToast("Failed to generate screening link. Please try again.", "error");
+          })
+          .finally(() => {
+            genBtn.disabled = false;
+            genBtn.innerHTML = '🔗 Screening Link';
+          });
+      }
+
+      genBtn.addEventListener("click", generateLink);
+
+      closeBtn.addEventListener("click", () => modal.classList.add("hidden"));
+      modal.addEventListener("click", (e) => { if (e.target === modal) modal.classList.add("hidden"); });
+
+      copyBtn.addEventListener("click", () => {
+        if (!urlInput.value) return;
+        navigator.clipboard.writeText(urlInput.value).then(() => {
+          copyBtn.textContent = "Copied!";
+          setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
+        });
+      });
+    });
+  </script>
+
+
+
+
+
+
+
+
+  <!-- modal for config -->
+
+  
+{% if not config_done %}
+  <!-- Config Setup Modal -->
+  <div id="configModal"
+    class="modal-shell fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[260] p-4 overflow-y-auto">
+    <div class="modal-content is-open bg-white rounded-2xl shadow-2xl w-full max-w-md relative max-h-[calc(100vh-2rem)] overflow-y-auto">
+      <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-2xl">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2.5">
+          <span class="shrink-0 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-lg">⚙️</span>
+          Mark Definition &amp; Configuration
+        </h2>
+      </div>
+      <div class="p-5 sm:p-6">
+
+      <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <strong>⚠️ Caution:</strong> This configuration can be set <u>only once</u> and cannot be edited later.
+      </div>
+
+      <!-- Load Default Values Toggle (Quick Stats) -->
+      <div class="mb-4">
+        <div class="flex items-center gap-3">
+          <label class="relative inline-flex w-11 h-6 cursor-pointer">
+            <input type="checkbox" id="loadDefaultsToggle" class="sr-only peer" onclick="toggleDefaultValues(this.checked)">
+            <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-indigo-600 relative transition-colors duration-200"></div>
+            <div class="absolute left-1 top-[2px] w-5 h-5 rounded-full bg-white shadow-md peer-checked:left-[24px] transition-all duration-200"></div>
+          </label>
+          <label for="loadDefaultsToggle" class="text-gray-700 font-medium cursor-pointer">Load Defaults</label>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">
+          When ON, all mark fields are pre-filled: <code class="bg-gray-100 px-1 rounded">1st: 5, 2nd: 3, 3rd: 1</code> • <code class="bg-gray-100 px-1 rounded">Grades: A=3, B=2, C=1</code> • <code class="bg-gray-100 px-1 rounded">Group: 10/7/5</code> • <code class="bg-gray-100 px-1 rounded">General: 10/7/5</code>
+        </p>
+      </div>
+
+      <form id="configForm" method="POST" action="{% url 'save_config' %}" data-no-loader>
+        {% csrf_token %}
+
+        <!-- Prize Positions -->
+        <div class="grid grid-cols-3 gap-3 mb-6">
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">🥇 1st Prize</label>
+            <input type="number" inputmode="numeric" name="first_prize" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">🥈 2nd Prize</label>
+            <input type="number" inputmode="numeric" name="second_prize" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">🥉 3rd Prize</label>
+            <input type="number" inputmode="numeric" name="third_prize" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          </div>
+        </div>
+
+        <!-- Grades -->
+        <div class="grid grid-cols-3 gap-3 mb-6">
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Grade A</label>
+            <input type="number" inputmode="numeric" name="grade_a" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" placeholder='Optional'>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Grade B</label>
+            <input type="number" inputmode="numeric" name="grade_b" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" placeholder='Optional'>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Grade C</label>
+            <input type="number" inputmode="numeric" name="grade_c" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" placeholder='Optional'>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 mb-6">
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Group First</label>
+            <input type="number" inputmode="numeric" name="group_first" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Group Sec</label>
+            <input type="number" inputmode="numeric" name="group_second" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Group Third</label>
+            <input type="number" inputmode="numeric" name="group_third" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 mb-6">
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">General First</label>
+            <input type="number" inputmode="numeric" name="general_first" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">General Sec</label>
+            <input type="number" inputmode="numeric" name="general_second" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">General Third</label>
+            <input type="number" inputmode="numeric" name="general_third" min="0"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          </div>
+        </div>
+
+
+        <!-- Max Programs -->
+        <div class="mb-6">
+          <div class="flex items-center gap-1.5 mb-1">
+            <label class="block text-gray-700 font-semibold">🎭 Max Programs per Participant</label>
+            <span class="relative inline-flex group">
+              <button type="button" tabindex="0" aria-label="What does this limit apply to?"
+                class="w-4 h-4 rounded-full bg-gray-200 text-gray-500 hover:bg-indigo-100 hover:text-indigo-600 flex items-center justify-center text-[10px] font-bold cursor-help focus:outline-none focus:ring-2 focus:ring-indigo-300">i</button>
+              <span
+                class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 rounded-lg bg-slate-800 text-white text-xs leading-snug px-3 py-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 shadow-lg z-30">
+                💡 Maximum number of programs a participant can select during registration.
+                This limit counts <b>individual</b> and <b>group</b> programs —
+                <b>General</b> (team-wise) programs are not counted, as they are
+                registered separately.
+              </span>
+            </span>
+          </div>
+          <input type="number" inputmode="numeric" name="max_programs" min="1"
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300" required>
+          <!-- <p class="mt-1.5 text-xs leading-snug text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-md px-2.5 py-1.5">
+            💡 This count includes <b>individual</b> and <b>group</b> programs only —
+            <b>general</b> (team-wise) programs are <b>not counted</b>. -->
+        </div>
+
+        <!-- Fest Type -->
+        <div class="mb-6">
+          <label class="block text-gray-700 font-semibold mb-2">Fest Type</label>
+          <select name="fest_type" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-300">
+            <option value="both" {% if fest_type == 'both' or not fest_type %}selected{% endif %}>Both Sections</option>
+            <option value="boys" {% if fest_type == 'boys' %}selected{% endif %}>Boys Only</option>
+            <option value="girls" {% if fest_type == 'girls' %}selected{% endif %}>Girls Only</option>
+          </select>
+          <p class="text-xs text-gray-400 mt-1">Boys/Girls Only hides the other section on every page — programs, students and results. Pre-filled from your signup selection.</p>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex justify-end gap-3">
+          <button type="submit" id="saveConfigBtn"
+            class="bg-indigo-600 text-white font-semibold px-5 py-2 rounded-lg shadow hover:bg-indigo-700 transition">
+            Save
+          </button>
+        </div>
+      </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const configModal = document.getElementById("configModal");
+      if (configModal) {
+        configModal.classList.remove("hidden");
+      }
+
+      // Optional: close modal after submitting
+      const configForm = document.getElementById("configForm");
+      if (configForm) {
+        const saveBtn = document.getElementById("saveConfigBtn");
+        const defaultBtnHTML = saveBtn ? saveBtn.innerHTML : "";
+
+        const setSaving = (saving) => {
+          if (!saveBtn) return;
+          if (saving) {
+            saveBtn.disabled = true;
+            saveBtn.classList.add("opacity-70", "cursor-not-allowed");
+            saveBtn.innerHTML =
+              '<span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin align-middle mr-2"></span>Saving...';
+          } else {
+            saveBtn.disabled = false;
+            saveBtn.classList.remove("opacity-70", "cursor-not-allowed");
+            saveBtn.innerHTML = defaultBtnHTML;
+          }
+        };
+
+        configForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+
+          // Guard: ignore repeated clicks while a save is already in flight
+          if (configForm.dataset.submitting === "true") return;
+          configForm.dataset.submitting = "true";
+          setSaving(true);
+
+          const formData = new FormData(configForm);
+          fetch(configForm.action, {
+            method: "POST",
+            body: formData,
+          })
+            .then(res => res.ok ? res.json() : Promise.reject(res))
+            .then(data => {
+              showToast("✅ Mark definition saved — configuration complete!", "success");
+              configModal.remove(); // hide modal
+              // Brief delay so the success toast is visible before the page
+              // reloads to mark config_done=True.
+              setTimeout(() => window.location.reload(), 900);
+            })
+            .catch(() => {
+              showToast("❌ Failed to save config. Please try again.", "error");
+              // Re-enable so the user can retry after a failure
+              configForm.dataset.submitting = "false";
+              setSaving(false);
+            });
+        });
+      }
+    });
+  </script>
+
+  <script>
+    // Quick Stats count-up: the final numbers are already server-rendered
+    // (so the page is correct without JS); this animation is cosmetic only.
+    document.addEventListener("DOMContentLoaded", () => {
+      const counters = document.querySelectorAll("[data-count-to]");
+      if (!counters.length) return;
+      if (window.matchMedia
+          && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        return; // respect reduced-motion preference
+      }
+      const DURATION = 1200;
+      const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+      counters.forEach((el) => {
+        const target = parseInt(el.dataset.countTo, 10) || 0;
+        if (target <= 0) return; // nothing to animate (0 stays 0)
+        let start = null;
+        const step = (ts) => {
+          if (start === null) start = ts;
+          const progress = Math.min((ts - start) / DURATION, 1);
+          el.textContent = Math.round(easeOut(progress) * target).toLocaleString();
+          if (progress < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      });
+    });
+  </script>
+
+  <script>
+    // Toggle default prize values into/out of the configuration form
+    function toggleDefaultValues(checked) {
+      const defaults = {
+        'first_prize': '5',
+        'second_prize': '3',
+        'third_prize': '1',
+        'grade_a': '3',
+        'grade_b': '2',
+        'grade_c': '1',
+        'group_first': '10',
+        'group_second': '7',
+        'group_third': '5',
+        'general_first': '10',
+        'general_second': '7',
+        'general_third': '5',
+      };
+      for (const [name, value] of Object.entries(defaults)) {
+        const element = document.querySelector('[name="' + name + '"]');
+        if (element) {
+          element.value = checked ? value : '';
+        }
+      }
+      if (checked) {
+        showToast('✅ Default prize values loaded into all fields.', 'success');
+      }
+    }
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+{% endblock %}
